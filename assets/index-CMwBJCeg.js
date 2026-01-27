@@ -7252,6 +7252,12 @@ function useGeminiCli() {
   }, []);
   return { testConnection, listMcps };
 }
+function useProcessInput() {
+  const sendInput = reactExports.useCallback(async (executionId, input) => {
+    return api.invoke("task:process-input", executionId, input);
+  }, []);
+  return { sendInput };
+}
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -21076,6 +21082,225 @@ function LogDetail({ log: initialLog }) {
       setTimeout(() => setCopied(false), 2e3);
     }
   };
+  const parseMcpPermissionPrompt = (output) => {
+    if (!output) return { hasPrompt: false };
+    const promptMatch = output.match(/Allow\s+execution\s+of\s+MCP\s+tool\s+"([^"]+)"\s+from\s+server\s+"([^"]+)"\?/i);
+    if (promptMatch) {
+      return {
+        hasPrompt: true,
+        toolName: promptMatch[1],
+        serverName: promptMatch[2],
+        question: `Allow execution of MCP tool "${promptMatch[1]}" from server "${promptMatch[2]}"?`
+      };
+    }
+    const chineseMatch = output.match(/允許.*MCP.*工具\s+"([^"]+)".*伺服器\s+"([^"]+)"\?/i);
+    if (chineseMatch) {
+      return {
+        hasPrompt: true,
+        toolName: chineseMatch[1],
+        serverName: chineseMatch[2],
+        question: `允許執行 MCP 工具 "${chineseMatch[1]}" 來自伺服器 "${chineseMatch[2]}"?`
+      };
+    }
+    if (output.includes("Allow execution of MCP tool") && (output.includes("Allow once") || output.includes("1. Allow"))) {
+      const toolMatch = output.match(/MCP\s+tool\s+"([^"]+)"/i);
+      const serverMatch = output.match(/server\s+"([^"]+)"/i);
+      if (toolMatch || serverMatch) {
+        return {
+          hasPrompt: true,
+          toolName: toolMatch?.[1],
+          serverName: serverMatch?.[1],
+          question: "Allow execution of MCP tool?"
+        };
+      }
+    }
+    return { hasPrompt: false };
+  };
+  const detectPermissionRequest = (output) => {
+    if (!output) return { hasRequest: false, message: "" };
+    const lowerOutput = output.toLowerCase();
+    const mcpPrompt = parseMcpPermissionPrompt(output);
+    if (mcpPrompt.hasPrompt) {
+      return {
+        hasRequest: true,
+        message: `需要授權執行 MCP 工具 "${mcpPrompt.toolName || "unknown"}"`
+      };
+    }
+    const permissionPatterns = [
+      // Policy denied errors (highest priority - check first)
+      {
+        test: (text2) => text2.includes("Denied by policy") || text2.includes("denied by policy") || text2.includes("操作遭到系統政策拒絕") || text2.includes("政策拒絕") || text2.includes("系統政策") && (text2.includes("拒絕") || text2.includes("denied")) || text2.includes("policy") && text2.includes("denied"),
+        message: "MCP 工具被系統政策拒絕"
+      },
+      // MCP server not started or permission not configured
+      {
+        test: (text2) => (text2.includes("MCP Server") || text2.includes("mcp server") || text2.includes("MCP 伺服器")) && (text2.includes("未正確啟動") || text2.includes("not.*start") || text2.includes("未啟動") || text2.includes("權限未配置") || text2.includes("permission.*not.*config")),
+        message: "MCP Server 未正確啟動或權限未配置"
+      },
+      // Security policy restriction
+      {
+        test: (text2) => text2.includes("目前的執行環境安全策略限制") || text2.includes("執行環境安全策略") || text2.includes("安全策略限制"),
+        message: "執行環境安全策略限制 - 需要授權確認"
+      },
+      // GA4 specific
+      {
+        test: (text2) => text2.includes("i will execute these data fetches now") && (text2.includes("權限政策限制") || text2.includes("無法直接存取") || text2.includes("ga4") || text2.includes("安全策略")),
+        message: "需要授權存取 Google Analytics 4 數據"
+      },
+      // MCP tools specific
+      {
+        test: (text2) => (text2.includes("mcp") || text2.includes("tool")) && (text2.includes("permission") || text2.includes("授權") || text2.includes("權限") || text2.includes("access") || text2.includes("存取")),
+        message: "需要授權存取 MCP 工具"
+      },
+      // General permission patterns
+      {
+        test: (text2) => (text2.includes("[y/n]") || text2.includes("(y/n)")) && (text2.includes("permission") || text2.includes("授權") || text2.includes("allow") || text2.includes("允許")),
+        message: "需要授權確認"
+      },
+      {
+        test: (text2) => text2.includes("permission") && text2.includes("access") && (text2.includes("allow") || text2.includes("grant") || text2.includes("授權")),
+        message: "需要授權確認"
+      },
+      {
+        test: (text2) => (text2.includes("授權") || text2.includes("權限")) && (text2.includes("存取") || text2.includes("access") || text2.includes("允許") || text2.includes("allow")),
+        message: "需要授權確認"
+      },
+      // Check if output seems stuck waiting for input (common sign of permission prompt)
+      {
+        test: (text2) => {
+          const lines = text2.split("\n").filter((l2) => l2.trim());
+          const lastLine = lines[lines.length - 1] || "";
+          return lastLine.includes("?") && (lastLine.includes("allow") || lastLine.includes("permission") || lastLine.includes("授權") || lastLine.includes("允許")) && text2.length > 100;
+        },
+        message: "等待權限確認"
+      }
+    ];
+    for (const pattern of permissionPatterns) {
+      if (pattern.test(lowerOutput)) {
+        return { hasRequest: true, message: pattern.message };
+      }
+    }
+    return { hasRequest: false, message: "" };
+  };
+  const extractCurrentActivity = (output) => {
+    if (!output || output.trim().length === 0) {
+      return "正在初始化...";
+    }
+    const lines = output.split("\n").filter((line) => line.trim().length > 0);
+    const lastLine = lines[lines.length - 1] || "";
+    lastLine.toLowerCase();
+    const willMatch = lastLine.match(/i\s+will\s+(?:start\s+by\s+)?(.+?)(?:\.|$)/i);
+    if (willMatch) {
+      const action = willMatch[1].trim();
+      const actionMap = {
+        "search": "正在搜尋",
+        "fetch": "正在獲取",
+        "analyze": "正在分析",
+        "access": "正在存取",
+        "check": "正在檢查",
+        "list": "正在列出",
+        "get": "正在取得",
+        "read": "正在讀取",
+        "process": "正在處理",
+        "execute": "正在執行",
+        "connect": "正在連線",
+        "query": "正在查詢",
+        "calculate": "正在計算",
+        "generate": "正在生成",
+        "create": "正在建立",
+        "update": "正在更新",
+        "retrieve": "正在檢索",
+        "confirm": "正在確認",
+        "identify": "正在識別"
+      };
+      const objectPatterns = [
+        { pattern: /ga4\s+(schema|metadata|data|dimension|metric)/i, label: "GA4" },
+        { pattern: /the\s+ga4\s+(schema|metadata)/i, label: "GA4 結構" },
+        { pattern: /performance\s+data/i, label: "效能數據" },
+        { pattern: /(dimension|metric)\s+names?/i, label: "維度和指標" },
+        { pattern: /high-traffic\s+articles?/i, label: "高流量文章" },
+        { pattern: /engagement\s+(data|metrics?)/i, label: "互動數據" },
+        { pattern: /bounce\s+rates?/i, label: "跳出率" }
+      ];
+      for (const objPattern of objectPatterns) {
+        if (action.match(objPattern.pattern)) {
+          for (const [key, value] of Object.entries(actionMap)) {
+            if (action.toLowerCase().includes(key)) {
+              return `${value} ${objPattern.label}...`;
+            }
+          }
+        }
+      }
+      for (const [key, value] of Object.entries(actionMap)) {
+        if (action.toLowerCase().includes(key)) {
+          const objectMatch = action.match(new RegExp(`${key}\\s+(?:the|a|an)?\\s*(.+?)(?:\\s+to|\\s+for|\\s+and|$|\\s+to\\s+confirm|\\s+to\\s+check)`, "i"));
+          if (objectMatch && objectMatch[1]) {
+            const object = objectMatch[1].trim();
+            const shortObject = object.length > 30 ? object.substring(0, 30) + "..." : object;
+            return `${value} ${shortObject}...`;
+          }
+          return `${value}...`;
+        }
+      }
+      const shortAction = action.length > 40 ? action.substring(0, 40) + "..." : action;
+      return `正在執行: ${shortAction}...`;
+    }
+    const chineseMatch = lastLine.match(/(正在|將要|開始)(.+?)(?:[。，\.]|$)/);
+    if (chineseMatch) {
+      return `${chineseMatch[1]}${chineseMatch[2]}...`;
+    }
+    const ingMatch = lastLine.match(/(\w+ing)\s+(.+?)(?:\.|$)/i);
+    if (ingMatch) {
+      const action = ingMatch[1];
+      const object = ingMatch[2].trim();
+      const actionMap = {
+        "searching": "正在搜尋",
+        "fetching": "正在獲取",
+        "analyzing": "正在分析",
+        "accessing": "正在存取",
+        "checking": "正在檢查",
+        "processing": "正在處理",
+        "executing": "正在執行",
+        "connecting": "正在連線",
+        "querying": "正在查詢",
+        "calculating": "正在計算",
+        "generating": "正在生成",
+        "creating": "正在建立",
+        "updating": "正在更新",
+        "retrieving": "正在檢索",
+        "loading": "正在載入",
+        "reading": "正在讀取"
+      };
+      const translatedAction = actionMap[action.toLowerCase()] || `正在${action}`;
+      return `${translatedAction} ${object}...`;
+    }
+    const recentText = lines.slice(-3).join(" ").toLowerCase();
+    if (recentText.includes("ga4") || recentText.includes("google analytics")) {
+      if (recentText.includes("schema") || recentText.includes("metadata")) {
+        return "正在檢查 GA4 結構...";
+      }
+      if (recentText.includes("fetch") || recentText.includes("get") || recentText.includes("retrieve")) {
+        return "正在獲取 GA4 數據...";
+      }
+      if (recentText.includes("analyze") || recentText.includes("analysis")) {
+        return "正在分析 GA4 數據...";
+      }
+      return "正在處理 GA4 相關操作...";
+    }
+    if (recentText.includes("mcp") || recentText.includes("tool")) {
+      return "正在呼叫 MCP 工具...";
+    }
+    if (recentText.includes("permission") || recentText.includes("授權") || recentText.includes("權限")) {
+      return "正在處理權限請求...";
+    }
+    if (lastLine.length > 50) {
+      return `正在處理: ${lastLine.substring(0, 50)}...`;
+    }
+    return "正在處理中...";
+  };
+  const permissionRequest = log.output ? detectPermissionRequest(log.output) : { hasRequest: false, message: "" };
+  const mcpPermissionPrompt = log.output ? parseMcpPermissionPrompt(log.output) : { hasPrompt: false };
+  const currentActivity = log.status === "running" && log.output ? extractCurrentActivity(log.output) : log.status === "running" ? "正在初始化任務..." : "";
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3", children: [
@@ -21109,22 +21334,271 @@ function LogDetail({ log: initialLog }) {
         ] })
       ] }),
       log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2.5 rounded-lg", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium", children: "Task is running..." })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent flex-shrink-0" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium", children: currentActivity || "任務執行中..." })
       ] }),
-      log.error && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-red-50 border border-red-200 rounded-lg p-4", children: [
+      log.error && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `rounded-lg p-4 ${log.error.includes("🚫") || log.error.includes("安全檢查") ? "bg-red-100 border-2 border-red-400 shadow-lg" : "bg-red-50 border border-red-200"}`, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-4 h-4 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" }) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium text-red-700", children: "Error" })
+          log.error.includes("🚫") || log.error.includes("安全檢查") ? /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-5 h-5 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-4 h-4 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `font-medium ${log.error.includes("🚫") || log.error.includes("安全檢查") ? "text-red-800 text-base" : "text-red-700 text-sm"}`, children: log.error.includes("🚫") || log.error.includes("安全檢查") ? "🚫 安全檢查失敗" : "Error" })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "text-sm text-red-600 whitespace-pre-wrap font-mono", children: log.error })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: `whitespace-pre-wrap font-mono mb-3 ${log.error.includes("🚫") || log.error.includes("安全檢查") ? "text-sm text-red-800 font-semibold" : "text-sm text-red-600"}`, children: log.error }),
+        (log.error.includes("🚫") || log.error.includes("安全檢查")) && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-red-200 border-2 border-red-400 rounded-lg p-4 mt-3", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0 mt-0.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-6 h-6 text-red-700", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" }) }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold text-red-900 mb-2", children: "⚠️ 安全保護機制已啟動" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-red-800 mb-2", children: "系統檢測到嘗試執行危險的刪除操作，已自動停止執行以保護您的系統安全。" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-red-300 rounded p-2 mt-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold text-red-900 mb-1", children: "保護措施：" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("ul", { className: "text-xs text-red-800 list-disc list-inside space-y-1", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "嚴格禁止在未經使用者授權下主動刪除項目" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "自動檢測並阻止危險的刪除命令（如 rm -rf）" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "執行已立即停止，不會對系統造成任何影響" })
+              ] })
+            ] })
+          ] })
+        ] }) }),
+        !log.error.includes("🚫") && !log.error.includes("安全檢查") && (log.error.includes("Denied by policy") || log.error.includes("政策拒絕") || log.error.includes("系統政策")) && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-red-100 border border-red-300 rounded p-3 text-xs text-red-800 mt-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-medium mb-2", children: "🔧 MCP 工具政策拒絕 - 解決步驟：" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("ol", { className: "list-decimal list-inside space-y-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+              "檢查 Gemini CLI 配置文件（通常在 ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-red-200 px-1 rounded", children: "~/.config/gemini-cli/settings.json" }),
+              "）"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+              "為您的 MCP server 添加 ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-red-200 px-1 rounded", children: '"trust": true' }),
+              " 設定"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+              "確認 MCP Server 已正確啟動（執行 ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-red-200 px-1 rounded", children: "gemini mcp list" }),
+              " 檢查）"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "確認 Google Analytics API 權限已正確配置" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "重新啟動 Gemini CLI 或應用程式" })
+          ] })
+        ] })
       ] }),
-      log.output ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "prose prose-sm max-w-none overflow-hidden\n              prose-headings:text-gray-900 prose-headings:font-semibold\n              prose-h1:text-xl prose-h1:mt-6 prose-h1:mb-4\n              prose-h2:text-lg prose-h2:mt-5 prose-h2:mb-3\n              prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2\n              prose-p:text-gray-600 prose-p:leading-relaxed prose-p:break-words\n              prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-a:break-all\n              prose-strong:text-gray-900 prose-strong:font-semibold\n              prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-normal prose-code:before:content-none prose-code:after:content-none prose-code:break-all\n              prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm\n              prose-ul:text-gray-600 prose-ol:text-gray-600\n              prose-li:marker:text-gray-400\n              [&_table]:w-full [&_table]:table-fixed [&_table]:text-sm [&_table]:border-collapse\n              [&_thead]:bg-gray-50\n              [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold [&_th]:text-gray-600 [&_th]:uppercase [&_th]:tracking-wider [&_th]:px-2 [&_th]:py-2 [&_th]:border-b [&_th]:border-gray-200 [&_th]:break-words\n              [&_td]:px-2 [&_td]:py-2 [&_td]:text-gray-600 [&_td]:border-b [&_td]:border-gray-100 [&_td]:align-top [&_td]:break-words [&_td]:overflow-hidden\n              [&_tr:last-child_td]:border-b-0\n              [&_tbody_tr:hover]:bg-gray-50\n            ", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Markdown, { remarkPlugins: [remarkGfm], children: log.output }),
+      log.output && (log.output.includes("Denied by policy") || log.output.includes("操作遭到系統政策拒絕") || log.output.includes("政策拒絕")) && !log.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-red-50 border border-red-200 rounded-lg p-4 mb-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0 mt-0.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-5 h-5 text-red-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-semibold text-red-900 mb-2", children: "MCP 工具被系統政策拒絕" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-red-100 border border-red-300 rounded p-3 text-xs text-red-800 mb-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-medium mb-2", children: "🔧 解決步驟：" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("ol", { className: "list-decimal list-inside space-y-1", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                "檢查 Gemini CLI 配置文件（",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-red-200 px-1 rounded", children: "~/.config/gemini-cli/settings.json" }),
+                "）"
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                "為 MCP server 添加 ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-red-200 px-1 rounded", children: '"trust": true' })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                "確認 MCP Server 已啟動（執行 ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-red-200 px-1 rounded", children: "gemini mcp list" }),
+                "）"
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "檢查 Google Analytics API 權限配置" })
+            ] })
+          ] })
+        ] })
+      ] }) }),
+      mcpPermissionPrompt.hasPrompt && log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-5 mb-4 shadow-lg", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3 mb-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0 mt-0.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-5 h-5 text-white", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" }) }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-base font-semibold text-gray-900 mb-2", children: "MCP 工具執行權限" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-white/80 rounded-lg p-3 mb-4 border border-purple-100", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-sm text-gray-700 mb-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-medium", children: "工具：" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "ml-2 px-2 py-1 bg-purple-100 rounded text-purple-700 font-mono text-xs", children: mcpPermissionPrompt.toolName || "unknown" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-sm text-gray-700", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-medium", children: "伺服器：" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "ml-2 px-2 py-1 bg-blue-100 rounded text-blue-700 font-mono text-xs", children: mcpPermissionPrompt.serverName || "unknown" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-gray-800 mb-3", children: mcpPermissionPrompt.question || "允許執行此 MCP 工具？" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(McpPermissionOptions, { executionId: log.id })
+        ] })
+      ] }) }),
+      permissionRequest.hasRequest && !mcpPermissionPrompt.hasPrompt && log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0 mt-0.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-5 h-5 text-amber-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" }) }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-semibold text-amber-900 mb-1", children: "權限請求" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-amber-700 mb-2", children: permissionRequest.message }),
+          (permissionRequest.message.includes("安全策略限制") || permissionRequest.message.includes("政策拒絕") || permissionRequest.message.includes("MCP Server")) && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-amber-100 border border-amber-300 rounded p-2 mb-3 text-xs text-amber-800", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-medium mb-1", children: "💡 解決方案：" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("ul", { className: "list-disc list-inside space-y-1", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                "檢查 Gemini CLI 配置文件（settings.json），為 MCP servers 添加 ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "bg-amber-200 px-1 rounded", children: '"trust": true' })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "確認 MCP Server 已正確啟動並運行" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "檢查 Google Analytics API 權限是否已正確配置" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "確認執行環境已取得 Google Analytics 的授權" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(PermissionConfirmButton, { executionId: log.id })
+        ] })
+      ] }) }),
+      log.output ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          ChatMessage,
+          {
+            content: log.output,
+            isStreaming: log.status === "running",
+            showPermissionAlert: permissionRequest.hasRequest && log.status === "running"
+          }
+        ),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: outputEndRef })
       ] }) : log.status === "running" ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-gray-400 text-sm", children: "Waiting for output..." }) : null
-    ] }) })
+    ] }) }),
+    log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx(LogInput, { executionId: log.id })
   ] });
+}
+function ChatMessage({ content: content2, isStreaming, showPermissionAlert }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-4 h-4 text-white", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" }) }) }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-white rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "prose prose-sm max-w-none overflow-hidden\n            prose-headings:text-gray-900 prose-headings:font-semibold\n            prose-h1:text-lg prose-h1:mt-4 prose-h1:mb-3\n            prose-h2:text-base prose-h2:mt-3 prose-h2:mb-2\n            prose-h3:text-sm prose-h3:mt-2 prose-h3:mb-1\n            prose-p:text-gray-700 prose-p:leading-relaxed prose-p:break-words prose-p:my-2\n            prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-a:break-all\n            prose-strong:text-gray-900 prose-strong:font-semibold\n            prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-normal prose-code:before:content-none prose-code:after:content-none prose-code:break-all\n            prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm prose-pre:my-2\n            prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-2 prose-ol:my-2\n            prose-li:marker:text-gray-400\n            [&_table]:w-full [&_table]:table-fixed [&_table]:text-sm [&_table]:border-collapse [&_table]:my-2\n            [&_thead]:bg-gray-50\n            [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold [&_th]:text-gray-600 [&_th]:uppercase [&_th]:tracking-wider [&_th]:px-2 [&_th]:py-2 [&_th]:border-b [&_th]:border-gray-200 [&_th]:break-words\n            [&_td]:px-2 [&_td]:py-2 [&_td]:text-gray-600 [&_td]:border-b [&_td]:border-gray-100 [&_td]:align-top [&_td]:break-words [&_td]:overflow-hidden\n            [&_tr:last-child_td]:border-b-0\n            [&_tbody_tr:hover]:bg-gray-50\n          ", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Markdown, { remarkPlugins: [remarkGfm], children: content2 }),
+      isStreaming && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse" })
+    ] }) }) })
+  ] });
+}
+function McpPermissionOptions({ executionId }) {
+  const { sendInput } = useProcessInput();
+  const [sending, setSending] = reactExports.useState(null);
+  const handleSelect = async (option) => {
+    setSending(option);
+    try {
+      const input = option === "esc" ? "\x1B" : option;
+      console.log(`[UI] Sending MCP permission option: ${option} (input: ${JSON.stringify(input)})`);
+      await sendInput(executionId, input);
+    } catch (err) {
+      console.error("Failed to send permission selection:", err);
+    } finally {
+      setSending(null);
+    }
+  };
+  const options = [
+    {
+      value: "1",
+      label: "Allow once",
+      description: "僅允許此次執行",
+      icon: "✓",
+      color: "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600"
+    },
+    {
+      value: "2",
+      label: "Allow tool for this session",
+      description: "允許此工具在此次會話中使用",
+      icon: "🔒",
+      color: "bg-blue-500 hover:bg-blue-600 text-white border-blue-600"
+    },
+    {
+      value: "3",
+      label: "Allow all server tools for this session",
+      description: "允許此伺服器的所有工具在此次會話中使用",
+      icon: "🔓",
+      color: "bg-purple-500 hover:bg-purple-600 text-white border-purple-600"
+    },
+    {
+      value: "esc",
+      label: "No, suggest changes",
+      description: "拒絕並建議修改",
+      icon: "✗",
+      color: "bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
+    }
+  ];
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-2", children: options.map((option) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "button",
+    {
+      onClick: () => handleSelect(option.value),
+      disabled: sending !== null,
+      className: `w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all text-left ${option.color} ${sending === option.value ? "opacity-75" : ""} ${sending !== null && sending !== option.value ? "opacity-50 cursor-not-allowed" : ""}`,
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm", children: option.value === "esc" ? "ESC" : option.value }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "font-medium text-sm", children: option.label }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs opacity-90 mt-0.5", children: option.description })
+        ] }),
+        sending === option.value && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" })
+      ]
+    },
+    option.value
+  )) });
+}
+function PermissionConfirmButton({ executionId }) {
+  const { sendInput } = useProcessInput();
+  const [sending, setSending] = reactExports.useState(false);
+  const handleConfirm = async () => {
+    setSending(true);
+    try {
+      await sendInput(executionId, "y");
+    } catch (err) {
+      console.error("Failed to send confirmation:", err);
+    } finally {
+      setSending(false);
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "button",
+    {
+      onClick: handleConfirm,
+      disabled: sending,
+      className: "px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2",
+      children: sending ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "確認中..." })
+      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M5 13l4 4L19 7" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "確認授權" })
+      ] })
+    }
+  );
+}
+function LogInput({ executionId }) {
+  const [input, setInput] = reactExports.useState("");
+  const { sendInput } = useProcessInput();
+  const [sending, setSending] = reactExports.useState(false);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || sending) return;
+    setSending(true);
+    try {
+      await sendInput(executionId, input);
+      setInput("");
+    } catch (err) {
+      console.error("Failed to send input:", err);
+    } finally {
+      setSending(false);
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("form", { onSubmit: handleSubmit, className: "p-4 border-t border-gray-100 bg-white", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "input",
+      {
+        type: "text",
+        value: input,
+        onChange: (e) => setInput(e.target.value),
+        placeholder: "輸入回應或輸入 'y' 確認權限...",
+        className: "flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "submit",
+        disabled: !input.trim() || sending,
+        className: "px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+        children: sending ? "發送中..." : "發送"
+      }
+    )
+  ] }) });
 }
 function StatusBadge({ status }) {
   const styles = {
