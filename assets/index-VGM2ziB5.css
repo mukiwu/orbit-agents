@@ -2809,6 +2809,10 @@ body {
   --tw-text-opacity: 1;
   color: rgb(88 101 242 / var(--tw-text-opacity, 1));
 }
+.hover\:text-blue-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(37 99 235 / var(--tw-text-opacity, 1));
+}
 .hover\:text-gray-600:hover {
   --tw-text-opacity: 1;
   color: rgb(75 85 99 / var(--tw-text-opacity, 1));
@@ -3048,6 +3052,10 @@ body {
 
   .sm\:flex-row {
     flex-direction: row;
+  }
+
+  .sm\:items-start {
+    align-items: flex-start;
   }
 }
 @media (min-width: 768px) {

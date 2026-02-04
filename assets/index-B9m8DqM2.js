@@ -22098,6 +22098,7 @@ const pkg = {
 const LATEST_VERSION = pkg.version;
 const MAC_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-${LATEST_VERSION}-arm64.dmg`;
 const WIN_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-Setup-${LATEST_VERSION}.exe`;
+const WIN_ZIP_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-${LATEST_VERSION}-arm64-win.zip`;
 const TESTIMONIALS = [
   {
     name: "Alex Chen",
@@ -22300,7 +22301,7 @@ function WelcomePage() {
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-cyan-600", children: "Orbit Agents" })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed font-display", children: "An AI-powered assistant built for developers to streamline task execution, workflow management, and development automation. Easily integrate with any MCP server or local filesystem." }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col sm:flex-row items-center justify-center gap-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col sm:flex-row items-center sm:items-start justify-center gap-4", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "a",
             {
@@ -22312,17 +22313,20 @@ function WelcomePage() {
               ]
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "a",
-            {
-              href: WIN_DOWNLOAD_URL,
-              className: "px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 text-lg",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-6 h-6", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24" }) }),
-                "Download for Windows"
-              ]
-            }
-          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "a",
+              {
+                href: WIN_DOWNLOAD_URL,
+                className: "px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 text-lg",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-6 h-6", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24" }) }),
+                  "Download for Windows"
+                ]
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("a", { href: WIN_ZIP_DOWNLOAD_URL, className: "text-sm text-gray-500 hover:text-blue-600 font-medium transition-colors", children: "Or Download Portable (.zip)" })
+          ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "a",
             {
@@ -22522,7 +22526,7 @@ function WelcomePage() {
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-20 mb-20 flex flex-col items-center", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-3xl font-bold text-gray-900 mb-8 font-display", children: "Ready to supercharge your workflow?" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col sm:flex-row gap-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col sm:flex-row items-center sm:items-start gap-4", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "a",
             {
@@ -22534,17 +22538,20 @@ function WelcomePage() {
               ]
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "a",
-            {
-              href: WIN_DOWNLOAD_URL,
-              className: "px-8 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold shadow-xl shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 text-xl",
-              children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-7 h-7", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24" }) }),
-                "Download for Windows"
-              ]
-            }
-          )
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "a",
+              {
+                href: WIN_DOWNLOAD_URL,
+                className: "px-8 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold shadow-xl shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 text-xl",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-7 h-7", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24" }) }),
+                  "Download for Windows"
+                ]
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("a", { href: WIN_ZIP_DOWNLOAD_URL, className: "text-sm text-gray-500 hover:text-blue-600 font-medium transition-colors", children: "Portable (.zip)" })
+          ] })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-4 text-gray-500 text-sm", children: "Available for macOS and Windows" })
       ] })
