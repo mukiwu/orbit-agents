@@ -7388,7 +7388,7 @@ const createLucideIcon = (iconName, iconNode) => {
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$f = [
+const __iconNode$g = [
   [
     "path",
     {
@@ -7399,14 +7399,14 @@ const __iconNode$f = [
   ["path", { d: "m3.3 7 8.7 5 8.7-5", key: "g66t2b" }],
   ["path", { d: "M12 22V12", key: "d0xqtd" }]
 ];
-const Box = createLucideIcon("box", __iconNode$f);
+const Box = createLucideIcon("box", __iconNode$g);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$e = [
+const __iconNode$f = [
   ["path", { d: "M8 2v4", key: "1cmpym" }],
   ["path", { d: "M16 2v4", key: "4m81vk" }],
   ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
@@ -7418,28 +7418,40 @@ const __iconNode$e = [
   ["path", { d: "M12 18h.01", key: "mhygvu" }],
   ["path", { d: "M16 18h.01", key: "kzsmim" }]
 ];
-const CalendarDays = createLucideIcon("calendar-days", __iconNode$e);
+const CalendarDays = createLucideIcon("calendar-days", __iconNode$f);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$d = [
+const __iconNode$e = [
   ["path", { d: "M8 2v4", key: "1cmpym" }],
   ["path", { d: "M16 2v4", key: "4m81vk" }],
   ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
   ["path", { d: "M3 10h18", key: "8toen8" }]
 ];
-const Calendar = createLucideIcon("calendar", __iconNode$d);
+const Calendar = createLucideIcon("calendar", __iconNode$e);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$c = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$c);
+const __iconNode$d = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$d);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$c = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
+  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
+];
+const CircleAlert = createLucideIcon("circle-alert", __iconNode$c);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -7447,11 +7459,10 @@ const Check = createLucideIcon("check", __iconNode$c);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$b = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
-  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
+  ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }],
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
 ];
-const CircleAlert = createLucideIcon("circle-alert", __iconNode$b);
+const Clock = createLucideIcon("clock", __iconNode$b);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -7459,17 +7470,6 @@ const CircleAlert = createLucideIcon("circle-alert", __iconNode$b);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$a = [
-  ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }],
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
-];
-const Clock = createLucideIcon("clock", __iconNode$a);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$9 = [
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M17 20v2", key: "1rnc9c" }],
@@ -7485,7 +7485,19 @@ const __iconNode$9 = [
   ["rect", { x: "4", y: "4", width: "16", height: "16", rx: "2", key: "1vbyd7" }],
   ["rect", { x: "8", y: "8", width: "8", height: "8", rx: "1", key: "z9xiuo" }]
 ];
-const Cpu = createLucideIcon("cpu", __iconNode$9);
+const Cpu = createLucideIcon("cpu", __iconNode$a);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$9 = [
+  ["path", { d: "M12 15V3", key: "m9g1x1" }],
+  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
+  ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
+];
+const Download = createLucideIcon("download", __iconNode$9);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -21663,8 +21675,11 @@ function Settings({}) {
     claude_session_token: "",
     gemini_cli_path: "",
     gemini_api_key: "",
-    auto_launch: "true"
+    auto_launch: "true",
+    auto_update: "true"
   });
+  const [updateStatus, setUpdateStatus] = reactExports.useState(null);
+  const [checkingUpdate, setCheckingUpdate] = reactExports.useState(false);
   const [isLoaded, setIsLoaded] = reactExports.useState(false);
   const [isSaving, setIsSaving] = reactExports.useState(false);
   const [lastSaved, setLastSaved] = reactExports.useState(null);
@@ -21687,11 +21702,55 @@ function Settings({}) {
         claude_session_token: settings.claude_session_token || "",
         gemini_cli_path: settings.gemini_cli_path || "",
         gemini_api_key: settings.gemini_api_key || "",
-        auto_launch: settings.auto_launch ?? "true"
+        auto_launch: settings.auto_launch ?? "true",
+        auto_update: settings.auto_update ?? "true"
       });
       setIsLoaded(true);
     }
   }, [loading, settings, isLoaded]);
+  const handleCheckForUpdates = async () => {
+    setCheckingUpdate(true);
+    try {
+      const status = await window.electronApi.invoke("updater:check");
+      setUpdateStatus(status);
+    } catch (err) {
+      setUpdateStatus({
+        checking: false,
+        available: false,
+        downloaded: false,
+        downloading: false,
+        progress: 0,
+        version: null,
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+  const handleDownloadUpdate = async () => {
+    try {
+      await window.electronApi.invoke("updater:download");
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+  const handleInstallUpdate = async () => {
+    try {
+      await window.electronApi.invoke("updater:install");
+    } catch (err) {
+      console.error("Install failed:", err);
+    }
+  };
+  reactExports.useEffect(() => {
+    const handleUpdateStatus = (status) => {
+      setUpdateStatus(status);
+      setCheckingUpdate(status.checking);
+    };
+    window.electronApi.on("updater:status", handleUpdateStatus);
+    return () => {
+      window.electronApi.off("updater:status", handleUpdateStatus);
+    };
+  }, []);
   const saveTimeoutRef = reactExports.useRef(null);
   const formDataRef = reactExports.useRef(formData);
   reactExports.useEffect(() => {
@@ -21854,25 +21913,132 @@ function Settings({}) {
           /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-lg font-semibold text-gray-900 mb-1", children: "General Settings" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-500", children: "Configure how Orbit Agents behaves on your system." })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-900 block", children: "Launch at Login" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-500 mt-1", children: "Automatically start the application when you log in." })
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-900 block", children: "Launch at Login" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-500 mt-1", children: "Automatically start the application when you log in." })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => setFormData((prev) => ({ ...prev, auto_launch: prev.auto_launch === "true" ? "false" : "true" })),
+                className: `relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${formData.auto_launch === "true" ? "bg-blue-600" : "bg-gray-200"}`,
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.auto_launch === "true" ? "translate-x-6" : "translate-x-1"}`
+                  }
+                )
+              }
+            )
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "button",
-            {
-              onClick: () => setFormData((prev) => ({ ...prev, auto_launch: prev.auto_launch === "true" ? "false" : "true" })),
-              className: `relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${formData.auto_launch === "true" ? "bg-blue-600" : "bg-gray-200"}`,
-              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "span",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-gray-100" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-900 block", children: "Auto Update" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-500 mt-1", children: "Automatically check for and notify about updates." })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => setFormData((prev) => ({ ...prev, auto_update: prev.auto_update === "true" ? "false" : "true" })),
+                className: `relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${formData.auto_update === "true" ? "bg-blue-600" : "bg-gray-200"}`,
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.auto_update === "true" ? "translate-x-6" : "translate-x-1"}`
+                  }
+                )
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pt-4 border-t border-gray-100", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-4", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-900 block", children: "Software Update" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-500 mt-1", children: "Check if a new version is available." })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "button",
                 {
-                  className: `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.auto_launch === "true" ? "translate-x-6" : "translate-x-1"}`
+                  onClick: handleCheckForUpdates,
+                  disabled: checkingUpdate || updateStatus?.downloading,
+                  className: "px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors",
+                  children: [
+                    checkingUpdate ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: "w-3.5 h-3.5" }),
+                    "Check for Updates"
+                  ]
                 }
               )
-            }
-          )
-        ] }) })
+            ] }),
+            updateStatus && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+              updateStatus.error && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-xs", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "w-4 h-4 flex-shrink-0 mt-0.5" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: updateStatus.error })
+              ] }),
+              !updateStatus.checking && !updateStatus.available && !updateStatus.error && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-lg text-xs", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "w-4 h-4" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "You're running the latest version!" })
+              ] }),
+              updateStatus.available && !updateStatus.downloaded && !updateStatus.downloading && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 bg-blue-50 rounded-lg", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-sm font-medium text-blue-900", children: [
+                    "Version ",
+                    updateStatus.version,
+                    " is available!"
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-blue-700 mt-1", children: "A new version can be downloaded and installed." })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "button",
+                  {
+                    onClick: handleDownloadUpdate,
+                    className: "px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(Download, { className: "w-3.5 h-3.5" }),
+                      "Download Update"
+                    ]
+                  }
+                )
+              ] }) }),
+              updateStatus.downloading && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "p-4 bg-blue-50 rounded-lg", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 mb-2", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "w-4 h-4 animate-spin text-blue-600" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium text-blue-900", children: "Downloading update..." })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-full bg-blue-200 rounded-full h-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "div",
+                  {
+                    className: "bg-blue-600 h-2 rounded-full transition-all duration-300",
+                    style: { width: `${updateStatus.progress}%` }
+                  }
+                ) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-blue-700 mt-2", children: [
+                  Math.round(updateStatus.progress),
+                  "% complete"
+                ] })
+              ] }),
+              updateStatus.downloaded && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 bg-emerald-50 rounded-lg", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-emerald-900", children: "Update downloaded!" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-emerald-700 mt-1", children: "The app will restart to install the update." })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "button",
+                  {
+                    onClick: handleInstallUpdate,
+                    className: "px-4 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors",
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: "w-3.5 h-3.5" }),
+                      "Restart & Install"
+                    ]
+                  }
+                )
+              ] }) })
+            ] })
+          ] })
+        ] })
       ] }),
       activeTab === "claude" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
@@ -22091,7 +22257,7 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
-const version = "1.0.3";
+const version = "1.0.4";
 const pkg = {
   version
 };
@@ -22674,7 +22840,7 @@ function App() {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.3" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.4" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),
