@@ -22096,8 +22096,8 @@ const pkg = {
   version
 };
 const LATEST_VERSION = pkg.version;
-const MAC_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit.Agents-${LATEST_VERSION}-arm64.dmg`;
-const WIN_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit.Agents.Setup.${LATEST_VERSION}.exe`;
+const MAC_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-${LATEST_VERSION}-arm64.dmg`;
+const WIN_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-Setup-${LATEST_VERSION}.exe`;
 const TESTIMONIALS = [
   {
     name: "Alex Chen",
