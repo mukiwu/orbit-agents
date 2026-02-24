@@ -22232,7 +22232,7 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
-const version = "1.0.5";
+const version = "1.0.6";
 const pkg = {
   version
 };
