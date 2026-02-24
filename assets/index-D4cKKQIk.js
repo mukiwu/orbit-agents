@@ -21139,52 +21139,15 @@ function LogDetail({ log: initialLog }) {
       };
     }
     const permissionPatterns = [
-      // Policy denied errors (highest priority - check first)
-      {
-        test: (text2) => text2.includes("Denied by policy") || text2.includes("denied by policy") || text2.includes("操作遭到系統政策拒絕") || text2.includes("政策拒絕") || text2.includes("系統政策") && (text2.includes("拒絕") || text2.includes("denied")) || text2.includes("policy") && text2.includes("denied"),
-        message: "MCP 工具被系統政策拒絕"
-      },
-      // MCP server not started or permission not configured
-      {
-        test: (text2) => (text2.includes("MCP Server") || text2.includes("mcp server") || text2.includes("MCP 伺服器")) && (text2.includes("未正確啟動") || text2.includes("not.*start") || text2.includes("未啟動") || text2.includes("權限未配置") || text2.includes("permission.*not.*config")),
-        message: "MCP Server 未正確啟動或權限未配置"
-      },
-      // Security policy restriction
-      {
-        test: (text2) => text2.includes("目前的執行環境安全策略限制") || text2.includes("執行環境安全策略") || text2.includes("安全策略限制"),
-        message: "執行環境安全策略限制 - 需要授權確認"
-      },
-      // GA4 specific
-      {
-        test: (text2) => text2.includes("i will execute these data fetches now") && (text2.includes("權限政策限制") || text2.includes("無法直接存取") || text2.includes("ga4") || text2.includes("安全策略")),
-        message: "需要授權存取 Google Analytics 4 數據"
-      },
-      // MCP tools specific
-      {
-        test: (text2) => (text2.includes("mcp") || text2.includes("tool")) && (text2.includes("permission") || text2.includes("授權") || text2.includes("權限") || text2.includes("access") || text2.includes("存取")),
-        message: "需要授權存取 MCP 工具"
-      },
-      // General permission patterns
+      // Explicit interactive prompt with [y/n] or (y/n)
       {
         test: (text2) => (text2.includes("[y/n]") || text2.includes("(y/n)")) && (text2.includes("permission") || text2.includes("授權") || text2.includes("allow") || text2.includes("允許")),
         message: "需要授權確認"
       },
+      // Policy denied errors (informational, not interactive)
       {
-        test: (text2) => text2.includes("permission") && text2.includes("access") && (text2.includes("allow") || text2.includes("grant") || text2.includes("授權")),
-        message: "需要授權確認"
-      },
-      {
-        test: (text2) => (text2.includes("授權") || text2.includes("權限")) && (text2.includes("存取") || text2.includes("access") || text2.includes("允許") || text2.includes("allow")),
-        message: "需要授權確認"
-      },
-      // Check if output seems stuck waiting for input (common sign of permission prompt)
-      {
-        test: (text2) => {
-          const lines = text2.split("\n").filter((l2) => l2.trim());
-          const lastLine = lines[lines.length - 1] || "";
-          return lastLine.includes("?") && (lastLine.includes("allow") || lastLine.includes("permission") || lastLine.includes("授權") || lastLine.includes("允許")) && text2.length > 100;
-        },
-        message: "等待權限確認"
+        test: (text2) => text2.includes("denied by policy") || text2.includes("操作遭到系統政策拒絕") || text2.includes("政策拒絕"),
+        message: "MCP 工具被系統政策拒絕"
       }
     ];
     for (const pattern of permissionPatterns) {
