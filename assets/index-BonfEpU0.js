@@ -7637,6 +7637,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         attachments: task.attachments ? JSON.parse(task.attachments) : [],
         output_type: task.output_type || "log",
         email_to: task.email_to || "",
+        knowledge_file: task.knowledge_file || "",
         week_interval: task.week_interval ?? 1,
         enabled: task.enabled === 1
       });
@@ -7652,6 +7653,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         attachments: [],
         output_type: "log",
         email_to: "",
+        knowledge_file: "",
         week_interval: 1,
         enabled: true
       });
@@ -7676,6 +7678,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     attachments: task?.attachments ? JSON.parse(task.attachments) : [],
     output_type: task?.output_type || "log",
     email_to: task?.email_to || "",
+    knowledge_file: task?.knowledge_file || "",
     week_interval: task?.week_interval ?? 1,
     enabled: task ? task.enabled === 1 : true
   });
@@ -7733,6 +7736,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         attachments: formData.attachments.length > 0 ? formData.attachments : void 0,
         output_type: formData.output_type,
         email_to: formData.email_to || void 0,
+        knowledge_file: formData.knowledge_file || void 0,
         week_interval: weekInterval,
         enabled: formData.enabled
       };
@@ -8183,14 +8187,66 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "input",
           {
-            type: "email",
+            type: "text",
             required: true,
             value: formData.email_to,
             onChange: (e) => setFormData((prev) => ({ ...prev, email_to: e.target.value })),
             className: "w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors",
-            placeholder: "recipient@example.com"
+            placeholder: "user@example.com, user2@example.com"
           }
         )
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block text-sm font-medium text-gray-600", children: [
+            "Knowledge ",
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-gray-400 font-normal", children: "(Optional)" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => setFormData((prev) => ({ ...prev, knowledge_file: prev.knowledge_file ? "" : `~/knowledge/${formData.name ? formData.name.toLowerCase().replace(/\s+/g, "-") : "task"}.md` })),
+              className: `relative w-9 h-5 rounded-full transition-colors ${formData.knowledge_file ? "bg-blue-600" : "bg-gray-300"}`,
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "span",
+                {
+                  className: `absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.knowledge_file ? "translate-x-4" : "translate-x-0"}`
+                }
+              )
+            }
+          )
+        ] }),
+        formData.knowledge_file && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1.5", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-500", children: "Auto-record reusable insights after each run" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "text",
+                value: formData.knowledge_file,
+                onChange: (e) => setFormData((prev) => ({ ...prev, knowledge_file: e.target.value })),
+                className: "flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono transition-colors",
+                placeholder: "~/knowledge/task-name.md"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: async () => {
+                  const defaultName = formData.name ? formData.name.toLowerCase().replace(/\s+/g, "-") : "task";
+                  const filePath = await window.electronApi.invoke("dialog:save-file", `${defaultName}.md`);
+                  if (filePath) {
+                    setFormData((prev) => ({ ...prev, knowledge_file: filePath }));
+                  }
+                },
+                className: "px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors whitespace-nowrap",
+                children: "Browse"
+              }
+            )
+          ] })
+        ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 pt-2", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
