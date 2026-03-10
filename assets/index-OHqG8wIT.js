@@ -21494,7 +21494,7 @@ function LogDetail({ log: initialLog }) {
 function ChatMessage({ content: content2, isStreaming, showPermissionAlert }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-4 h-4 text-white", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" }) }) }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-white rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "prose prose-sm max-w-none overflow-hidden\n            prose-headings:text-gray-900 prose-headings:font-semibold\n            prose-h1:text-lg prose-h1:mt-4 prose-h1:mb-3\n            prose-h2:text-base prose-h2:mt-3 prose-h2:mb-2\n            prose-h3:text-sm prose-h3:mt-2 prose-h3:mb-1\n            prose-p:text-gray-700 prose-p:leading-relaxed prose-p:break-words prose-p:my-2\n            prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-a:break-all\n            prose-strong:text-gray-900 prose-strong:font-semibold\n            prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-normal prose-code:before:content-none prose-code:after:content-none prose-code:break-all\n            prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:text-sm prose-pre:my-2\n            prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-2 prose-ol:my-2\n            prose-li:marker:text-gray-400\n            [&_table]:w-full [&_table]:table-fixed [&_table]:text-sm [&_table]:border-collapse [&_table]:my-2\n            [&_thead]:bg-gray-50\n            [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold [&_th]:text-gray-600 [&_th]:uppercase [&_th]:tracking-wider [&_th]:px-2 [&_th]:py-2 [&_th]:border-b [&_th]:border-gray-200 [&_th]:break-words\n            [&_td]:px-2 [&_td]:py-2 [&_td]:text-gray-600 [&_td]:border-b [&_td]:border-gray-100 [&_td]:align-top [&_td]:break-words [&_td]:overflow-hidden\n            [&_tr:last-child_td]:border-b-0\n            [&_tbody_tr:hover]:bg-gray-50\n          ", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-white rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "prose prose-sm max-w-none overflow-hidden\n            prose-headings:text-gray-900 prose-headings:font-semibold\n            prose-h1:text-lg prose-h1:mt-4 prose-h1:mb-3\n            prose-h2:text-base prose-h2:mt-3 prose-h2:mb-2\n            prose-h3:text-sm prose-h3:mt-2 prose-h3:mb-1\n            prose-p:text-gray-700 prose-p:leading-relaxed prose-p:break-words prose-p:my-2\n            prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-a:break-all\n            prose-strong:text-gray-900 prose-strong:font-semibold\n            prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-normal prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-code:break-all\n            prose-pre:bg-gray-950 prose-pre:text-gray-300 prose-pre:rounded-xl prose-pre:overflow-x-auto prose-pre:text-xs prose-pre:my-3 prose-pre:p-4 prose-pre:leading-relaxed prose-pre:shadow-inner\n            [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit [&_pre_code]:text-xs [&_pre_code]:leading-relaxed [&_pre_code]:rounded-none [&_pre_code]:shadow-none\n            prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-2 prose-ol:my-2\n            prose-li:marker:text-gray-400\n            [&_table]:w-full [&_table]:table-fixed [&_table]:text-sm [&_table]:border-collapse [&_table]:my-2\n            [&_thead]:bg-gray-50\n            [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold [&_th]:text-gray-600 [&_th]:uppercase [&_th]:tracking-wider [&_th]:px-2 [&_th]:py-2 [&_th]:border-b [&_th]:border-gray-200 [&_th]:break-words\n            [&_td]:px-2 [&_td]:py-2 [&_td]:text-gray-600 [&_td]:border-b [&_td]:border-gray-100 [&_td]:align-top [&_td]:break-words [&_td]:overflow-hidden\n            [&_tr:last-child_td]:border-b-0\n            [&_tbody_tr:hover]:bg-gray-50\n          ", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(Markdown, { remarkPlugins: [remarkGfm], children: content2 }),
       isStreaming && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse" })
     ] }) }) })
@@ -22007,7 +22007,7 @@ function Settings({}) {
                     updateStatus.version,
                     " is available!"
                   ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-blue-700 mt-1", children: "A new version can be downloaded and installed." })
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-blue-700 mt-1", children: updateStatus.updateMethod === "asar" ? "A lightweight update is ready for quick download." : "A new version can be downloaded and installed." })
                 ] }),
                 updateStatus.releaseUrl ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
                   "a",
@@ -22288,7 +22288,7 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
-const version = "1.0.7";
+const version = "1.0.8";
 const pkg = {
   version
 };
@@ -22871,7 +22871,7 @@ function App() {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.7" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.8" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),

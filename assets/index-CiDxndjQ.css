@@ -3013,6 +3013,10 @@ body {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
 }
+.prose-code\:text-xs :is(:where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
 .prose-code\:font-normal :is(:where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
   font-weight: 400;
 }
@@ -3028,27 +3032,38 @@ body {
   --tw-content: none;
   content: var(--tw-content);
 }
-.prose-pre\:my-2 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+.prose-pre\:my-3 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 .prose-pre\:overflow-x-auto :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
   overflow-x: auto;
 }
-.prose-pre\:rounded-lg :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
-  border-radius: 0.5rem;
+.prose-pre\:rounded-xl :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  border-radius: 0.75rem;
 }
-.prose-pre\:bg-gray-900 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+.prose-pre\:bg-gray-950 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
   --tw-bg-opacity: 1;
-  background-color: rgb(17 24 39 / var(--tw-bg-opacity, 1));
+  background-color: rgb(3 7 18 / var(--tw-bg-opacity, 1));
 }
-.prose-pre\:text-sm :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+.prose-pre\:p-4 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  padding: 1rem;
 }
-.prose-pre\:text-gray-100 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+.prose-pre\:text-xs :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.prose-pre\:leading-relaxed :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  line-height: 1.625;
+}
+.prose-pre\:text-gray-300 :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
   --tw-text-opacity: 1;
-  color: rgb(243 244 246 / var(--tw-text-opacity, 1));
+  color: rgb(209 213 219 / var(--tw-text-opacity, 1));
+}
+.prose-pre\:shadow-inner :is(:where(pre):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  --tw-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: inset 0 2px 4px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .prose-ol\:my-2 :is(:where(ol):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
   margin-top: 0.5rem;
@@ -3110,6 +3125,30 @@ body {
     font-size: 3.75rem;
     line-height: 1;
   }
+}
+.\[\&_pre_code\]\:rounded-none pre code {
+  border-radius: 0px;
+}
+.\[\&_pre_code\]\:bg-transparent pre code {
+  background-color: transparent;
+}
+.\[\&_pre_code\]\:p-0 pre code {
+  padding: 0px;
+}
+.\[\&_pre_code\]\:text-xs pre code {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.\[\&_pre_code\]\:leading-relaxed pre code {
+  line-height: 1.625;
+}
+.\[\&_pre_code\]\:text-inherit pre code {
+  color: inherit;
+}
+.\[\&_pre_code\]\:shadow-none pre code {
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .\[\&_table\]\:my-2 table {
   margin-top: 0.5rem;
