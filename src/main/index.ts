@@ -32,6 +32,7 @@ import {
 import { writeToProcess } from './process-manager'
 import { testClaudeConnection, listMcpServers } from './claude-cli'
 import { testGeminiConnection, listMcpServers as listGeminiMcpServers } from './gemini-cli'
+import { testCodexConnection, listCodexMcpServers, listCodexModels } from './codex-cli'
 
 import { resetTransporter, sendTestEmail } from './email'
 import type {
@@ -179,6 +180,19 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('gemini:list-mcps', async () => {
     return listGeminiMcpServers()
+  })
+
+  // Codex CLI handlers
+  ipcMain.handle('codex:test', async () => {
+    return testCodexConnection()
+  })
+
+  ipcMain.handle('codex:list-mcps', async () => {
+    return listCodexMcpServers()
+  })
+
+  ipcMain.handle('codex:list-models', async () => {
+    return listCodexModels()
   })
 
 

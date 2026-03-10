@@ -4,7 +4,7 @@
 
 ![Orbit Agents Screenshot](src/renderer/src/assets/screenshot.png)
 
-Orbit Agents is an AI-powered desktop cron scheduler built with Electron. It combines a modern Cron scheduling system with powerful AI integration (Claude & Gemini), allowing you to automate various tasks from simple script execution to complex AI-assisted workflows.
+Orbit Agents is an AI-powered desktop cron scheduler built with Electron. It combines a modern Cron scheduling system with powerful AI integration (Claude, Gemini, and Codex), allowing you to automate various tasks from simple script execution to complex AI-assisted workflows.
 
 ## Key Features
 
@@ -17,6 +17,7 @@ Orbit Agents is an AI-powered desktop cron scheduler built with Electron. It com
 - **Deep AI Integration**
   - Built-in Anthropic Claude CLI integration
   - Built-in Google Gemini CLI integration
+  - Built-in OpenAI Codex CLI integration
   - Supports MCP (Model Context Protocol) servers
   - Turn AI into your automation assistant
 

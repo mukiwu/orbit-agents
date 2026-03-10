@@ -131,6 +131,7 @@ export default function TaskList({
                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
                             task.cli_tool === 'claude' ? 'bg-orange-100 text-orange-700' :
                             task.cli_tool === 'gemini' ? 'bg-teal-100 text-teal-700' :
+                            task.cli_tool === 'codex' ? 'bg-sky-100 text-sky-700' :
                             'bg-indigo-100 text-indigo-700'
                          }`}>
                            {task.cli_tool}

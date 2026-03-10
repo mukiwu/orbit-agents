@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useTasks, useClaudeCli, useGeminiCli } from '../hooks/useApi'
-import type { Task, CreateTaskInput, McpServer, ModelType } from '../../../shared/types'
+import { useTasks, useClaudeCli, useGeminiCli, useCodexCli } from '../hooks/useApi'
+import type { Task, CreateTaskInput, McpServer, ModelOption, ModelType } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays } from 'lucide-react'
 
 interface TaskFormProps {
@@ -19,15 +19,27 @@ import {
   type FrequencyType
 } from '../utils/cron'
 
+type CliTool = 'claude' | 'gemini' | 'codex'
+const DEFAULT_CODEX_MODEL = 'gpt-5.4'
+
+function getDefaultModelForTool(cliTool: CliTool): ModelType {
+  if (cliTool === 'gemini') return 'gemini-3'
+  if (cliTool === 'codex') return DEFAULT_CODEX_MODEL
+  return 'sonnet'
+}
+
 export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
   const { createTask, updateTask } = useTasks()
   const { listMcps: listClaudeMcps } = useClaudeCli()
   const { listMcps: listGeminiMcps } = useGeminiCli()
+  const { listMcps: listCodexMcps, listModels: listCodexModels } = useCodexCli()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServer[]>([])
   const [loadingMcps, setLoadingMcps] = useState(false)
+  const [codexModels, setCodexModels] = useState<ModelOption[]>([])
+  const [loadingCodexModels, setLoadingCodexModels] = useState(false)
 
   // Parse existing cron to determine initial schedule mode
   const initialSchedule = useMemo(() => {
@@ -42,8 +54,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             description: task.description || '',
             cron_expression: task.cron_expression || '0 9 * * *',
             prompt: task.prompt || '',
-            cli_tool: (task.cli_tool || 'claude') as 'claude' | 'gemini',
-            model: (task.model || 'sonnet') as ModelType,
+            cli_tool: (task.cli_tool || 'claude') as CliTool,
+            model: (task.model || getDefaultModelForTool((task.cli_tool || 'claude') as CliTool)) as ModelType,
             mcp_tools: task.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
             attachments: task.attachments ? JSON.parse(task.attachments) : [] as string[],
             output_type: (task.output_type || 'log') as 'log' | 'both',
@@ -60,7 +72,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             cron_expression: '0 9 * * *',
             prompt: '',
             cli_tool: 'claude',
-            model: 'sonnet',
+            model: getDefaultModelForTool('claude'),
             mcp_tools: [],
             attachments: [],
             output_type: 'log',
@@ -86,8 +98,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     description: task?.description || '',
     cron_expression: task?.cron_expression || '0 9 * * *',
     prompt: task?.prompt || '',
-    cli_tool: (task?.cli_tool || 'claude') as 'claude' | 'gemini',
-    model: (task?.model || 'sonnet') as ModelType,
+    cli_tool: (task?.cli_tool || 'claude') as CliTool,
+    model: (task?.model || getDefaultModelForTool((task?.cli_tool || 'claude') as CliTool)) as ModelType,
     mcp_tools: task?.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
     attachments: task?.attachments ? JSON.parse(task.attachments) : [] as string[],
     output_type: (task?.output_type || 'log') as 'log' | 'both',
@@ -109,6 +121,22 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     return getScheduleDescription(frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay)
   }, [frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay])
 
+  const availableCodexModels = useMemo(() => {
+    if (formData.cli_tool !== 'codex') return codexModels
+    if (!formData.model || codexModels.some((model) => model.value === formData.model)) {
+      return codexModels
+    }
+
+    return [
+      {
+        value: formData.model,
+        label: formData.model,
+        desc: 'Saved on this task'
+      },
+      ...codexModels
+    ]
+  }, [codexModels, formData.cli_tool, formData.model])
+
   const toggleWeekday = (day: number) => {
     setSelectedWeekdays(prev => {
       if (prev.includes(day)) {
@@ -129,6 +157,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
           servers = await listClaudeMcps()
         } else if (formData.cli_tool === 'gemini') {
           servers = await listGeminiMcps()
+        } else if (formData.cli_tool === 'codex') {
+          servers = await listCodexMcps()
         }
         setMcpServers(servers)
       } catch (err) {
@@ -140,7 +170,43 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     }
 
     fetchMcps()
-  }, [formData.cli_tool, listClaudeMcps, listGeminiMcps])
+  }, [formData.cli_tool, listClaudeMcps, listGeminiMcps, listCodexMcps])
+
+  useEffect(() => {
+    if (formData.cli_tool !== 'codex') return
+
+    const fetchCodexModels = async () => {
+      setLoadingCodexModels(true)
+      try {
+        const models = await listCodexModels()
+        setCodexModels(models)
+      } catch (err) {
+        console.error('Failed to fetch Codex models:', err)
+        setCodexModels([
+          {
+            value: DEFAULT_CODEX_MODEL,
+            label: 'GPT-5.4',
+            desc: 'Fallback default model'
+          }
+        ])
+      } finally {
+        setLoadingCodexModels(false)
+      }
+    }
+
+    fetchCodexModels()
+  }, [formData.cli_tool, listCodexModels])
+
+  useEffect(() => {
+    if (formData.cli_tool !== 'codex' || codexModels.length === 0) return
+
+    const preferredModel = codexModels[0].value
+    const hasCurrentModel = availableCodexModels.some((model) => model.value === formData.model)
+
+    if (!hasCurrentModel || (!task && formData.model === DEFAULT_CODEX_MODEL && preferredModel !== DEFAULT_CODEX_MODEL)) {
+      setFormData((prev) => ({ ...prev, model: preferredModel }))
+    }
+  }, [availableCodexModels, codexModels, formData.cli_tool, formData.model, task])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -148,6 +214,10 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     setError(null)
 
     try {
+      if (formData.cli_tool === 'codex') {
+        await window.electronApi.invoke('settings:update', { codex_default_model: formData.model })
+      }
+
       const input: CreateTaskInput = {
         name: formData.name,
         description: formData.description || undefined,
@@ -155,7 +225,9 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
         prompt: formData.prompt,
         cli_tool: formData.cli_tool,
         model: formData.model,
-        mcp_tools: formData.mcp_tools.length > 0 ? formData.mcp_tools : undefined,
+        mcp_tools: formData.cli_tool !== 'codex' && formData.mcp_tools.length > 0
+          ? formData.mcp_tools
+          : undefined,
         attachments: formData.attachments.length > 0 ? formData.attachments : undefined,
         output_type: formData.output_type,
         email_to: formData.email_to || undefined,
@@ -483,7 +555,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 onChange={(e) => setFormData((prev) => ({ ...prev, prompt: e.target.value }))}
                 rows={8}
                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-y"
-                placeholder="Enter the prompt for Claude to execute..."
+                placeholder="Enter the prompt for the selected CLI agent to execute..."
               />
             </div>
 
@@ -496,15 +568,17 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <div className="flex gap-2">
                   {[
                     { value: 'claude', label: 'Claude' },
-                    { value: 'gemini', label: 'Gemini' }
+                    { value: 'gemini', label: 'Gemini' },
+                    { value: 'codex', label: 'Codex' }
                   ].map((tool) => (
                     <button
                       key={tool.value}
                       type="button"
                       onClick={() => {
-                        const toolValue = tool.value as 'claude' | 'gemini'
-                        let defaultModel: ModelType = 'sonnet'
-                        if (toolValue === 'gemini') defaultModel = 'gemini-3'
+                        const toolValue = tool.value as CliTool
+                        const defaultModel = toolValue === 'codex'
+                          ? (codexModels[0]?.value || DEFAULT_CODEX_MODEL)
+                          : getDefaultModelForTool(toolValue)
 
                         setFormData((prev) => ({
                           ...prev,
@@ -529,9 +603,14 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   AI Model
                 </label>
+                {formData.cli_tool === 'codex' && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    Codex models are sourced from your local Codex config plus the current official Codex model set. The model you save here becomes the default for your next Codex task.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   {(() => {
-                    let models: { value: ModelType, label: string, desc: string }[] = []
+                    let models: ModelOption[] = []
 
                     if (formData.cli_tool === 'claude') {
                       models = [
@@ -544,6 +623,17 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         { value: 'gemini-3', label: 'Auto (Gemini 3)', desc: 'Best for task (3-pro/3-flash)' },
                         { value: 'gemini-2', label: 'Gemini 2', desc: 'Auto (2-pro / 2-flash)' }
                       ]
+                    } else if (formData.cli_tool === 'codex') {
+                      models = availableCodexModels
+                    }
+
+                    if (formData.cli_tool === 'codex' && loadingCodexModels) {
+                      return (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
+                          Loading Codex models...
+                        </div>
+                      )
                     }
 
                     return models.map((model) => (
@@ -558,7 +648,10 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         }`}
                       >
                         <span className="font-medium text-sm">{model.label}</span>
-                        <span className="text-sm opacity-70">{model.desc}</span>
+                        <span className="text-sm opacity-70">
+                          {model.desc}
+                          {model.deprecated ? ' · Deprecated' : ''}
+                        </span>
                       </button>
                     ))
                   })()}
@@ -575,6 +668,26 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                   <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
                   Loading MCP servers...
+                </div>
+              ) : formData.cli_tool === 'codex' ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">
+                    Codex uses the MCP servers configured in your Codex CLI profile. Task-level MCP filtering is not applied.
+                  </p>
+                  {mcpServers.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {mcpServers.map((server) => (
+                        <span
+                          key={server.name}
+                          className="px-3 py-1.5 text-sm font-medium rounded-lg border bg-gray-50 border-gray-200 text-gray-600"
+                        >
+                          {server.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">No MCP servers configured in Codex CLI</p>
+                  )}
                 </div>
               ) : mcpServers.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -615,6 +728,11 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 Attachments <span className="text-gray-400 font-normal">(Optional)</span>
               </label>
               <div className="space-y-2">
+                {formData.cli_tool === 'codex' && (
+                  <p className="text-sm text-gray-500">
+                    Codex CLI accepts image attachments directly. Text files are embedded into the prompt automatically; other binary files are listed in the prompt but not uploaded.
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={async () => {

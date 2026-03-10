@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSettings, useClaudeCli, useGeminiCli } from '../hooks/useApi'
-import type { ClaudeCliResult, GeminiCliResult, UpdateStatus } from '../../../shared/types'
+import { useSettings, useClaudeCli, useGeminiCli, useCodexCli } from '../hooks/useApi'
+import type { ClaudeCliResult, GeminiCliResult, CodexCliResult, UpdateStatus } from '../../../shared/types'
 import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw } from 'lucide-react'
 
-type SettingsTab = 'general' | 'claude' | 'gemini' | 'email'
+type SettingsTab = 'general' | 'claude' | 'gemini' | 'codex' | 'email'
 
 interface SettingsProps {}
 
@@ -11,6 +11,7 @@ export default function Settings({}: SettingsProps) {
   const { settings, loading, updateSettings, testEmail } = useSettings()
   const { testConnection: testClaude } = useClaudeCli()
   const { testConnection: testGemini } = useGeminiCli()
+  const { testConnection: testCodex } = useCodexCli()
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
 
@@ -25,6 +26,7 @@ export default function Settings({}: SettingsProps) {
     claude_session_token: '',
     gemini_cli_path: '',
     gemini_api_key: '',
+    codex_cli_path: '',
     auto_launch: 'true',
     auto_update: 'true'
   })
@@ -45,6 +47,9 @@ export default function Settings({}: SettingsProps) {
   const [testingGemini, setTestingGemini] = useState(false)
   const [geminiResult, setGeminiResult] = useState<GeminiCliResult | null>(null)
 
+  const [testingCodex, setTestingCodex] = useState(false)
+  const [codexResult, setCodexResult] = useState<CodexCliResult | null>(null)
+
   const [testingEmail, setTestingEmail] = useState(false)
   const [emailResult, setEmailResult] = useState<{ success: boolean; message: string } | null>(null)
   const [testEmailAddress, setTestEmailAddress] = useState('')
@@ -62,6 +67,7 @@ export default function Settings({}: SettingsProps) {
         claude_session_token: settings.claude_session_token || '',
         gemini_cli_path: settings.gemini_cli_path || '',
         gemini_api_key: settings.gemini_api_key || '',
+        codex_cli_path: settings.codex_cli_path || '',
         auto_launch: settings.auto_launch ?? 'true',
         auto_update: settings.auto_update ?? 'true'
       })
@@ -206,6 +212,23 @@ export default function Settings({}: SettingsProps) {
     }
   }
 
+  const handleTestCodex = async () => {
+    setTestingCodex(true)
+    setCodexResult(null)
+    try {
+      const result = await testCodex()
+      setCodexResult(result)
+    } catch (err) {
+      setCodexResult({
+        success: false,
+        output: '',
+        error: err instanceof Error ? err.message : 'Unknown error'
+      })
+    } finally {
+      setTestingCodex(false)
+    }
+  }
+
 
   const handleTestEmail = async () => {
     if (!testEmailAddress) {
@@ -291,6 +314,12 @@ export default function Settings({}: SettingsProps) {
             icon={Box} 
             label="Gemini CLI" 
             desc="Google Gemini configuration"
+          />
+          <NavButton
+            tab="codex"
+            icon={Terminal}
+            label="Codex CLI"
+            desc="OpenAI Codex configuration"
           />
 
           <NavButton 
@@ -624,6 +653,66 @@ export default function Settings({}: SettingsProps) {
               {geminiResult && !geminiResult.success && geminiResult.error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-mono break-all">
                   {geminiResult.error}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Codex CLI */}
+        {activeTab === 'codex' && (
+          <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Codex CLI</h3>
+              <p className="text-sm text-gray-500">Configure the connection to OpenAI&apos;s Codex command line tool.</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
+                <input
+                  type="text"
+                  value={formData.codex_cli_path}
+                  onChange={(e) => setFormData(prev => ({ ...prev, codex_cli_path: e.target.value }))}
+                  placeholder="codex"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                />
+                <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default `codex` binary on your PATH.</p>
+              </div>
+
+              <div className="rounded-lg border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                Authenticate Codex separately with <code className="bg-sky-100 px-1 rounded">codex login</code>. Orbit Agents reuses your existing Codex CLI session and MCP configuration.
+              </div>
+
+               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
+                <button
+                  onClick={handleTestCodex}
+                  disabled={testingCodex}
+                  className="px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                >
+                  {testingCodex ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Terminal className="w-3.5 h-3.5" />
+                  )}
+                  Test Connection
+                </button>
+
+                {codexResult && (
+                  <div className={`flex items-center gap-2 text-xs font-medium ${codexResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {codexResult.success ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    {codexResult.success ? 'Connection successful' : 'Connection failed'}
+                  </div>
+                )}
+              </div>
+
+              {codexResult && (
+                <div className={`p-3 rounded-lg text-xs font-mono break-all ${codexResult.success ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                  {codexResult.success ? codexResult.output : codexResult.error}
                 </div>
               )}
             </div>

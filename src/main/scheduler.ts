@@ -26,10 +26,15 @@ function isBinaryFile(filePath: string): boolean {
   const ext = extname(filePath).toLowerCase()
   return BINARY_EXTENSIONS.has(ext)
 }
+function isCodexNativeImage(filePath: string): boolean {
+  const ext = extname(filePath).toLowerCase()
+  return ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp'].includes(ext)
+}
 import { executeClaudeCli } from './claude-cli'
+import { executeCodexCli } from './codex-cli'
 import { executeGeminiCli } from './gemini-cli'
 import { sendTaskResultEmail } from './email'
-import type { Task, ExecutionLog, ClaudeCliResult, GeminiCliResult } from '../shared/types'
+import type { Task, ExecutionLog, ClaudeCliResult, GeminiCliResult, CodexCliResult } from '../shared/types'
 
 // Store active cron jobs
 const activeJobs: Map<string, ScheduledTask> = new Map()
@@ -154,10 +159,25 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
 
       // Set binary attachments for --file flag
       if (binaryFiles.length > 0) {
-        binaryAttachments = binaryFiles
-        // Add attachment info to prompt so Claude knows about the files
-        const fileNames = binaryFiles.map(f => basename(f)).join(', ')
-        promptWithTextFiles = `${promptWithTextFiles}\n\n[附件檔案: ${fileNames}] - 請直接分析這些已附加的檔案內容。`
+        if (task.cli_tool === 'codex') {
+          const codexImageAttachments = binaryFiles.filter(isCodexNativeImage)
+          const skippedFiles = binaryFiles.filter((filePath) => !isCodexNativeImage(filePath))
+
+          if (codexImageAttachments.length > 0) {
+            binaryAttachments = codexImageAttachments
+            const fileNames = codexImageAttachments.map(f => basename(f)).join(', ')
+            promptWithTextFiles = `${promptWithTextFiles}\n\n[已附加圖片檔案: ${fileNames}] - 請一併參考這些圖片內容。`
+          }
+
+          if (skippedFiles.length > 0) {
+            const fileNames = skippedFiles.map(f => basename(f)).join(', ')
+            promptWithTextFiles = `${promptWithTextFiles}\n\n[未直接附加的二進位檔案: ${fileNames}] - Codex CLI 目前只能直接接收圖片附件，若需要分析請改附上文字內容或圖片檔。`
+          }
+        } else {
+          binaryAttachments = binaryFiles
+          const fileNames = binaryFiles.map(f => basename(f)).join(', ')
+          promptWithTextFiles = `${promptWithTextFiles}\n\n[附件檔案: ${fileNames}] - 請直接分析這些已附加的檔案內容。`
+        }
       }
     }
 
@@ -182,10 +202,12 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
       }
     }
 
-    let result: ClaudeCliResult | GeminiCliResult
+    let result: ClaudeCliResult | GeminiCliResult | CodexCliResult
 
     if (task.cli_tool === 'gemini') {
       result = await executeGeminiCli(promptWithTextFiles, task.model, onOutput, binaryAttachments, mcpTools, log.id)
+    } else if (task.cli_tool === 'codex') {
+      result = await executeCodexCli(promptWithTextFiles, task.model, onOutput, binaryAttachments, mcpTools)
     } else {
       // Default to Claude
       result = await executeClaudeCli(promptWithTextFiles, mcpTools, task.model, onOutput, binaryAttachments)

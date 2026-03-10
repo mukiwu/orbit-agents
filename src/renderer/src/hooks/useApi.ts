@@ -8,7 +8,9 @@ import type {
   Settings,
   ClaudeCliResult,
   GeminiCliResult,
-  McpServer
+  CodexCliResult,
+  McpServer,
+  ModelOption
 } from '../../../shared/types'
 
 const api = window.electronApi
@@ -234,6 +236,22 @@ export function useGeminiCli() {
   }, [])
 
   return { testConnection, listMcps }
+}
+
+export function useCodexCli() {
+  const testConnection = useCallback(async (): Promise<CodexCliResult> => {
+    return api.invoke('codex:test')
+  }, [])
+
+  const listMcps = useCallback(async (): Promise<McpServer[]> => {
+    return api.invoke('codex:list-mcps')
+  }, [])
+
+  const listModels = useCallback(async (): Promise<ModelOption[]> => {
+    return api.invoke('codex:list-models')
+  }, [])
+
+  return { testConnection, listMcps, listModels }
 }
 
 export function useProcessInput() {
