@@ -22288,7 +22288,7 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
-const version = "1.0.8";
+const version = "1.0.9";
 const pkg = {
   version
 };
@@ -22871,7 +22871,7 @@ function App() {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.8" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.9" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),
