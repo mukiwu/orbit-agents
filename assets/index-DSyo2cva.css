@@ -1896,6 +1896,10 @@ video {
 .border-purple-200\/20 {
   border-color: rgb(233 213 255 / 0.2);
 }
+.border-purple-300 {
+  --tw-border-opacity: 1;
+  border-color: rgb(216 180 254 / var(--tw-border-opacity, 1));
+}
 .border-purple-500\/20 {
   border-color: rgb(168 85 247 / 0.2);
 }
@@ -2253,6 +2257,10 @@ video {
 .px-2 {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
 }
 .px-3 {
   padding-left: 0.75rem;
