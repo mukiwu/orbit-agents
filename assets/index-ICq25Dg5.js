@@ -7844,7 +7844,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         output_type: formData.output_type,
         email_to: formData.email_to || void 0,
         knowledge_file: formData.knowledge_file || void 0,
-        project_path: projectPath || void 0,
+        project_path: projectPath ?? null,
         week_interval: weekInterval,
         enabled: formData.enabled
       };
@@ -22455,7 +22455,7 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
-const version = "1.0.12";
+const version = "1.0.13";
 const pkg = {
   version
 };
@@ -23038,7 +23038,7 @@ function App() {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.12" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.13" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),
