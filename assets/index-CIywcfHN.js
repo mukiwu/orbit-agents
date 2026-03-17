@@ -7710,6 +7710,15 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     return parseCronToSimple(task?.cron_expression || "0 9 * * *");
   }, [task?.cron_expression]);
   reactExports.useEffect(() => {
+    const parsed = parseCronToSimple(task?.cron_expression || "0 9 * * *");
+    setScheduleMode(parsed.mode);
+    setFrequency(parsed.frequency);
+    setIntervalValue(parsed.intervalValue);
+    setIntervalUnit(parsed.intervalUnit);
+    setScheduleTime(parsed.time);
+    setSelectedWeekdays(parsed.weekdays);
+    setWeekInterval(task?.week_interval || parsed.weekInterval);
+    setMonthDay(parsed.monthDay);
     if (task) {
       setFormData({
         name: task.name || "",
@@ -7724,6 +7733,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         email_to: task.email_to || "",
         knowledge_file: task.knowledge_file || "",
         week_interval: task.week_interval ?? 1,
+        skip_permissions: task.skip_permissions === 1,
         enabled: task.enabled === 1
       });
       if (task.project_path) {
@@ -7749,6 +7759,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         email_to: "",
         knowledge_file: "",
         week_interval: 1,
+        skip_permissions: true,
         enabled: true
       });
     }
@@ -7774,6 +7785,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     email_to: task?.email_to || "",
     knowledge_file: task?.knowledge_file || "",
     week_interval: task?.week_interval ?? 1,
+    skip_permissions: task ? task.skip_permissions === 1 : true,
     enabled: task ? task.enabled === 1 : true
   });
   reactExports.useEffect(() => {
@@ -7845,6 +7857,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         email_to: formData.email_to || void 0,
         knowledge_file: formData.knowledge_file || void 0,
         project_path: projectPath ?? null,
+        skip_permissions: formData.skip_permissions,
         week_interval: weekInterval,
         enabled: formData.enabled
       };
@@ -22455,7 +22468,7 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
-const version = "1.0.13";
+const version = "1.0.14";
 const pkg = {
   version
 };
@@ -23038,7 +23051,7 @@ function App() {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.13" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.0.14" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),
