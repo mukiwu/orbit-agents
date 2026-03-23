@@ -22468,10 +22468,15 @@ function Settings({}) {
   ] });
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
+const screenshotLog = "" + new URL("screenshot-log-BjcTkmuR.png", import.meta.url).href;
 const version = "1.0.15";
 const pkg = {
   version
 };
+const SLIDES = [
+  { src: screenshot, alt: "Orbit Agents — task scheduling interface" },
+  { src: screenshotLog, alt: "Orbit Agents — execution log with AI output" }
+];
 const LATEST_VERSION = pkg.version;
 const MAC_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-${LATEST_VERSION}-arm64.dmg`;
 const WIN_DOWNLOAD_URL = `https://github.com/mukiwu/orbit-agents/releases/download/v${LATEST_VERSION}/Orbit-Agents-Setup-${LATEST_VERSION}.exe`;
@@ -22565,10 +22570,58 @@ const FEATURES = [
     bg: "bg-red-50"
   }
 ];
+function ScreenshotSlider() {
+  const [current, setCurrent] = reactExports.useState(0);
+  const next = reactExports.useCallback(() => setCurrent((i) => (i + 1) % SLIDES.length), []);
+  const prev = reactExports.useCallback(() => setCurrent((i) => (i - 1 + SLIDES.length) % SLIDES.length), []);
+  reactExports.useEffect(() => {
+    const timer = setInterval(next, 5e3);
+    return () => clearInterval(timer);
+  }, [next]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-16 w-full max-w-5xl mx-auto", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative group", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-xl overflow-hidden shadow-2xl ring-1 ring-gray-900/10 relative aspect-[16/10] bg-white", children: SLIDES.map((slide, i) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "img",
+        {
+          src: slide.src,
+          alt: slide.alt,
+          className: `absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${i === current ? "opacity-100" : "opacity-0"}`
+        },
+        i
+      )) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          onClick: prev,
+          className: "absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg ring-1 ring-black/5 flex items-center justify-center text-gray-600 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity",
+          "aria-label": "Previous screenshot",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 19l-7-7 7-7" }) })
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          onClick: next,
+          className: "absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg ring-1 ring-black/5 flex items-center justify-center text-gray-600 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity",
+          "aria-label": "Next screenshot",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9 5l7 7-7 7" }) })
+        }
+      )
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-center gap-2 mt-4", children: SLIDES.map((_, i) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        onClick: () => setCurrent(i),
+        className: `w-2 h-2 rounded-full transition-all ${i === current ? "bg-blue-600 w-6" : "bg-gray-300 hover:bg-gray-400"}`,
+        "aria-label": `Go to screenshot ${i + 1}`
+      },
+      i
+    )) })
+  ] });
+}
 function WelcomePage() {
   const platform = reactExports.useMemo(() => detectPlatform(), []);
   const primaryDownloadUrl = platform === "windows" ? WIN_DOWNLOAD_URL : MAC_DOWNLOAD_URL;
-  const primaryDownloadLabel = platform === "windows" ? "Download for Windows" : "Download for Mac";
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-h-screen bg-[#F8F7F6] flex flex-col relative overflow-hidden", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -22610,7 +22663,7 @@ function WelcomePage() {
           {
             href: primaryDownloadUrl,
             className: "px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors",
-            children: primaryDownloadLabel
+            children: "Download"
           }
         )
       ] })
@@ -22660,14 +22713,7 @@ function WelcomePage() {
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-gray-300", children: "|" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("a", { href: WIN_ZIP_DOWNLOAD_URL, className: "text-sm text-gray-500 hover:text-blue-600 font-medium transition-colors", children: "Portable (.zip)" })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-16 w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl ring-1 ring-gray-900/10", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "img",
-        {
-          src: screenshot,
-          alt: "Orbit Agents — task scheduling interface",
-          className: "w-full h-auto bg-white"
-        }
-      ) })
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ScreenshotSlider, {})
     ] }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "relative z-10 py-24", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-5xl mx-auto px-6", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4 font-display", children: "Three steps. That's it." }),
@@ -22719,6 +22765,62 @@ function WelcomePage() {
         },
         feature.title
       )) })
+    ] }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "relative z-10 py-24 bg-white/50", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-4xl mx-auto px-6", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4 font-display", children: "Installation" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-lg text-gray-500 text-center mb-12 max-w-xl mx-auto", children: "Download, install, and you're ready to go." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid md:grid-cols-2 gap-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-white rounded-2xl p-8 ring-1 ring-gray-900/5 shadow-sm", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 mb-6", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-11 h-11 bg-gray-100 rounded-xl flex items-center justify-center text-gray-700", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-6 h-6", viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M17.05 19.349c-.854 1.25-1.764 2.495-3.13 2.52-1.353.025-1.788-.804-3.34-.804-1.536 0-2.004.78-3.296.828-1.304.049-2.296-1.325-3.125-2.524C2.378 16.63 1.01 12.062 2.72 8.996c.884-1.556 2.464-2.537 4.195-2.564 1.305-.022 2.535.877 3.333.877.785 0 2.256-1.085 3.826-.917.653.027 2.49.255 3.655 1.964-.093.058-2.186 1.275-2.164 3.81.025 3.012 2.67 4.025 2.697 4.036-.026.069-.418 1.436-1.365 2.809l-.248.34zM12.984 3.52c.732-.888 1.225-2.122 1.09-3.267-1.056.042-2.336.78-3.087 1.635-.678.756-1.27 1.96-1.096 3.12 1.183.091 2.39-.63 3.093-1.488z" }) }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-xl font-bold text-gray-900 font-display", children: "macOS" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-600 mb-4", children: "Since Orbit Agents doesn't have an Apple Developer certificate yet, macOS Gatekeeper may block the app. Fix it with either method:" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-semibold text-gray-800 mb-2", children: "Option 1: Terminal command (Recommended)" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "block bg-gray-50 rounded-lg px-4 py-3 text-xs font-mono text-gray-800 border border-gray-100", children: "xattr -cr /Applications/Orbit\\ Agents.app" })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-semibold text-gray-800 mb-2", children: "Option 2: Right-click to open" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("ol", { className: "list-decimal list-inside space-y-1 text-sm text-gray-600", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: "Right-click (or Control-click) the app in Finder" }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                  "Select ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: '"Open"' })
+                ] }),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                  "Click ",
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: '"Open"' }),
+                  " again in the dialog"
+                ] })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-400 pt-1", children: "Only needed the first time — after that, the app opens normally." })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-white rounded-2xl p-8 ring-1 ring-gray-900/5 shadow-sm", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 mb-6", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-6 h-6", viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24" }) }) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-xl font-bold text-gray-900 font-display", children: "Windows" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-600 mb-4", children: "Windows SmartScreen may show a warning for unsigned apps. Click through to proceed:" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("ol", { className: "list-decimal list-inside space-y-1 text-sm text-gray-600", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                "Click ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: '"More info"' }),
+                " on the SmartScreen popup"
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+                "Click ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: '"Run anyway"' })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-400 pt-4", children: "Or use the portable .zip version — no installer, no SmartScreen." })
+          ] })
+        ] })
+      ] })
     ] }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "relative z-10 py-20 text-center", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-3xl mx-auto px-6", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-display", children: "Ready to put your AI on autopilot?" }),
