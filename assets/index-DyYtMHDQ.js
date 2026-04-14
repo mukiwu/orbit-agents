@@ -22469,7 +22469,7 @@ function Settings({}) {
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
 const screenshotLog = "" + new URL("screenshot-log-BjcTkmuR.png", import.meta.url).href;
-const version = "1.0.15";
+const version = "1.0.16";
 const pkg = {
   version
 };
