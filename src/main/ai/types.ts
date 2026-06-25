@@ -19,17 +19,13 @@ export interface ModelOption {
   desc?: string
 }
 
-export interface ProviderTestResult {
-  success: boolean
-  output: string
-  error?: string
-}
-
 export interface ProviderResult {
   success: boolean
   output: string
   error?: string
 }
+
+export type ProviderTestResult = ProviderResult
 
 export type OutputCallback = (partialOutput: string) => void
 

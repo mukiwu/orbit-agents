@@ -1,7 +1,8 @@
-import { spawn, execFile } from 'child_process'
+import { spawn } from 'child_process'
 import { existsSync } from 'fs'
 import { getSetting } from './database'
 import { checkDangerousOperations } from './security-check'
+import { parseClaudeOutput as parseStreamJsonOutput } from './ai/providers/claude'
 import type { ClaudeCliResult, McpServer } from '../shared/types'
 
 function getHomedir(): string {
@@ -24,68 +25,6 @@ const IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes of no output = timeout
 
 // Callback for streaming output updates
 type OutputCallback = (partialOutput: string) => void
-
-// Parse stream-json output from Claude CLI
-// Extracts assistant text messages without duplication.
-// stream-json emits overlapping event types for the same content:
-//   - content_block_delta: incremental text chunks during streaming
-//   - assistant: complete message after each turn (contains same text as deltas)
-//   - result: final result (contains same text as assistant message)
-// We use assistant messages as the primary source (complete per-turn text),
-// and accumulate content_block_delta only for the latest in-progress turn
-// (i.e., deltas that arrive after the last assistant message).
-function parseStreamJsonOutput(rawOutput: string): string {
-  const lines = rawOutput.split('\n').filter(line => line.trim())
-  const assistantTexts: string[] = []
-  const pendingDeltas: string[] = []
-  let hasResult = false
-  let resultText = ''
-
-  for (const line of lines) {
-    try {
-      const json = JSON.parse(line)
-
-      if (json.type === 'assistant' && json.message?.content) {
-        // Complete assistant message for a turn — use this as primary source
-        for (const block of json.message.content) {
-          if (block.type === 'text' && block.text) {
-            assistantTexts.push(block.text)
-          }
-        }
-        // Clear pending deltas since this assistant message covers them
-        pendingDeltas.length = 0
-      } else if (json.type === 'result' && json.result) {
-        // Final result — only use if no assistant messages were found
-        if (typeof json.result === 'string') {
-          hasResult = true
-          resultText = json.result
-        }
-      } else if (json.type === 'content_block_delta' && json.delta?.text) {
-        // Streaming delta — accumulate for in-progress turn display
-        pendingDeltas.push(json.delta.text)
-      }
-    } catch {
-      // Not valid JSON, might be plain text - include it
-      if (line.trim() && !line.startsWith('{')) {
-        assistantTexts.push(line)
-      }
-    }
-  }
-
-  // Build output: completed turns + any in-progress streaming text
-  const parts: string[] = [...assistantTexts]
-  if (pendingDeltas.length > 0) {
-    parts.push(pendingDeltas.join(''))
-  }
-
-  // If no parsed content, try result or raw output as fallback
-  if (parts.length === 0) {
-    if (hasResult) return resultText.trim()
-    return rawOutput.trim()
-  }
-
-  return parts.join('\n\n').trim()
-}
 
 export async function executeClaudeCli(
   prompt: string,
