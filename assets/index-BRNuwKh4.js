@@ -10821,7 +10821,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
           /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-sm font-medium text-gray-600 mb-2", children: t2("taskForm.provider.label") }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2 flex-wrap", children: [
             { value: "claude", label: "Claude", defaultModel: "sonnet" },
-            { value: "codex", label: "Codex", defaultModel: "gpt-5.3-codex" },
+            { value: "codex", label: "Codex", defaultModel: "gpt-5.5" },
             { value: "antigravity", label: "Antigravity", defaultModel: "" }
           ].map((tool) => /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
@@ -10843,21 +10843,18 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-sm font-medium text-gray-600 mb-2", children: t2("taskForm.model.label") }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2 flex-wrap", children: (() => {
-            return dynamicModels.map((model) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
-              "button",
-              {
-                type: "button",
-                onClick: () => setFormData((prev) => ({ ...prev, model: model.value })),
-                className: `flex-1 flex flex-col items-center justify-center p-2.5 h-14 border rounded-lg transition-all ${formData.model === model.value ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`,
-                children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-medium text-sm", children: model.label }),
-                  model.desc && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm opacity-70", children: model.desc })
-                ]
-              },
-              model.value
-            ));
-          })() })
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "select",
+            {
+              value: formData.model,
+              onChange: (e) => setFormData((prev) => ({ ...prev, model: e.target.value })),
+              className: "w-full h-14 px-3 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors",
+              children: dynamicModels.map((model) => /* @__PURE__ */ jsxRuntimeExports.jsxs("option", { value: model.value, children: [
+                model.label,
+                model.desc ? ` (${model.desc})` : ""
+              ] }, model.value))
+            }
+          )
         ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
