@@ -41,6 +41,15 @@ describe('buildClaudeArgs', () => {
     expect(args[m + 1]).toBe('opus')
     expect(args.filter(a => a === '--add-dir')).toHaveLength(2)
   })
+
+  it('includes -p followed by prompt on non-Windows (arg delivery)', () => {
+    // This test runs on macOS/Linux where promptDelivery === 'arg'
+    if (process.platform === 'win32') return
+    const args = buildClaudeArgs(ctx({ prompt: 'do the thing' }))
+    const i = args.indexOf('-p')
+    expect(i).toBeGreaterThan(-1)
+    expect(args[i + 1]).toBe('do the thing')
+  })
 })
 
 describe('parseClaudeOutput', () => {

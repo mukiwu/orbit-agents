@@ -21,7 +21,11 @@ export function buildClaudeArgs(ctx: ExecutionContext): string[] {
   if (ctx.model) args.push('--model', ctx.model)
   if (ctx.mcpTools.length > 0) args.push('--allowedTools', ctx.mcpTools.join(','))
   for (const dir of ctx.addDirs) args.push('--add-dir', dir)
-  // prompt is delivered by the runner depending on promptDelivery
+  // On non-Windows, deliver prompt as a -p flag (positional arg mode).
+  // On Windows, promptDelivery is 'stdin', so the runner writes ctx.prompt to stdin instead.
+  if (process.platform !== 'win32') {
+    args.push('-p', ctx.prompt)
+  }
   return args
 }
 
