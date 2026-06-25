@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSettings, useClaudeCli, useGeminiCli, useAiProvider } from '../hooks/useApi'
-import type { ClaudeCliResult, GeminiCliResult, ProviderTestResult, UpdateStatus } from '../../../shared/types'
+import { useSettings, useGeminiCli, useAiProvider } from '../hooks/useApi'
+import type { GeminiCliResult, ProviderTestResult, UpdateStatus } from '../../../shared/types'
 import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw } from 'lucide-react'
 
 type SettingsTab = 'general' | 'claude' | 'codex' | 'antigravity' | 'gemini' | 'email'
@@ -9,7 +9,6 @@ interface SettingsProps {}
 
 export default function Settings({}: SettingsProps) {
   const { settings, loading, updateSettings, testEmail } = useSettings()
-  const { testConnection: testClaude } = useClaudeCli()
   const { testConnection: testGemini } = useGeminiCli()
   const { test: testAiProvider } = useAiProvider()
 
@@ -43,7 +42,7 @@ export default function Settings({}: SettingsProps) {
 
   // Test states
   const [testingClaude, setTestingClaude] = useState(false)
-  const [claudeResult, setClaudeResult] = useState<ClaudeCliResult | null>(null)
+  const [claudeResult, setClaudeResult] = useState<ProviderTestResult | null>(null)
 
   const [testingGemini, setTestingGemini] = useState(false)
   const [geminiResult, setGeminiResult] = useState<GeminiCliResult | null>(null)
@@ -187,7 +186,7 @@ export default function Settings({}: SettingsProps) {
     setTestingClaude(true)
     setClaudeResult(null)
     try {
-      const result = await testClaude()
+      const result = await testAiProvider('claude')
       setClaudeResult(result)
     } catch (err) {
       setClaudeResult({

@@ -198,6 +198,15 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
       try {
         const models = await listModels(tool as 'claude' | 'codex' | 'antigravity')
         setDynamicModels(models)
+        if (models.length > 0) {
+          setFormData((prev) => {
+            const isValid = models.some((m) => m.value === prev.model)
+            if (!prev.model || !isValid) {
+              return { ...prev, model: models[0].value as ModelType }
+            }
+            return prev
+          })
+        }
       } catch (err) {
         setDynamicModels([])
       }
