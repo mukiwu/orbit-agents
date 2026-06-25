@@ -281,8 +281,8 @@
   },
   "welcome": {
     "slides": {
-      "alt0": "Orbit Agents — 任務排程介面",
-      "alt1": "Orbit Agents — AI 輸出執行記錄"
+      "alt0": "Orbit Agents 任務排程介面",
+      "alt1": "Orbit Agents AI 輸出執行記錄"
     },
     "nav": {
       "download": "下載"
@@ -379,7 +379,7 @@
       },
       "autoRetry": {
         "title": "失敗自動重試",
-        "desc": "網路不穩？Orbit 會自動重試，讓排程任務持續正常運行。"
+        "desc": "網路不穩？Orbit 會自動重試，讓排程任務持續正常執行。"
       }
     },
     "installation": {
@@ -398,7 +398,7 @@
       "windows": {
         "title": "Windows",
         "desc": "Windows SmartScreen 可能會對未簽署的應用程式顯示警告，點選繼續即可：",
-        "step1": "在 SmartScreen 彈窗中點「更多資訊」",
+        "step1": "在 SmartScreen 彈出視窗中點「更多資訊」",
         "step2": "點「仍要執行」",
         "note": "或使用 Portable .zip 版本，免安裝、免 SmartScreen。"
       }
@@ -440,8 +440,8 @@
     },
     "policyDenied": {
       "title": "🔧 MCP 工具政策拒絕 - 解決步驟：",
-      "step1": "檢查 CLI 配置文件中的 MCP 設定",
-      "step2pre": "為您的 MCP server 添加 ",
+      "step1": "檢查 CLI 設定檔中的 MCP 設定",
+      "step2pre": "為您的 MCP server 新增 ",
       "step2post": " 設定",
       "step3": "確認 MCP Server 已正確啟動",
       "step4": "確認 API 權限已正確配置",
@@ -450,8 +450,8 @@
     "mcpDenied": {
       "title": "MCP 工具被系統政策拒絕",
       "stepsTitle": "🔧 解決步驟：",
-      "step1": "檢查 CLI 配置文件中的 MCP 設定",
-      "step2pre": "為 MCP server 添加 ",
+      "step1": "檢查 CLI 設定檔中的 MCP 設定",
+      "step2pre": "為 MCP server 新增 ",
       "step2post": "",
       "step3": "確認 MCP Server 已啟動",
       "step4": "檢查 API 權限配置"
