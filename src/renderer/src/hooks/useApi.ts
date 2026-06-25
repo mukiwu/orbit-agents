@@ -301,10 +301,3 @@ export function useSkills() {
 
   return { skills, loading, projectPath, setProjectPath, scanSkills, selectProject, clearProject, initProject }
 }
-
-export function useProcessInput() {
-  const sendInput = useCallback(async (executionId: string, input: string): Promise<boolean> => {
-    return api.invoke('task:process-input', executionId, input)
-  }, [])
-  return { sendInput }
-}

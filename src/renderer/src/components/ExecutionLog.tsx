@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { useExecutionLogs, useExecutionLog, useProcessInput } from '../hooks/useApi'
+import { useExecutionLogs, useExecutionLog } from '../hooks/useApi'
 import type { ExecutionLogWithTask } from '../../../shared/types'
 
 export default function ExecutionLog() {
@@ -240,102 +240,6 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
     }
   }
 
-  // Parse Gemini CLI interactive permission prompt
-  const parseMcpPermissionPrompt = (output: string): { 
-    hasPrompt: boolean
-    toolName?: string
-    serverName?: string
-    question?: string
-  } => {
-    if (!output) return { hasPrompt: false }
-    
-    // Pattern: "Allow execution of MCP tool "tool_name" from server "server_name"?"
-    const promptMatch = output.match(/Allow\s+execution\s+of\s+MCP\s+tool\s+"([^"]+)"\s+from\s+server\s+"([^"]+)"\?/i)
-    if (promptMatch) {
-      return {
-        hasPrompt: true,
-        toolName: promptMatch[1],
-        serverName: promptMatch[2],
-        question: `Allow execution of MCP tool "${promptMatch[1]}" from server "${promptMatch[2]}"?`
-      }
-    }
-    
-    // Also check for Chinese version or variations
-    const chineseMatch = output.match(/允許.*MCP.*工具\s+"([^"]+)".*伺服器\s+"([^"]+)"\?/i)
-    if (chineseMatch) {
-      return {
-        hasPrompt: true,
-        toolName: chineseMatch[1],
-        serverName: chineseMatch[2],
-        question: `允許執行 MCP 工具 "${chineseMatch[1]}" 來自伺服器 "${chineseMatch[2]}"?`
-      }
-    }
-    
-    // Check if output contains the permission prompt pattern with options
-    if (output.includes('Allow execution of MCP tool') && 
-        (output.includes('Allow once') || output.includes('1. Allow'))) {
-      // Try to extract tool and server from context
-      const toolMatch = output.match(/MCP\s+tool\s+"([^"]+)"/i)
-      const serverMatch = output.match(/server\s+"([^"]+)"/i)
-      if (toolMatch || serverMatch) {
-        return {
-          hasPrompt: true,
-          toolName: toolMatch?.[1],
-          serverName: serverMatch?.[1],
-          question: 'Allow execution of MCP tool?'
-        }
-      }
-    }
-    
-    return { hasPrompt: false }
-  }
-
-  // Detect permission requests in output
-  const detectPermissionRequest = (output: string): { hasRequest: boolean; message: string } => {
-    if (!output) return { hasRequest: false, message: '' }
-    
-    const lowerOutput = output.toLowerCase()
-    
-    // Check for Gemini CLI interactive prompt first
-    const mcpPrompt = parseMcpPermissionPrompt(output)
-    if (mcpPrompt.hasPrompt) {
-      return {
-        hasRequest: true,
-        message: `需要授權執行 MCP 工具 "${mcpPrompt.toolName || 'unknown'}"`
-      }
-    }
-    
-    // Only detect real interactive permission prompts (e.g. Gemini CLI [y/n] prompts).
-    // Claude CLI uses --dangerously-skip-permissions so it never actually waits for input.
-    // Previous broad patterns (matching "mcp"+"access", "tool"+"permission", etc.) caused
-    // false positives on normal Claude output that simply mentioned these words.
-    const permissionPatterns = [
-      // Explicit interactive prompt with [y/n] or (y/n)
-      {
-        test: (text: string) =>
-          (text.includes('[y/n]') || text.includes('(y/n)')) &&
-          (text.includes('permission') || text.includes('授權') || text.includes('allow') || text.includes('允許')),
-        message: '需要授權確認'
-      },
-      // Policy denied errors (informational, not interactive)
-      {
-        test: (text: string) =>
-          text.includes('denied by policy') ||
-          text.includes('操作遭到系統政策拒絕') ||
-          text.includes('政策拒絕'),
-        message: 'MCP 工具被系統政策拒絕'
-      }
-    ]
-
-    for (const pattern of permissionPatterns) {
-      if (pattern.test(lowerOutput)) {
-        return { hasRequest: true, message: pattern.message }
-      }
-    }
-
-    return { hasRequest: false, message: '' }
-  }
-
   // Extract current activity from output
   const extractCurrentActivity = (output: string): string => {
     if (!output || output.trim().length === 0) {
@@ -478,9 +382,7 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
     return '正在處理中...'
   }
 
-  const permissionRequest = log.output ? detectPermissionRequest(log.output) : { hasRequest: false, message: '' }
-  const mcpPermissionPrompt = log.output ? parseMcpPermissionPrompt(log.output) : { hasPrompt: false }
-  const currentActivity = log.status === 'running' && log.output 
+  const currentActivity = log.status === 'running' && log.output
     ? extractCurrentActivity(log.output) 
     : log.status === 'running' 
       ? '正在初始化任務...' 
@@ -650,80 +552,12 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
             </div>
           )}
 
-          {/* Gemini CLI Interactive MCP Permission Prompt */}
-          {mcpPermissionPrompt.hasPrompt && log.status === 'running' && (
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-5 mb-4 shadow-lg">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-gray-900 mb-2">MCP 工具執行權限</h4>
-                  <div className="bg-white/80 rounded-lg p-3 mb-4 border border-purple-100">
-                    <p className="text-sm text-gray-700 mb-2">
-                      <span className="font-medium">工具：</span>
-                      <code className="ml-2 px-2 py-1 bg-purple-100 rounded text-purple-700 font-mono text-xs">
-                        {mcpPermissionPrompt.toolName || 'unknown'}
-                      </code>
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">伺服器：</span>
-                      <code className="ml-2 px-2 py-1 bg-blue-100 rounded text-blue-700 font-mono text-xs">
-                        {mcpPermissionPrompt.serverName || 'unknown'}
-                      </code>
-                    </p>
-                  </div>
-                  <p className="text-sm font-medium text-gray-800 mb-3">
-                    {mcpPermissionPrompt.question || '允許執行此 MCP 工具？'}
-                  </p>
-                  <McpPermissionOptions executionId={log.id} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Permission Request Alert (fallback for other types) */}
-          {permissionRequest.hasRequest && !mcpPermissionPrompt.hasPrompt && log.status === 'running' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-amber-900 mb-1">權限請求</h4>
-                  <p className="text-sm text-amber-700 mb-2">{permissionRequest.message}</p>
-                  {(permissionRequest.message.includes('安全策略限制') || 
-                    permissionRequest.message.includes('政策拒絕') ||
-                    permissionRequest.message.includes('MCP Server')) && (
-                    <div className="bg-amber-100 border border-amber-300 rounded p-2 mb-3 text-xs text-amber-800">
-                      <p className="font-medium mb-1">💡 解決方案：</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>檢查 Gemini CLI 配置文件（settings.json），為 MCP servers 添加 <code className="bg-amber-200 px-1 rounded">"trust": true</code></li>
-                        <li>確認 MCP Server 已正確啟動並運行</li>
-                        <li>檢查 Google Analytics API 權限是否已正確配置</li>
-                        <li>確認執行環境已取得 Google Analytics 的授權</li>
-                      </ul>
-                    </div>
-                  )}
-                  <PermissionConfirmButton executionId={log.id} />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Output - Chat Style */}
           {log.output ? (
             <div className="space-y-4">
-              <ChatMessage 
-                content={log.output} 
+              <ChatMessage
+                content={log.output}
                 isStreaming={log.status === 'running'}
-                showPermissionAlert={permissionRequest.hasRequest && log.status === 'running'}
               />
               <div ref={outputEndRef} />
             </div>
@@ -732,13 +566,11 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
           ) : null}
         </div>
       </div>
-      
-      {log.status === 'running' && <LogInput executionId={log.id} />}
     </>
   )
 }
 
-function ChatMessage({ content, isStreaming, showPermissionAlert }: { content: string; isStreaming: boolean; showPermissionAlert: boolean }) {
+function ChatMessage({ content, isStreaming }: { content: string; isStreaming: boolean }) {
   return (
     <div className="flex gap-3">
       {/* Avatar */}
@@ -781,165 +613,6 @@ function ChatMessage({ content, isStreaming, showPermissionAlert }: { content: s
         </div>
       </div>
     </div>
-  )
-}
-
-function McpPermissionOptions({ executionId }: { executionId: string }) {
-  const { sendInput } = useProcessInput()
-  const [sending, setSending] = useState<string | null>(null)
-
-  const handleSelect = async (option: '1' | '2' | '3' | 'esc') => {
-    setSending(option)
-    try {
-      // Send the option number or ESC key
-      // Gemini CLI expects: '1', '2', '3' (writeToProcess will add \n), or '\x1b' (ESC, no newline)
-      const input = option === 'esc' ? '\x1b' : option
-      console.log(`[UI] Sending MCP permission option: ${option} (input: ${JSON.stringify(input)})`)
-      await sendInput(executionId, input)
-    } catch (err) {
-      console.error('Failed to send permission selection:', err)
-    } finally {
-      setSending(null)
-    }
-  }
-
-  const options = [
-    {
-      value: '1' as const,
-      label: 'Allow once',
-      description: '僅允許此次執行',
-      icon: '✓',
-      color: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600'
-    },
-    {
-      value: '2' as const,
-      label: 'Allow tool for this session',
-      description: '允許此工具在此次會話中使用',
-      icon: '🔒',
-      color: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
-    },
-    {
-      value: '3' as const,
-      label: 'Allow all server tools for this session',
-      description: '允許此伺服器的所有工具在此次會話中使用',
-      icon: '🔓',
-      color: 'bg-purple-500 hover:bg-purple-600 text-white border-purple-600'
-    },
-    {
-      value: 'esc' as const,
-      label: 'No, suggest changes',
-      description: '拒絕並建議修改',
-      icon: '✗',
-      color: 'bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300'
-    }
-  ]
-
-  return (
-    <div className="space-y-2">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          onClick={() => handleSelect(option.value)}
-          disabled={sending !== null}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all text-left ${
-            option.color
-          } ${sending === option.value ? 'opacity-75' : ''} ${
-            sending !== null && sending !== option.value ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
-            {option.value === 'esc' ? 'ESC' : option.value}
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-sm">{option.label}</div>
-            <div className="text-xs opacity-90 mt-0.5">{option.description}</div>
-          </div>
-          {sending === option.value && (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-          )}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function PermissionConfirmButton({ executionId }: { executionId: string }) {
-  const { sendInput } = useProcessInput()
-  const [sending, setSending] = useState(false)
-
-  const handleConfirm = async () => {
-    setSending(true)
-    try {
-      await sendInput(executionId, 'y')
-    } catch (err) {
-      console.error('Failed to send confirmation:', err)
-    } finally {
-      setSending(false)
-    }
-  }
-
-  return (
-    <button
-      onClick={handleConfirm}
-      disabled={sending}
-      className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-    >
-      {sending ? (
-        <>
-          <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-          <span>確認中...</span>
-        </>
-      ) : (
-        <>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span>確認授權</span>
-        </>
-      )}
-    </button>
-  )
-}
-
-function LogInput({ executionId }: { executionId: string }) {
-  const [input, setInput] = useState('')
-  const { sendInput } = useProcessInput()
-  const [sending, setSending] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || sending) return
-
-    setSending(true)
-    try {
-      await sendInput(executionId, input)
-      setInput('')
-    } catch (err) {
-      console.error('Failed to send input:', err)
-    } finally {
-      setSending(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-100 bg-white">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="輸入回應或輸入 'y' 確認權限..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || sending}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {sending ? '發送中...' : '發送'}
-        </button>
-      </div>
-    </form>
   )
 }
 

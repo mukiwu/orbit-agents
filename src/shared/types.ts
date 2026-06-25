@@ -156,7 +156,6 @@ export interface IpcApi {
   'task:delete': (id: string) => Promise<void>
   'task:toggle': (id: string) => Promise<Task>
   'task:run-now': (id: string) => Promise<ExecutionLog>
-  'task:process-input': (executionId: string, input: string) => Promise<boolean>
 
   // Log operations
   'log:list': (taskId?: string, limit?: number) => Promise<ExecutionLogWithTask[]>
