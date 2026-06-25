@@ -23,6 +23,7 @@ export interface Task {
   skip_permissions: number // 0 or 1, whether to use --dangerously-skip-permissions
   week_interval: number // Default 1
   enabled: number // 0 or 1
+  needs_review: number // 0 or 1, set when migrated from a removed provider (e.g. Gemini)
   created_at: string
   updated_at: string
 }
