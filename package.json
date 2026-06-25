@@ -14,7 +14,9 @@
     "build:mac": "npm run build && npm run rebuild:native && electron-builder --mac",
     "build:win": "npm run build && electron-builder --win",
     "build:linux": "npm run build && electron-builder --linux",
-    "prepare-asar": "node scripts/prepare-asar.mjs"
+    "prepare-asar": "node scripts/prepare-asar.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
@@ -50,7 +52,8 @@
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^4.1.9"
   },
   "build": {
     "appId": "com.orbit.agents.app",
