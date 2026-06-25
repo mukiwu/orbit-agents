@@ -34,6 +34,7 @@ describe('buildCodexArgs', () => {
     const prompt = args[args.length - 1]
     expect(prompt.startsWith('SI')).toBe(true)
     expect(prompt).toContain('P')
+    expect(args[args.length - 2]).toBe('--')
   })
 })
 

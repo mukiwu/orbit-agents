@@ -22,6 +22,7 @@ export function buildCodexArgs(ctx: ExecutionContext): string[] {
   const fullPrompt = ctx.systemInstruction
     ? `${ctx.systemInstruction}\n\n${ctx.prompt}`
     : ctx.prompt
+  args.push('--')
   args.push(fullPrompt)
   return args
 }

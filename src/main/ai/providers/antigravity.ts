@@ -15,6 +15,8 @@ export function buildAntigravityArgs(ctx: ExecutionContext): string[] {
   const fullPrompt = ctx.systemInstruction
     ? `${ctx.systemInstruction}\n\n${ctx.prompt}`
     : ctx.prompt
+  // agy does not support the `--` separator. The unattended systemInstruction is always
+  // prefixed here, so the positional prompt never begins with `-` in the scheduled flow.
   args.push(fullPrompt)
   return args
 }
