@@ -1,0 +1,11 @@
+{
+  "common": {
+    "cancel": "取消",
+    "save": "儲存",
+    "delete": "刪除",
+    "loading": "載入中...",
+    "running": "執行中",
+    "done": "完成",
+    "failed": "失敗"
+  }
+}
