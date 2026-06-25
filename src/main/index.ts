@@ -34,7 +34,7 @@ import type { ProviderId } from './ai/types'
 
 import { scanSkills } from './skills'
 import { resetTransporter, sendTestEmail } from './email'
-import { setMainLocale } from './i18n'
+import { setMainLocale, t } from './i18n'
 import { resolveLocale } from '../shared/i18n/resolveLocale'
 import type {
   CreateTaskInput,
@@ -236,12 +236,13 @@ app.whenReady().then(() => {
     initDatabase()
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
+    // DB is unreadable so we cannot load the stored language preference;
+    // fall back to the system locale so the dialog is at least in the
+    // user's system language.
+    setMainLocale(resolveLocale('system', app.getLocale()))
     dialog.showErrorBox(
-      'Orbit Agents failed to start',
-      'The local database could not be opened, so the app cannot continue.\n\n' +
-        'This usually means the bundled database engine (better-sqlite3) was built ' +
-        'for a different CPU architecture or Electron version.\n\n' +
-        `Details:\n${message}`
+      t('main.dbError.title'),
+      t('main.dbError.body', { details: message })
     )
     app.quit()
     return

@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import { existsSync } from 'fs'
 import { checkDangerousOperations } from '../security-check'
 import { registerProcess } from '../process-manager'
+import { t } from '../i18n'
 import type { AiProvider, ExecutionContext, OutputCallback, ProviderResult } from './types'
 
 const IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes of no output
@@ -33,7 +34,7 @@ export async function runProvider(
     return {
       success: false,
       output: '',
-      error: `🚫 安全檢查失敗: ${promptCheck.reason}\n\n為了保護您的系統安全，已阻止執行包含危險刪除操作的命令。\n檢測到的命令: ${promptCheck.detectedCommand || '未知'}\n\n如需執行此操作，請明確授權並確認風險。`
+      error: t('main.security.promptBlocked', { reason: promptCheck.reason, command: promptCheck.detectedCommand || t('main.security.unknownCommand') })
     }
   }
 
@@ -93,7 +94,7 @@ export async function runProvider(
         resolve({
           success: false,
           output: provider.parseOutput(stdout),
-          error: `🚫 安全檢查失敗: ${securityCheck.reason}\n\n為了保護您的系統安全，已自動停止執行。\n檢測到的命令: ${securityCheck.detectedCommand || '未知'}\n\n嚴格禁止在未經使用者授權下主動刪除項目。`
+          error: t('main.security.runtimeBlocked', { reason: securityCheck.reason, command: securityCheck.detectedCommand || t('main.security.unknownCommand') })
         })
         return
       }
@@ -117,7 +118,7 @@ export async function runProvider(
         resolve({
           success: false,
           output: provider.parseOutput(stdout),
-          error: `🚫 安全檢查失敗: ${securityCheck.reason}\n\n為了保護您的系統安全，已自動停止執行。\n檢測到的命令: ${securityCheck.detectedCommand || '未知'}\n\n嚴格禁止在未經使用者授權下主動刪除項目。`
+          error: t('main.security.runtimeBlocked', { reason: securityCheck.reason, command: securityCheck.detectedCommand || t('main.security.unknownCommand') })
         })
         return
       }

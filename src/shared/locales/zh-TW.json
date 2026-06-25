@@ -11,6 +11,23 @@
   "main": {
     "test": {
       "greeting": "嗨 {{name}}"
+    },
+    "notification": {
+      "success": "✅ 執行成功",
+      "failure": "❌ 執行失敗"
+    },
+    "retry": {
+      "networkError": "⏳ 網路錯誤，{{delay}} 秒後自動重試（第 {{attempt}}/{{max}} 次）...\n錯誤: {{error}}",
+      "exhausted": "⚠️ 已重試 {{max}} 次仍然失敗"
+    },
+    "security": {
+      "unknownCommand": "未知",
+      "promptBlocked": "🚫 安全檢查失敗: {{reason}}\n\n為了保護您的系統安全，已阻止執行包含危險刪除操作的命令。\n檢測到的命令: {{command}}\n\n如需執行此操作，請明確授權並確認風險。",
+      "runtimeBlocked": "🚫 安全檢查失敗: {{reason}}\n\n為了保護您的系統安全，已自動停止執行。\n檢測到的命令: {{command}}\n\n嚴格禁止在未經使用者授權下主動刪除項目。"
+    },
+    "dbError": {
+      "title": "Orbit Agents 無法啟動",
+      "body": "本機資料庫無法開啟，應用程式無法繼續執行。\n\n這通常代表內建的資料庫引擎（better-sqlite3）是針對不同 CPU 架構或 Electron 版本所建置。\n\n詳細資訊：\n{{details}}"
     }
   },
   "settings": {

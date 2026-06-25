@@ -11,6 +11,23 @@
   "main": {
     "test": {
       "greeting": "Hi {{name}}"
+    },
+    "notification": {
+      "success": "✅ Task completed",
+      "failure": "❌ Task failed"
+    },
+    "retry": {
+      "networkError": "⏳ Network error, retrying in {{delay}}s (attempt {{attempt}}/{{max}})...\nError: {{error}}",
+      "exhausted": "⚠️ Failed after {{max}} retries"
+    },
+    "security": {
+      "unknownCommand": "unknown",
+      "promptBlocked": "🚫 Security check failed: {{reason}}\n\nTo protect your system, execution of the command containing dangerous delete operations has been blocked.\nDetected command: {{command}}\n\nTo perform this operation, please explicitly authorize and confirm the risk.",
+      "runtimeBlocked": "🚫 Security check failed: {{reason}}\n\nTo protect your system, execution has been automatically stopped.\nDetected command: {{command}}\n\nStrictly prohibited: actively deleting items without user authorization."
+    },
+    "dbError": {
+      "title": "Orbit Agents failed to start",
+      "body": "The local database could not be opened, so the app cannot continue.\n\nThis usually means the bundled database engine (better-sqlite3) was built for a different CPU architecture or Electron version.\n\nDetails:\n{{details}}"
     }
   },
   "settings": {

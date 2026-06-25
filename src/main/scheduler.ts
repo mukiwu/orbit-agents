@@ -31,6 +31,7 @@ import { getProvider, runProvider } from './ai'
 import { buildUnattendedInstruction } from './ai/unattended'
 import type { ExecutionContext, ProviderResult } from './ai/types'
 import { sendTaskResultEmail } from './email'
+import { t } from './i18n'
 import type { Task, ExecutionLog, ExecutionLogWithTask } from '../shared/types'
 
 // Store active cron jobs
@@ -132,7 +133,7 @@ function showCompletionNotification(taskName: string, success: boolean): void {
   try {
     new Notification({
       title: taskName,
-      body: success ? '✅ 執行成功' : '❌ 執行失敗'
+      body: success ? t('main.notification.success') : t('main.notification.failure')
     }).show()
   } catch (err) {
     console.error('[Notification] failed:', err)
@@ -254,7 +255,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
         console.log(`[Scheduler] Retry ${attempt}/${MAX_RETRIES} for task ${task.name} after ${delay / 1000}s delay (error: ${lastError})`)
 
         // Update log to show retry status
-        const retryLog = updateExecutionLogOutput(log.id, `⏳ 網路錯誤，${delay / 1000} 秒後自動重試（第 ${attempt}/${MAX_RETRIES} 次）...\n錯誤: ${lastError}`)
+        const retryLog = updateExecutionLogOutput(log.id, t('main.retry.networkError', { delay: delay / 1000, attempt, max: MAX_RETRIES, error: lastError }))
         notifyExecutionUpdate(retryLog)
 
         await sleep(delay)
@@ -289,7 +290,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
       lastError = errorText
       if (attempt === MAX_RETRIES) {
         console.log(`[Scheduler] Task ${task.name} failed after ${MAX_RETRIES} retries`)
-        result.error = `${result.error}\n\n⚠️ 已重試 ${MAX_RETRIES} 次仍然失敗`
+        result.error = `${result.error}\n\n${t('main.retry.exhausted', { max: MAX_RETRIES })}`
       }
     }
 
