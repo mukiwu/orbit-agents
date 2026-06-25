@@ -131,6 +131,21 @@ export interface SkillScanResult {
   errors?: string[]
 }
 
+// AI Provider Types (mirrored from src/main/ai/types.ts to avoid main-process imports)
+export type ProviderId = 'claude' | 'codex' | 'antigravity'
+
+export interface ProviderTestResult {
+  success: boolean
+  output: string
+  error?: string
+}
+
+export interface ModelOption {
+  value: string
+  label: string
+  desc?: string
+}
+
 // IPC API Types
 export interface IpcApi {
   // Task operations
@@ -159,6 +174,11 @@ export interface IpcApi {
   // Gemini CLI operations
   'gemini:test': () => Promise<GeminiCliResult>
   'gemini:list-mcps': () => Promise<McpServer[]>
+
+  // Generalized AI provider operations
+  'ai:test': (provider: ProviderId) => Promise<ProviderTestResult>
+  'ai:list-mcps': (provider: ProviderId) => Promise<McpServer[]>
+  'ai:list-models': (provider: ProviderId) => Promise<ModelOption[]>
 
   // Skill operations
   'skill:scan': (projectPath?: string) => Promise<SkillScanResult>

@@ -10,7 +10,10 @@ import type {
   GeminiCliResult,
   McpServer,
   Skill,
-  SkillScanResult
+  SkillScanResult,
+  ProviderId,
+  ProviderTestResult,
+  ModelOption
 } from '../../../shared/types'
 
 const api = window.electronApi
@@ -236,6 +239,22 @@ export function useGeminiCli() {
   }, [])
 
   return { testConnection, listMcps }
+}
+
+export function useAiProvider() {
+  const test = useCallback(
+    (provider: ProviderId): Promise<ProviderTestResult> => api.invoke('ai:test', provider),
+    []
+  )
+  const listMcps = useCallback(
+    (provider: ProviderId): Promise<McpServer[]> => api.invoke('ai:list-mcps', provider),
+    []
+  )
+  const listModels = useCallback(
+    (provider: ProviderId): Promise<ModelOption[]> => api.invoke('ai:list-models', provider),
+    []
+  )
+  return { test, listMcps, listModels }
 }
 
 // ============ Skills Hooks ============
