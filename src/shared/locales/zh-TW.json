@@ -7,5 +7,10 @@
     "running": "執行中",
     "done": "完成",
     "failed": "失敗"
+  },
+  "main": {
+    "test": {
+      "greeting": "嗨 {{name}}"
+    }
   }
 }

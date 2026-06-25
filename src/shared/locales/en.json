@@ -7,5 +7,10 @@
     "running": "Running",
     "done": "Done",
     "failed": "Failed"
+  },
+  "main": {
+    "test": {
+      "greeting": "Hi {{name}}"
+    }
   }
 }
