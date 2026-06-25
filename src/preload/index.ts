@@ -3,7 +3,16 @@ import type { IpcApi, ElectronApi } from '../shared/types'
 
 type IpcChannel = keyof IpcApi | 'settings:test-email' | 'dialog:open-files' | 'dialog:save-file' | 'dialog:open-directory' | 'updater:check' | 'updater:download' | 'updater:install' | 'updater:status'
 
-const api: ElectronApi = {
+type RendererListener = (event: unknown, ...args: unknown[]) => void
+
+// Map each caller-provided callback to the wrapper actually registered with
+// ipcRenderer, so off() can remove the exact same function reference. Without
+// this, on() registers an anonymous wrapper that off() can never remove, so
+// listeners leak and stale subscriptions keep firing (e.g. one running task's
+// execution:update overwriting another task's log view).
+const listenerWrappers = new WeakMap<(...args: unknown[]) => void, RendererListener>()
+
+export const api: ElectronApi = {
   invoke: <K extends keyof IpcApi>(
     channel: K,
     ...args: Parameters<IpcApi[K]>
@@ -46,7 +55,9 @@ const api: ElectronApi = {
     const validChannels = ['execution:update', 'updater:status']
 
     if (validChannels.includes(channel)) {
-      ipcRenderer.on(channel, (_, ...args) => callback(...args))
+      const wrapper: RendererListener = (_event, ...args) => callback(...args)
+      listenerWrappers.set(callback, wrapper)
+      ipcRenderer.on(channel, wrapper)
     }
   },
 
@@ -54,7 +65,11 @@ const api: ElectronApi = {
     const validChannels = ['execution:update', 'updater:status']
 
     if (validChannels.includes(channel)) {
-      ipcRenderer.removeListener(channel, callback)
+      const wrapper = listenerWrappers.get(callback)
+      if (wrapper) {
+        ipcRenderer.removeListener(channel, wrapper)
+        listenerWrappers.delete(callback)
+      }
     }
   }
 }
@@ -65,7 +80,7 @@ if (process.contextIsolated) {
   } catch (error) {
     console.error(error)
   }
-} else {
+} else if (typeof window !== 'undefined') {
   // @ts-ignore (define in dts)
   window.electronApi = api
 }
