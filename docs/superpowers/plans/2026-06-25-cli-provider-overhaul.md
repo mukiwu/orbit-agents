@@ -423,7 +423,7 @@ Expected: FAIL
 
 - [ ] **Step 3: 實作 adapter**
 
-Create `src/main/ai/providers/claude.ts`。把 `src/main/claude-cli.ts` 的 `parseStreamJsonOutput` 內容整段複製進來改名 `parseClaudeOutput`（邏輯不變）,並實作:
+Create `src/main/ai/providers/claude.ts`。把 `src/main/claude-cli.ts` 的 `parseStreamJsonOutput` 內容「移動」進來改名 `parseClaudeOutput`（邏輯不變）。為避免過渡期重複,改 `claude-cli.ts` 從 adapter 匯入沿用:在 `claude-cli.ts` 刪掉本地 `parseStreamJsonOutput` 定義,改 `import { parseClaudeOutput as parseStreamJsonOutput } from './ai/providers/claude'`（`claude-cli.ts` 於 Task 13 整個刪除）。adapter 實作:
 
 ```ts
 import { spawn } from 'child_process'
