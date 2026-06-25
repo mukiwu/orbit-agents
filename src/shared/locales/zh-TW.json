@@ -21,5 +21,25 @@
       "en": "English",
       "zhTW": "繁體中文"
     }
+  },
+  "app": {
+    "newTask": "新增任務",
+    "nav": {
+      "tasks": "任務",
+      "executionLogs": "執行記錄",
+      "settings": "設定"
+    }
+  },
+  "taskList": {
+    "title": "任務",
+    "subtitle": "管理自動化工作流程",
+    "confirmDelete": "確定要刪除這個任務嗎？",
+    "emptyState": "目前沒有任務",
+    "createOne": "建立一個",
+    "needsReview": "需要確認：Gemini 已移除，請重新設定供應商",
+    "runNow": "立即執行",
+    "noTaskSelected": "未選取任務",
+    "noTaskSelectedDesc": "從列表選取任務以查看詳情，或建立新任務",
+    "createNewTask": "建立新任務"
   }
 }

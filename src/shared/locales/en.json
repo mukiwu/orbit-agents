@@ -21,5 +21,25 @@
       "en": "English",
       "zhTW": "Traditional Chinese"
     }
+  },
+  "app": {
+    "newTask": "New Task",
+    "nav": {
+      "tasks": "Tasks",
+      "executionLogs": "Execution Logs",
+      "settings": "Settings"
+    }
+  },
+  "taskList": {
+    "title": "Tasks",
+    "subtitle": "Manage automated workflows",
+    "confirmDelete": "Are you sure you want to delete this task?",
+    "emptyState": "No tasks found.",
+    "createOne": "Create one",
+    "needsReview": "Needs review: Gemini removed, reconfigure provider",
+    "runNow": "Run Now",
+    "noTaskSelected": "No Task Selected",
+    "noTaskSelectedDesc": "Select a task from the list to view details or create a new one.",
+    "createNewTask": "Create New Task"
   }
 }
