@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSettings, useGeminiCli, useAiProvider } from '../hooks/useApi'
-import type { GeminiCliResult, ProviderTestResult, UpdateStatus } from '../../../shared/types'
+import { useSettings, useAiProvider } from '../hooks/useApi'
+import type { ProviderTestResult, UpdateStatus } from '../../../shared/types'
 import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw } from 'lucide-react'
 
-type SettingsTab = 'general' | 'claude' | 'codex' | 'antigravity' | 'gemini' | 'email'
+type SettingsTab = 'general' | 'claude' | 'codex' | 'antigravity' | 'email'
 
 interface SettingsProps {}
 
 export default function Settings({}: SettingsProps) {
   const { settings, loading, updateSettings, testEmail } = useSettings()
-  const { testConnection: testGemini } = useGeminiCli()
   const { test: testAiProvider } = useAiProvider()
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
@@ -22,9 +21,6 @@ export default function Settings({}: SettingsProps) {
     email_smtp_pass: '',
     email_from: '',
     claude_cli_path: '',
-    claude_session_token: '',
-    gemini_cli_path: '',
-    gemini_api_key: '',
     codex_cli_path: '',
     antigravity_cli_path: '',
     auto_launch: 'true',
@@ -43,9 +39,6 @@ export default function Settings({}: SettingsProps) {
   // Test states
   const [testingClaude, setTestingClaude] = useState(false)
   const [claudeResult, setClaudeResult] = useState<ProviderTestResult | null>(null)
-
-  const [testingGemini, setTestingGemini] = useState(false)
-  const [geminiResult, setGeminiResult] = useState<GeminiCliResult | null>(null)
 
   const [testingCodex, setTestingCodex] = useState(false)
   const [codexResult, setCodexResult] = useState<ProviderTestResult | null>(null)
@@ -67,9 +60,6 @@ export default function Settings({}: SettingsProps) {
         email_smtp_pass: settings.email_smtp_pass || '',
         email_from: settings.email_from || '',
         claude_cli_path: settings.claude_cli_path || '',
-        claude_session_token: settings.claude_session_token || '',
-        gemini_cli_path: settings.gemini_cli_path || '',
-        gemini_api_key: settings.gemini_api_key || '',
         codex_cli_path: settings.codex_cli_path || '',
         antigravity_cli_path: settings.antigravity_cli_path || '',
         auto_launch: settings.auto_launch ?? 'true',
@@ -199,24 +189,6 @@ export default function Settings({}: SettingsProps) {
     }
   }
 
-  const handleTestGemini = async () => {
-    setTestingGemini(true)
-    setGeminiResult(null)
-    try {
-      const result = await testGemini()
-      setGeminiResult(result)
-    } catch (err) {
-      setGeminiResult({
-        success: false,
-        output: '',
-        error: err instanceof Error ? err.message : 'Unknown error'
-      })
-    } finally {
-      setTestingGemini(false)
-    }
-  }
-
-
   const handleTestCodex = async () => {
     setTestingCodex(true)
     setCodexResult(null)
@@ -342,14 +314,8 @@ export default function Settings({}: SettingsProps) {
             label="Antigravity CLI"
             desc="Antigravity configuration"
           />
-          <NavButton
-            tab="gemini"
-            icon={Box}
-            label="Gemini CLI"
-            desc="Google Gemini configuration"
-          />
 
-          <NavButton 
+          <NavButton
             tab="email" 
             icon={Mail} 
             label="Email (SMTP)" 
@@ -716,74 +682,6 @@ export default function Settings({}: SettingsProps) {
             </div>
           </div>
         )}
-
-        {/* Gemini CLI */}
-        {activeTab === 'gemini' && (
-          <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Gemini CLI</h3>
-              <p className="text-sm text-gray-500">Configure the connection to Google's Gemini command line tool.</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
-                <input
-                  type="text"
-                  value={formData.gemini_cli_path}
-                  onChange={(e) => setFormData(prev => ({ ...prev, gemini_cli_path: e.target.value }))}
-                  placeholder="Use default path"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">API Key</label>
-                <input
-                  type="password"
-                  value={formData.gemini_api_key}
-                  onChange={(e) => setFormData(prev => ({ ...prev, gemini_api_key: e.target.value }))}
-                  placeholder="GEMINI_API_KEY"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors font-mono"
-                />
-                <p className="mt-1.5 text-xs text-gray-400">Optional if configured in system environment variables.</p>
-              </div>
-
-               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
-                <button
-                  onClick={handleTestGemini}
-                  disabled={testingGemini}
-                  className="px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                >
-                  {testingGemini ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Terminal className="w-3.5 h-3.5" />
-                  )}
-                  Test Connection
-                </button>
-                
-                {geminiResult && (
-                  <div className={`flex items-center gap-2 text-xs font-medium ${geminiResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {geminiResult.success ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4" />
-                    )}
-                    {geminiResult.success ? 'Connection successful' : 'Connection failed'}
-                  </div>
-                )}
-              </div>
-
-              {geminiResult && !geminiResult.success && geminiResult.error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-mono break-all">
-                  {geminiResult.error}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
 
         {/* Email Settings */}
         {activeTab === 'email' && (

@@ -29,10 +29,9 @@ function isBinaryFile(filePath: string): boolean {
 }
 import { getProvider, runProvider } from './ai'
 import { buildUnattendedInstruction } from './ai/unattended'
-import { executeGeminiCli } from './gemini-cli' // 暫留，Task 13 移除
 import type { ExecutionContext, ProviderResult } from './ai/types'
 import { sendTaskResultEmail } from './email'
-import type { Task, ExecutionLog, ExecutionLogWithTask, GeminiCliResult } from '../shared/types'
+import type { Task, ExecutionLog, ExecutionLogWithTask } from '../shared/types'
 
 // Store active cron jobs
 const activeJobs: Map<string, ScheduledTask> = new Map()
@@ -246,7 +245,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
       }
     }
 
-    let result: ProviderResult | GeminiCliResult
+    let result: ProviderResult
     let lastError = ''
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -261,21 +260,17 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
         await sleep(delay)
       }
 
-      if (task.cli_tool === 'gemini') {
-        result = await executeGeminiCli(promptWithTextFiles, task.model, onOutput, binaryFiles.length ? binaryFiles : undefined, mcpTools, log.id, task.project_path)
-      } else {
-        const ctx: ExecutionContext = {
-          prompt: promptWithTextFiles,
-          systemInstruction: buildUnattendedInstruction(),
-          model: task.model,
-          mcpTools: mcpTools ?? [],
-          imagePaths: binaryFiles,
-          addDirs: Array.from(addDirs),
-          projectPath: task.project_path,
-          skipPermissions: task.skip_permissions === 1
-        }
-        result = await runProvider(getProvider(task.cli_tool), ctx, { executionId: log.id, onOutput })
+      const ctx: ExecutionContext = {
+        prompt: promptWithTextFiles,
+        systemInstruction: buildUnattendedInstruction(),
+        model: task.model,
+        mcpTools: mcpTools ?? [],
+        imagePaths: binaryFiles,
+        addDirs: Array.from(addDirs),
+        projectPath: task.project_path,
+        skipPermissions: task.skip_permissions === 1
       }
+      result = await runProvider(getProvider(task.cli_tool), ctx, { executionId: log.id, onOutput })
 
       // If success or non-network error, stop retrying
       if (result.success) {

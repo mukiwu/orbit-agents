@@ -6,8 +6,6 @@ import type {
   ExecutionLog,
   ExecutionLogWithTask,
   Settings,
-  ClaudeCliResult,
-  GeminiCliResult,
   McpServer,
   Skill,
   SkillScanResult,
@@ -213,32 +211,6 @@ export function useSettings() {
   }, [])
 
   return { settings, loading, error, fetchSettings, updateSettings, testEmail }
-}
-
-// ============ Claude CLI Hooks ============
-
-export function useClaudeCli() {
-  const testConnection = useCallback(async (): Promise<ClaudeCliResult> => {
-    return api.invoke('claude:test')
-  }, [])
-
-  const listMcps = useCallback(async (): Promise<McpServer[]> => {
-    return api.invoke('claude:list-mcps')
-  }, [])
-
-  return { testConnection, listMcps }
-}
-
-export function useGeminiCli() {
-  const testConnection = useCallback(async (): Promise<GeminiCliResult> => {
-    return api.invoke('gemini:test')
-  }, [])
-
-  const listMcps = useCallback(async (): Promise<McpServer[]> => {
-    return api.invoke('gemini:list-mcps')
-  }, [])
-
-  return { testConnection, listMcps }
 }
 
 export function useAiProvider() {

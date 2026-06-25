@@ -27,7 +27,7 @@ const STEPS = [
   {
     number: '1',
     title: 'Pick your AI',
-    description: 'Claude or Gemini — choose the model that fits your task.',
+    description: 'Claude, Codex, or Antigravity — choose the model that fits your task.',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -68,7 +68,7 @@ const STEPS = [
 const COMPARISON = [
   { label: 'Cost', others: 'Cloud subscription fees', orbit: 'Free, runs locally' },
   { label: 'Setup', others: 'Wire nodes & connectors', orbit: 'Write a prompt' },
-  { label: 'AI integration', others: 'Requires add-ons', orbit: 'Claude & Gemini built-in' },
+  { label: 'AI integration', others: 'Requires add-ons', orbit: 'Claude, Codex & Antigravity built-in' },
   { label: 'Data', others: 'Stored in the cloud', orbit: '100% on your machine' },
   { label: 'Platform', others: 'Browser-based / macOS only', orbit: 'macOS + Windows' },
   { label: 'Source code', others: 'Closed / limited', orbit: 'Open source (MIT)' },
@@ -88,7 +88,7 @@ const FEATURES = [
   },
   {
     title: 'Deep AI Integration',
-    description: 'First-class support for Claude CLI and Gemini CLI, with MCP server connections.',
+    description: 'First-class support for Claude, Codex, and Antigravity CLI, with MCP server connections.',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -298,7 +298,7 @@ export default function WelcomePage() {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed font-display">
-            Schedule Claude or Gemini to run automatically on your desktop.
+            Schedule Claude, Codex, or Antigravity to run automatically on your desktop.
             No servers, no cloud fees, no node wiring — just write a prompt,
             pick a schedule, and let it work for you.
           </p>

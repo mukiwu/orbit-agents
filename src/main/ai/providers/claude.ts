@@ -29,7 +29,6 @@ export function buildClaudeArgs(ctx: ExecutionContext): string[] {
   return args
 }
 
-// Moved from src/main/claude-cli.ts parseStreamJsonOutput (logic unchanged).
 // Extracts assistant text messages without duplication.
 // stream-json emits overlapping event types for the same content:
 //   - content_block_delta: incremental text chunks during streaming

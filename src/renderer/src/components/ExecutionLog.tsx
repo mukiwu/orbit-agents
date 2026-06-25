@@ -516,11 +516,11 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                 <div className="bg-red-100 border border-red-300 rounded p-3 text-xs text-red-800 mt-3">
                   <p className="font-medium mb-2">🔧 MCP 工具政策拒絕 - 解決步驟：</p>
                   <ol className="list-decimal list-inside space-y-1">
-                    <li>檢查 Gemini CLI 配置文件（通常在 <code className="bg-red-200 px-1 rounded">~/.config/gemini-cli/settings.json</code>）</li>
+                    <li>檢查 CLI 配置文件中的 MCP 設定</li>
                     <li>為您的 MCP server 添加 <code className="bg-red-200 px-1 rounded">"trust": true</code> 設定</li>
-                    <li>確認 MCP Server 已正確啟動（執行 <code className="bg-red-200 px-1 rounded">gemini mcp list</code> 檢查）</li>
-                    <li>確認 Google Analytics API 權限已正確配置</li>
-                    <li>重新啟動 Gemini CLI 或應用程式</li>
+                    <li>確認 MCP Server 已正確啟動</li>
+                    <li>確認 API 權限已正確配置</li>
+                    <li>重新啟動 CLI 或應用程式</li>
                   </ol>
                 </div>
               )}
@@ -541,10 +541,10 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                   <div className="bg-red-100 border border-red-300 rounded p-3 text-xs text-red-800 mb-3">
                     <p className="font-medium mb-2">🔧 解決步驟：</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>檢查 Gemini CLI 配置文件（<code className="bg-red-200 px-1 rounded">~/.config/gemini-cli/settings.json</code>）</li>
+                      <li>檢查 CLI 配置文件中的 MCP 設定</li>
                       <li>為 MCP server 添加 <code className="bg-red-200 px-1 rounded">"trust": true</code></li>
-                      <li>確認 MCP Server 已啟動（執行 <code className="bg-red-200 px-1 rounded">gemini mcp list</code>）</li>
-                      <li>檢查 Google Analytics API 權限配置</li>
+                      <li>確認 MCP Server 已啟動</li>
+                      <li>檢查 API 權限配置</li>
                     </ol>
                   </div>
                 </div>

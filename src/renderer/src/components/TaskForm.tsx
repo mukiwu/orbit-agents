@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useTasks, useClaudeCli, useGeminiCli, useAiProvider, useSkills } from '../hooks/useApi'
+import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
 import type { Task, CreateTaskInput, McpServer, ModelType, Skill, ModelOption } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
 
@@ -21,8 +21,6 @@ import {
 
 export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
   const { createTask, updateTask } = useTasks()
-  const { listMcps: listClaudeMcps } = useClaudeCli()
-  const { listMcps: listGeminiMcps } = useGeminiCli()
   const { listMcps: listAiMcps, listModels } = useAiProvider()
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills, initProject } = useSkills()
   const [dynamicModels, setDynamicModels] = useState<ModelOption[]>([])
@@ -56,7 +54,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             description: task.description || '',
             cron_expression: task.cron_expression || '0 9 * * *',
             prompt: task.prompt || '',
-            cli_tool: (task.cli_tool || 'claude') as 'claude' | 'gemini' | 'codex' | 'antigravity',
+            cli_tool: (task.cli_tool || 'claude') as 'claude' | 'codex' | 'antigravity',
             model: (task.model || 'sonnet') as ModelType,
             mcp_tools: task.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
             attachments: task.attachments ? JSON.parse(task.attachments) : [] as string[],
@@ -112,7 +110,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     description: task?.description || '',
     cron_expression: task?.cron_expression || '0 9 * * *',
     prompt: task?.prompt || '',
-    cli_tool: (task?.cli_tool || 'claude') as 'claude' | 'gemini' | 'codex' | 'antigravity',
+    cli_tool: (task?.cli_tool || 'claude') as 'claude' | 'codex' | 'antigravity',
     model: (task?.model || 'sonnet') as ModelType,
     mcp_tools: task?.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
     attachments: task?.attachments ? JSON.parse(task.attachments) : [] as string[],
@@ -169,12 +167,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
       setLoadingMcps(true)
       try {
         let servers: McpServer[] = []
-        if (formData.cli_tool === 'claude') {
-          servers = await listClaudeMcps()
-        } else if (formData.cli_tool === 'gemini') {
-          servers = await listGeminiMcps()
-        } else if (formData.cli_tool === 'codex') {
-          servers = await listAiMcps('codex')
+        if (formData.cli_tool === 'claude' || formData.cli_tool === 'codex') {
+          servers = await listAiMcps(formData.cli_tool)
         }
         // antigravity returns [] — skip the call
         setMcpServers(servers)
@@ -186,17 +180,13 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     }
 
     fetchMcps()
-  }, [formData.cli_tool, listClaudeMcps, listGeminiMcps, listAiMcps])
+  }, [formData.cli_tool, listAiMcps])
 
   useEffect(() => {
     const fetchModels = async () => {
       const tool = formData.cli_tool
-      if (tool === 'gemini') {
-        setDynamicModels([])
-        return
-      }
       try {
-        const models = await listModels(tool as 'claude' | 'codex' | 'antigravity')
+        const models = await listModels(tool)
         setDynamicModels(models)
         if (models.length > 0) {
           setFormData((prev) => {
@@ -647,8 +637,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                     [
                       { value: 'claude' as const, label: 'Claude', defaultModel: 'sonnet' as ModelType },
                       { value: 'codex' as const, label: 'Codex', defaultModel: 'gpt-5.3-codex' as ModelType },
-                      { value: 'antigravity' as const, label: 'Antigravity', defaultModel: '' as ModelType },
-                      { value: 'gemini' as const, label: 'Gemini', defaultModel: 'gemini-3' as ModelType }
+                      { value: 'antigravity' as const, label: 'Antigravity', defaultModel: '' as ModelType }
                     ]
                   ).map((tool) => (
                     <button
@@ -680,28 +669,6 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {(() => {
-                    if (formData.cli_tool === 'gemini') {
-                      const geminiModels: { value: ModelType; label: string; desc: string }[] = [
-                        { value: 'gemini-3', label: 'Auto (Gemini 3)', desc: 'Best for task (3-pro/3-flash)' },
-                        { value: 'gemini-2', label: 'Gemini 2', desc: 'Auto (2-pro / 2-flash)' }
-                      ]
-                      return geminiModels.map((model) => (
-                        <button
-                          key={model.value}
-                          type="button"
-                          onClick={() => setFormData((prev) => ({ ...prev, model: model.value }))}
-                          className={`flex-1 flex flex-col items-center justify-center p-2.5 h-14 border rounded-lg transition-all ${
-                            formData.model === model.value
-                              ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm'
-                              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          <span className="font-medium text-sm">{model.label}</span>
-                          <span className="text-sm opacity-70">{model.desc}</span>
-                        </button>
-                      ))
-                    }
-
                     return dynamicModels.map((model) => (
                       <button
                         key={model.value}

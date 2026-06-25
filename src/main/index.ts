@@ -29,8 +29,6 @@ import {
   runTaskNow,
   onExecutionUpdate
 } from './scheduler'
-import { testClaudeConnection, listMcpServers } from './claude-cli'
-import { testGeminiConnection, listMcpServers as listGeminiMcpServers } from './gemini-cli'
 import { getProvider } from './ai'
 import type { ProviderId } from './ai/types'
 
@@ -158,24 +156,6 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:test-email', async (_, toAddress: string) => {
     await sendTestEmail(toAddress)
-  })
-
-  // Claude CLI handlers
-  ipcMain.handle('claude:test', async () => {
-    return testClaudeConnection()
-  })
-
-  ipcMain.handle('claude:list-mcps', async () => {
-    return listMcpServers()
-  })
-
-  // Gemini CLI handlers
-  ipcMain.handle('gemini:test', async () => {
-    return testGeminiConnection()
-  })
-
-  ipcMain.handle('gemini:list-mcps', async () => {
-    return listGeminiMcpServers()
   })
 
   // Generalized AI provider handlers
