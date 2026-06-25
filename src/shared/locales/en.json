@@ -258,7 +258,8 @@
       "dailyAt": "Daily at {{time}}",
       "weekly": "Every {{days}} at {{time}}",
       "weeklyEveryN": "Every {{n}} weeks on {{days}} at {{time}}",
-      "monthly": "Monthly on day {{day}} at {{time}}"
+      "monthly": "Monthly on day {{day}} at {{time}}",
+      "daySeparator": ", "
     }
   },
   "executionLog": {

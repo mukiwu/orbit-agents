@@ -25,7 +25,8 @@ describe('getScheduleDescription', () => {
     const result = getScheduleDescription('weekly', 30, 'minutes', '09:00', [1, 3], 1, 1, t)
     // value 1 = Mon -> labelKey 'schedule.weekday.short.mon'
     // value 3 = Wed -> labelKey 'schedule.weekday.short.wed'
-    const days = 'schedule.weekday.short.mon, schedule.weekday.short.wed'
+    // separator comes from t('schedule.desc.daySeparator'), stub returns the key itself
+    const days = 'schedule.weekday.short.monschedule.desc.daySeparatorschedule.weekday.short.wed'
     expect(result).toBe(`schedule.desc.weekly:${JSON.stringify({ days, time: '09:00' })}`)
   })
 

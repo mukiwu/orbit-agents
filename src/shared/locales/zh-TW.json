@@ -258,7 +258,8 @@
       "dailyAt": "每天 {{time}}",
       "weekly": "每週{{days}} {{time}}",
       "weeklyEveryN": "每 {{n}} 週的{{days}} {{time}}",
-      "monthly": "每月第 {{day}} 天 {{time}}"
+      "monthly": "每月第 {{day}} 天 {{time}}",
+      "daySeparator": "、"
     }
   },
   "executionLog": {

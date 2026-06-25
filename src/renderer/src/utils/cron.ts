@@ -2,13 +2,13 @@ export type ScheduleMode = 'simple' | 'advanced'
 export type FrequencyType = 'interval' | 'daily' | 'weekly' | 'monthly'
 
 export const WEEKDAYS = [
-  { value: 1, label: 'Mon', fullLabel: 'Monday', labelKey: 'schedule.weekday.short.mon', fullLabelKey: 'schedule.weekday.long.mon' },
-  { value: 2, label: 'Tue', fullLabel: 'Tuesday', labelKey: 'schedule.weekday.short.tue', fullLabelKey: 'schedule.weekday.long.tue' },
-  { value: 3, label: 'Wed', fullLabel: 'Wednesday', labelKey: 'schedule.weekday.short.wed', fullLabelKey: 'schedule.weekday.long.wed' },
-  { value: 4, label: 'Thu', fullLabel: 'Thursday', labelKey: 'schedule.weekday.short.thu', fullLabelKey: 'schedule.weekday.long.thu' },
-  { value: 5, label: 'Fri', fullLabel: 'Friday', labelKey: 'schedule.weekday.short.fri', fullLabelKey: 'schedule.weekday.long.fri' },
-  { value: 6, label: 'Sat', fullLabel: 'Saturday', labelKey: 'schedule.weekday.short.sat', fullLabelKey: 'schedule.weekday.long.sat' },
-  { value: 0, label: 'Sun', fullLabel: 'Sunday', labelKey: 'schedule.weekday.short.sun', fullLabelKey: 'schedule.weekday.long.sun' }
+  { value: 1, labelKey: 'schedule.weekday.short.mon', fullLabelKey: 'schedule.weekday.long.mon' },
+  { value: 2, labelKey: 'schedule.weekday.short.tue', fullLabelKey: 'schedule.weekday.long.tue' },
+  { value: 3, labelKey: 'schedule.weekday.short.wed', fullLabelKey: 'schedule.weekday.long.wed' },
+  { value: 4, labelKey: 'schedule.weekday.short.thu', fullLabelKey: 'schedule.weekday.long.thu' },
+  { value: 5, labelKey: 'schedule.weekday.short.fri', fullLabelKey: 'schedule.weekday.long.fri' },
+  { value: 6, labelKey: 'schedule.weekday.short.sat', fullLabelKey: 'schedule.weekday.long.sat' },
+  { value: 0, labelKey: 'schedule.weekday.short.sun', fullLabelKey: 'schedule.weekday.long.sun' }
 ]
 
 export function parseCronToSimple(cron: string): {
@@ -144,7 +144,7 @@ export function getScheduleDescription(
         .map(d => WEEKDAYS.find(w => w.value === d))
         .filter((w): w is (typeof WEEKDAYS)[number] => w !== undefined)
         .map(w => t(w.labelKey))
-        .join(', ')
+        .join(t('schedule.desc.daySeparator'))
       if (weekInterval === 1) {
         return t('schedule.desc.weekly', { days: dayNames, time })
       }
