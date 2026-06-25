@@ -2,7 +2,7 @@ import { spawn, execFile } from 'child_process'
 import { existsSync } from 'fs'
 import { getSetting } from './database'
 import { checkDangerousOperations } from './security-check'
-import type { ClaudeCliResult, McpServer, ModelType } from '../shared/types'
+import type { ClaudeCliResult, McpServer } from '../shared/types'
 
 function getHomedir(): string {
   return process.env.HOME || process.env.USERPROFILE || ''
@@ -90,7 +90,7 @@ function parseStreamJsonOutput(rawOutput: string): string {
 export async function executeClaudeCli(
   prompt: string,
   mcpTools?: string[],
-  model?: ModelType | null,
+  model?: string | null,
   onOutput?: OutputCallback,
   attachments?: string[],
   projectPath?: string | null,

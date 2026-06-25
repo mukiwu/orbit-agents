@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { getSetting } from './database'
 import { registerProcess } from './process-manager'
 import { checkDangerousOperations } from './security-check'
-import type { GeminiCliResult, ModelType, McpServer } from '../shared/types'
+import type { GeminiCliResult, McpServer } from '../shared/types'
 
 function getGeminiCliPath(): string {
   const customPath = getSetting('gemini_cli_path')
@@ -18,7 +18,7 @@ type OutputCallback = (partialOutput: string) => void
 
 export async function executeGeminiCli(
   prompt: string,
-  model?: ModelType | null,
+  model?: string | null,
   onOutput?: OutputCallback,
   attachments?: string[],
   mcpTools?: string[],

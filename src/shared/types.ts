@@ -1,5 +1,10 @@
 // Task Types
-export type ModelType = 'sonnet' | 'opus' | 'haiku' | 'gemini-3' | 'gemini-2.5' | 'gemini-2'
+export type ClaudeModel = 'haiku' | 'sonnet' | 'opus'
+export type CodexModel = 'gpt-5.3-codex' | 'gpt-5.3-codex-spark'
+export type GeminiModel = 'gemini-3' | 'gemini-2.5' | 'gemini-2' // 待 Task 13 移除
+// 嚴格 union 用於 claude/codex 的選項與預設值（編譯期安全,呼應使用者偏好）
+// Antigravity 模型由 agy models 動態提供,在執行期驗證,以 string 儲存
+export type ModelType = ClaudeModel | CodexModel | GeminiModel
 
 export interface Task {
   id: string
@@ -7,8 +12,8 @@ export interface Task {
   description: string | null
   cron_expression: string
   prompt: string
-  cli_tool: 'claude' | 'gemini'
-  model: ModelType | null // AI model to use
+  cli_tool: 'claude' | 'gemini' | 'codex' | 'antigravity'
+  model: string | null // AI model to use (cross-provider, including antigravity dynamic strings)
   mcp_tools: string | null // JSON array of tool patterns
   attachments: string | null // JSON array of file paths
   output_type: 'log' | 'both'
@@ -27,8 +32,8 @@ export interface CreateTaskInput {
   description?: string
   cron_expression: string
   prompt: string
-  cli_tool?: 'claude' | 'gemini'
-  model?: ModelType
+  cli_tool?: 'claude' | 'gemini' | 'codex' | 'antigravity'
+  model?: string
   mcp_tools?: string[]
   attachments?: string[] // Array of file paths
   output_type?: 'log' | 'both'
@@ -70,6 +75,8 @@ export interface Settings {
   claude_session_token?: string
   gemini_cli_path?: string
   gemini_api_key?: string
+  codex_cli_path?: string
+  antigravity_cli_path?: string
   auto_launch?: string
   auto_update?: string
 }
