@@ -30,17 +30,28 @@ git commit -m "chore: bump version to <VERSION>"
 
 ### Step 3：Build
 
-macOS 和 Windows 可以平行 build：
+> ⚠️ 一定要用 `npm run build:mac` / `npm run build:win`，不要直接呼叫 `npx electron-builder`
+>
+> `build:mac` 會在打包前先用 `rebuild:native` 把 better-sqlite3 強制重編成 arm64。直接跑 `electron-builder` 會跳過這步，跨平台共用的 `node_modules` native binary 可能是錯的架構（例如剛 build 完 Windows 留下的 x64 binary），打出來的 mac App 會無聲開不了視窗，這就是 issue #3
 
 ```bash
-bun run build
-npx electron-builder --mac --config
-npx electron-builder --win --config
+# macOS（會自動 rebuild:native → arm64，再打包）
+npm run build:mac
+
+# Windows（electron-builder 打包時會自動抓 better-sqlite3 的 Windows 預編版）
+npm run build:win
 ```
 
 等待 build 完成，確認 `dist/` 下產生：
 - macOS: `Orbit-Agents-<VERSION>-arm64.dmg`, `Orbit-Agents-<VERSION>-arm64.zip`
 - Windows: `Orbit-Agents-Setup-<VERSION>.exe`, `Orbit-Agents-<VERSION>-x64-win.zip`
+
+打包後務必驗證 mac 的 native binary 架構，避免 issue #3 重演：
+
+```bash
+file "dist/mac-arm64/Orbit Agents.app/Contents/Resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+# 預期輸出要包含：Mach-O 64-bit bundle arm64
+```
 
 ### Step 4：產生更新檔案
 

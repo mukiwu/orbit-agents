@@ -91,6 +91,8 @@ xattr -cr /Applications/Orbit\ Agents.app
    npm run build:linux
    ```
 
+   > 註:`npm run build:mac` 會自動把 better-sqlite3 原生模組重編成對應架構,各平台請在各自的作業系統上打包,native 模組才會對到目標架構
+
 ## 技術架構
 
 - **核心框架**: [Electron](https://www.electronjs.org/)

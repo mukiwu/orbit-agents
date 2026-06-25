@@ -114,6 +114,8 @@ xattr -cr /Applications/Orbit\ Agents.app
    npm run build:linux
    ```
 
+   > Note: `npm run build:mac` rebuilds the native `better-sqlite3` binary for the correct architecture, and each platform should be built on its own OS so the native module matches the target
+
 ## Technical Architecture
 
 - **Core Framework**: [Electron](https://www.electronjs.org/)
