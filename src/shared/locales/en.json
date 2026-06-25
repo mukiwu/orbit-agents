@@ -143,6 +143,91 @@
     "noTaskSelectedDesc": "Select a task from the list to view details or create a new one.",
     "createNewTask": "Create New Task"
   },
+  "taskForm": {
+    "editTitle": "Edit Task",
+    "newTitle": "New Task",
+    "subtitle": "Configure your scheduled AI task",
+    "optional": "(Optional)",
+    "name": {
+      "label": "Task Name",
+      "placeholder": "e.g., Daily Security Report"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "Brief description of this task"
+    },
+    "schedule": {
+      "label": "Schedule",
+      "simple": "Simple",
+      "advanced": "Advanced",
+      "freqInterval": "Interval",
+      "freqDaily": "Daily",
+      "freqWeekly": "Weekly",
+      "freqMonthly": "Monthly",
+      "every": "Every",
+      "at": "At",
+      "on": "On",
+      "onDay": "On day",
+      "minutes": "minutes",
+      "hours": "hours",
+      "week": "week",
+      "weeks": "weeks",
+      "cronFormat": "Cron format: minute hour day month weekday",
+      "examplesLabel": "Examples:",
+      "exampleDailyDesc": "(daily 9am)",
+      "exampleIntervalDesc": "(every 15 min)"
+    },
+    "skills": {
+      "label": "Skills",
+      "changeProject": "Change Project",
+      "selectProject": "Select Project",
+      "scanning": "Scanning skills...",
+      "noneInProject": "No skills found in this project",
+      "selectProjectHint": "Select a project to load project skills",
+      "scopeProject": " (project)",
+      "scopeUser": " (user)"
+    },
+    "prompt": {
+      "label": "AI Prompt",
+      "placeholder": "Enter the prompt for Claude to execute..."
+    },
+    "provider": {
+      "label": "AI Provider"
+    },
+    "model": {
+      "label": "AI Model"
+    },
+    "mcpTools": {
+      "label": "MCP Tools",
+      "loading": "Loading MCP servers...",
+      "noneConfigured": "No MCP servers configured in {{tool}} CLI"
+    },
+    "attachments": {
+      "label": "Attachments",
+      "addFiles": "Add Files"
+    },
+    "output": {
+      "label": "Output",
+      "logOnly": "Log Only",
+      "logAndEmail": "Log + Email"
+    },
+    "emailTo": {
+      "label": "Email To",
+      "placeholder": "user@example.com, user2@example.com"
+    },
+    "knowledge": {
+      "label": "Knowledge",
+      "description": "Auto-record reusable insights after each run",
+      "placeholder": "~/knowledge/task-name.md",
+      "browse": "Browse"
+    },
+    "enable": {
+      "label": "Enable task immediately"
+    },
+    "saveChanges": "Save Changes",
+    "createTask": "Create Task",
+    "errorSave": "Failed to save task"
+  },
   "executionLog": {
     "listTitle": "Execution Logs",
     "selectAll": "Select all",

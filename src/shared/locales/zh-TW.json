@@ -143,6 +143,91 @@
     "noTaskSelectedDesc": "從列表選取任務以查看詳情，或建立新任務",
     "createNewTask": "建立新任務"
   },
+  "taskForm": {
+    "editTitle": "編輯任務",
+    "newTitle": "新增任務",
+    "subtitle": "設定您的排程 AI 任務",
+    "optional": "（選填）",
+    "name": {
+      "label": "任務名稱",
+      "placeholder": "例：每日安全報告"
+    },
+    "description": {
+      "label": "說明",
+      "placeholder": "簡短描述此任務"
+    },
+    "schedule": {
+      "label": "排程",
+      "simple": "簡單",
+      "advanced": "進階",
+      "freqInterval": "間隔",
+      "freqDaily": "每天",
+      "freqWeekly": "每週",
+      "freqMonthly": "每月",
+      "every": "每隔",
+      "at": "於",
+      "on": "在",
+      "onDay": "第幾天",
+      "minutes": "分鐘",
+      "hours": "小時",
+      "week": "週",
+      "weeks": "週",
+      "cronFormat": "Cron 格式：分 時 日 月 星期",
+      "examplesLabel": "範例：",
+      "exampleDailyDesc": "（每天早上 9 點）",
+      "exampleIntervalDesc": "（每 15 分鐘）"
+    },
+    "skills": {
+      "label": "技能",
+      "changeProject": "更換專案",
+      "selectProject": "選擇專案",
+      "scanning": "正在掃描技能...",
+      "noneInProject": "此專案中沒有技能",
+      "selectProjectHint": "選擇專案以載入專案技能",
+      "scopeProject": "（專案）",
+      "scopeUser": "（使用者）"
+    },
+    "prompt": {
+      "label": "AI 提示詞",
+      "placeholder": "輸入要讓 Claude 執行的提示詞..."
+    },
+    "provider": {
+      "label": "AI 供應商"
+    },
+    "model": {
+      "label": "AI 模型"
+    },
+    "mcpTools": {
+      "label": "MCP 工具",
+      "loading": "正在載入 MCP 伺服器...",
+      "noneConfigured": "{{tool}} CLI 中沒有設定 MCP 伺服器"
+    },
+    "attachments": {
+      "label": "附件",
+      "addFiles": "新增檔案"
+    },
+    "output": {
+      "label": "輸出",
+      "logOnly": "僅記錄",
+      "logAndEmail": "記錄 + 電子郵件"
+    },
+    "emailTo": {
+      "label": "收件人",
+      "placeholder": "user@example.com, user2@example.com"
+    },
+    "knowledge": {
+      "label": "知識庫",
+      "description": "每次執行後自動記錄可重複使用的洞察",
+      "placeholder": "~/knowledge/task-name.md",
+      "browse": "瀏覽"
+    },
+    "enable": {
+      "label": "立即啟用任務"
+    },
+    "saveChanges": "儲存變更",
+    "createTask": "建立任務",
+    "errorSave": "儲存任務失敗"
+  },
   "executionLog": {
     "listTitle": "執行記錄",
     "selectAll": "全選",

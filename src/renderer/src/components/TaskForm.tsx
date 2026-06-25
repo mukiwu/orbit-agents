@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
 import type { Task, CreateTaskInput, McpServer, ModelType, Skill, ModelOption } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
@@ -20,6 +21,7 @@ import {
 } from '../utils/cron'
 
 export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
+  const { t } = useTranslation()
   const { createTask, updateTask } = useTasks()
   const { listMcps: listAiMcps, listModels } = useAiProvider()
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills, initProject } = useSkills()
@@ -241,7 +243,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
         onClose()
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save task')
+      setError(err instanceof Error ? err.message : t('taskForm.errorSave'))
     } finally {
       setLoading(false)
     }
@@ -262,9 +264,9 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
         <div className={`px-6 py-4 border-b border-gray-100 flex items-center justify-between ${variant === 'panel' ? '' : ''}`}>
           <div>
             <h2 className="text-base font-semibold text-gray-900">
-              {task ? 'Edit Task' : 'New Task'}
+              {task ? t('taskForm.editTitle') : t('taskForm.newTitle')}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">Configure your scheduled AI task</p>
+            <p className="text-sm text-gray-500 mt-0.5">{t('taskForm.subtitle')}</p>
           </div>
           {variant === 'modal' && (
             <button
@@ -293,7 +295,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                Task Name <span className="text-red-500">*</span>
+                {t('taskForm.name.label')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -301,21 +303,21 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-                placeholder="e.g., Daily Security Report"
+                placeholder={t('taskForm.name.placeholder')}
               />
             </div>
 
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                Description <span className="text-gray-400 font-normal">(Optional)</span>
+                {t('taskForm.description.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
               </label>
               <input
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-                placeholder="Brief description of this task"
+                placeholder={t('taskForm.description.placeholder')}
               />
             </div>
 
@@ -323,7 +325,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-600">
-                  Schedule <span className="text-red-500">*</span>
+                  {t('taskForm.schedule.label')} <span className="text-red-500">*</span>
                 </label>
                 <div className="flex bg-gray-100 rounded-md p-0.5">
                   <button
@@ -335,7 +337,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    Simple
+                    {t('taskForm.schedule.simple')}
                   </button>
                   <button
                     type="button"
@@ -346,7 +348,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    Advanced
+                    {t('taskForm.schedule.advanced')}
                   </button>
                 </div>
               </div>
@@ -356,15 +358,15 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   {/* Frequency Type */}
                   <div className="flex gap-1.5">
                     {[
-                      { value: 'interval', label: 'Interval', Icon: RefreshCw },
-                      { value: 'daily', label: 'Daily', Icon: Sun },
-                      { value: 'weekly', label: 'Weekly', Icon: Calendar },
-                      { value: 'monthly', label: 'Monthly', Icon: CalendarDays }
+                      { value: 'interval' as FrequencyType, labelKey: 'freqInterval', Icon: RefreshCw },
+                      { value: 'daily' as FrequencyType, labelKey: 'freqDaily', Icon: Sun },
+                      { value: 'weekly' as FrequencyType, labelKey: 'freqWeekly', Icon: Calendar },
+                      { value: 'monthly' as FrequencyType, labelKey: 'freqMonthly', Icon: CalendarDays }
                     ].map((f) => (
                       <button
                         key={f.value}
                         type="button"
-                        onClick={() => setFrequency(f.value as FrequencyType)}
+                        onClick={() => setFrequency(f.value)}
                         className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm font-medium rounded-md border transition-all ${
                           frequency === f.value
                             ? 'bg-blue-100 border-blue-300 text-blue-700'
@@ -372,7 +374,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         }`}
                       >
                         <f.Icon className="w-3.5 h-3.5" />
-                        {f.label}
+                        {t(`taskForm.schedule.${f.labelKey}`)}
                       </button>
                     ))}
                   </div>
@@ -380,7 +382,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   {/* Interval options */}
                   {frequency === 'interval' && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Every</span>
+                      <span className="text-sm text-gray-600">{t('taskForm.schedule.every')}</span>
                       <input
                         type="number"
                         min={1}
@@ -397,7 +399,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                             intervalUnit === 'minutes' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
                           }`}
                         >
-                          minutes
+                          {t('taskForm.schedule.minutes')}
                         </button>
                         <button
                           type="button"
@@ -406,7 +408,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                             intervalUnit === 'hours' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
                           }`}
                         >
-                          hours
+                          {t('taskForm.schedule.hours')}
                         </button>
                       </div>
                     </div>
@@ -415,7 +417,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   {/* Time picker for daily only */}
                   {frequency === 'daily' && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">At</span>
+                      <span className="text-sm text-gray-600">{t('taskForm.schedule.at')}</span>
                       <input
                         type="time"
                         value={scheduleTime}
@@ -431,7 +433,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                       {/* Time + Week interval in one row */}
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">At</span>
+                          <span className="text-sm text-gray-600">{t('taskForm.schedule.at')}</span>
                           <input
                             type="time"
                             value={scheduleTime}
@@ -440,7 +442,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Every</span>
+                          <span className="text-sm text-gray-600">{t('taskForm.schedule.every')}</span>
                           <select
                             value={weekInterval}
                             onChange={(e) => setWeekInterval(parseInt(e.target.value))}
@@ -451,13 +453,13 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                             <option value={3}>3</option>
                             <option value={4}>4</option>
                           </select>
-                          <span className="text-sm text-gray-600">{weekInterval === 1 ? 'week' : 'weeks'}</span>
+                          <span className="text-sm text-gray-600">{weekInterval === 1 ? t('taskForm.schedule.week') : t('taskForm.schedule.weeks')}</span>
                         </div>
                       </div>
 
                       {/* Day selection */}
                       <div>
-                        <span className="text-sm text-gray-600 block mb-1.5">On</span>
+                        <span className="text-sm text-gray-600 block mb-1.5">{t('taskForm.schedule.on')}</span>
                         <div className="flex gap-1">
                           {WEEKDAYS.map((day) => (
                             <button
@@ -483,7 +485,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   {frequency === 'monthly' && (
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">At</span>
+                        <span className="text-sm text-gray-600">{t('taskForm.schedule.at')}</span>
                         <input
                           type="time"
                           value={scheduleTime}
@@ -492,7 +494,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">On day</span>
+                        <span className="text-sm text-gray-600">{t('taskForm.schedule.onDay')}</span>
                         <select
                           value={monthDay}
                           onChange={(e) => setMonthDay(parseInt(e.target.value))}
@@ -529,8 +531,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <p className="font-medium text-gray-500">Cron format: minute hour day month weekday</p>
-                      <p className="mt-1">Examples: <code className="bg-gray-100 px-1 rounded">0 9 * * *</code> (daily 9am), <code className="bg-gray-100 px-1 rounded">*/15 * * * *</code> (every 15 min)</p>
+                      <p className="font-medium text-gray-500">{t('taskForm.schedule.cronFormat')}</p>
+                      <p className="mt-1">{t('taskForm.schedule.examplesLabel')} <code className="bg-gray-100 px-1 rounded">0 9 * * *</code> {t('taskForm.schedule.exampleDailyDesc')}, <code className="bg-gray-100 px-1 rounded">*/15 * * * *</code> {t('taskForm.schedule.exampleIntervalDesc')}</p>
                     </div>
                   </div>
                 </div>
@@ -542,7 +544,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-600">
                   <Sparkles className="w-3.5 h-3.5 inline mr-1" />
-                  Skills <span className="text-gray-400 font-normal">(Optional)</span>
+                  {t('taskForm.skills.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
                 </label>
                 <button
                   type="button"
@@ -550,7 +552,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <FolderOpen className="w-3.5 h-3.5" />
-                  {projectPath ? 'Change Project' : 'Select Project'}
+                  {projectPath ? t('taskForm.skills.changeProject') : t('taskForm.skills.selectProject')}
                 </button>
               </div>
 
@@ -573,7 +575,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
               {loadingSkills ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                   <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
-                  Scanning skills...
+                  {t('taskForm.skills.scanning')}
                 </div>
               ) : skills.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
@@ -584,7 +586,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         key={skill.filePath}
                         type="button"
                         onClick={() => isSelected ? handleClearSkill() : handleSelectSkill(skill)}
-                        title={`${skill.description}${skill.scope === 'project' ? ' (project)' : ' (user)'}`}
+                        title={`${skill.description}${skill.scope === 'project' ? t('taskForm.skills.scopeProject') : t('taskForm.skills.scopeUser')}`}
                         className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
                           isSelected
                             ? 'bg-purple-100 border-purple-300 text-purple-700'
@@ -606,7 +608,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">
-                  {projectPath ? 'No skills found in this project' : 'Select a project to load project skills'}
+                  {projectPath ? t('taskForm.skills.noneInProject') : t('taskForm.skills.selectProjectHint')}
                 </p>
               )}
             </div>
@@ -614,7 +616,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {/* Prompt */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                AI Prompt <span className="text-red-500">*</span>
+                {t('taskForm.prompt.label')} <span className="text-red-500">*</span>
               </label>
               <textarea
                 required
@@ -622,7 +624,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 onChange={(e) => setFormData((prev) => ({ ...prev, prompt: e.target.value }))}
                 rows={8}
                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-y"
-                placeholder="Enter the prompt for Claude to execute..."
+                placeholder={t('taskForm.prompt.placeholder')}
               />
             </div>
 
@@ -630,7 +632,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">
-                  AI Provider
+                  {t('taskForm.provider.label')}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {(
@@ -665,7 +667,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">
-                  AI Model
+                  {t('taskForm.model.label')}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {(() => {
@@ -692,12 +694,12 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {/* MCP Tools */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
-                MCP Tools <span className="text-gray-400 font-normal">(Optional)</span>
+                {t('taskForm.mcpTools.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
               </label>
               {loadingMcps ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                   <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
-                  Loading MCP servers...
+                  {t('taskForm.mcpTools.loading')}
                 </div>
               ) : mcpServers.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -727,7 +729,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">
-                  No MCP servers configured in {formData.cli_tool} CLI
+                  {t('taskForm.mcpTools.noneConfigured', { tool: formData.cli_tool })}
                 </p>
               )}
             </div>
@@ -735,7 +737,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {/* Attachments */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
-                Attachments <span className="text-gray-400 font-normal">(Optional)</span>
+                {t('taskForm.attachments.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
               </label>
               <div className="space-y-2">
                 <button
@@ -754,7 +756,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
-                  Add Files
+                  {t('taskForm.attachments.addFiles')}
                 </button>
                 {formData.attachments.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -787,7 +789,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {/* Output Type */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
-                Output
+                {t('taskForm.output.label')}
               </label>
               <div className="flex gap-2">
                 {(['log', 'both'] as const).map((type) => (
@@ -801,8 +803,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
-                    {type === 'log' && 'Log Only'}
-                    {type === 'both' && 'Log + Email'}
+                    {type === 'log' && t('taskForm.output.logOnly')}
+                    {type === 'both' && t('taskForm.output.logAndEmail')}
                   </button>
                 ))}
               </div>
@@ -812,7 +814,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {formData.output_type === 'both' && (
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                  Email To <span className="text-red-500">*</span>
+                  {t('taskForm.emailTo.label')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -820,7 +822,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   value={formData.email_to}
                   onChange={(e) => setFormData((prev) => ({ ...prev, email_to: e.target.value }))}
                   className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-                  placeholder="user@example.com, user2@example.com"
+                  placeholder={t('taskForm.emailTo.placeholder')}
                 />
               </div>
             )}
@@ -829,7 +831,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-600">
-                  Knowledge <span className="text-gray-400 font-normal">(Optional)</span>
+                  {t('taskForm.knowledge.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
                 </label>
                 <button
                   type="button"
@@ -847,14 +849,14 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
               </div>
               {formData.knowledge_file && (
                 <div className="space-y-1.5">
-                  <p className="text-sm text-gray-500">Auto-record reusable insights after each run</p>
+                  <p className="text-sm text-gray-500">{t('taskForm.knowledge.description')}</p>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={formData.knowledge_file}
                       onChange={(e) => setFormData((prev) => ({ ...prev, knowledge_file: e.target.value }))}
                       className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono transition-colors"
-                      placeholder="~/knowledge/task-name.md"
+                      placeholder={t('taskForm.knowledge.placeholder')}
                     />
                     <button
                       type="button"
@@ -867,7 +869,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                       }}
                       className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors whitespace-nowrap"
                     >
-                      Browse
+                      {t('taskForm.knowledge.browse')}
                     </button>
                   </div>
                 </div>
@@ -890,7 +892,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 />
               </button>
               <label className="text-sm text-gray-600">
-                Enable task immediately
+                {t('taskForm.enable.label')}
               </label>
             </div>
           </div>
@@ -904,7 +906,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             disabled={loading}
             className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -915,7 +917,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {loading && (
               <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
             )}
-            {task ? 'Save Changes' : 'Create Task'}
+            {task ? t('taskForm.saveChanges') : t('taskForm.createTask')}
           </button>
         </div>
       </div>
