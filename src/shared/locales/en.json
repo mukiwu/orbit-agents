@@ -85,7 +85,8 @@
       "testConnection": "Test Connection",
       "connectionSuccessful": "Connection successful",
       "connectionFailed": "Connection failed",
-      "defaultPathNote": "Leave empty to use the default system path."
+      "defaultPathNote": "Leave empty to use the default system path.",
+      "unknownError": "Unknown error"
     },
     "claude": {
       "title": "Claude CLI",

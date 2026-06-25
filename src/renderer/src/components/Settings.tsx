@@ -188,7 +188,7 @@ export default function Settings({}: SettingsProps) {
       setClaudeResult({
         success: false,
         output: '',
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: err instanceof Error ? err.message : t('settings.cli.unknownError')
       })
     } finally {
       setTestingClaude(false)
@@ -205,7 +205,7 @@ export default function Settings({}: SettingsProps) {
       setCodexResult({
         success: false,
         output: '',
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: err instanceof Error ? err.message : t('settings.cli.unknownError')
       })
     } finally {
       setTestingCodex(false)
@@ -222,7 +222,7 @@ export default function Settings({}: SettingsProps) {
       setAntigravityResult({
         success: false,
         output: '',
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: err instanceof Error ? err.message : t('settings.cli.unknownError')
       })
     } finally {
       setTestingAntigravity(false)
