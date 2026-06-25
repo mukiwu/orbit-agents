@@ -176,3 +176,24 @@ database.ts 目前沒有 migration runner，這次加一個簡單的版本化 mi
 - Antigravity 非 TTY 輸出問題:先驗證再決定是否引入 node-pty（跨平台 pty）
 - DB migration 改到既有任務:採「停用 + 提示」而非靜默改行為或刪除，使用者資料不流失
 - Codex 沙箱與全自動旗標的危險性:沿用既有 `skip_permissions` 任務開關 + 既有 security-check 守門，行為與目前 Claude 的 skip-permissions 一致
+
+## 實作 Notes（Task 1 spike 結果,2026-06-25）
+
+### Codex
+- 認證:Logged in using ChatGPT,靠本機登入,無需金鑰
+- 非互動:`codex exec --json --skip-git-repo-check "<prompt>"` 正常,exit 0
+- `--json` 事件為逐行 JSON,助理文字在:`{"type":"item.completed","item":{"type":"agent_message","text":"..."}}`
+- 其他事件:`thread.started`、`turn.started`、`turn.completed`（含 usage）
+- codex exec 會嘗試讀 stdin（印 Reading additional input from stdin）,runner 要把 stdin 設為 ignore 避免等待
+- parseCodexOutput 取 type=item.completed 且 item.type=agent_message 的 item.text,計畫假設正確
+
+### Antigravity（agy）
+- 非互動:`agy -p "<prompt>"` 在非 TTY（直接 spawn）正常輸出,needsPty = false
+- 注意:互動 TUI（例如 `agy doctor`）在非 TTY 會炸 `could not open TTY`,所以 test() 不要用 doctor,改用 `agy models` 或 `agy --version`
+- `agy models` 在非 TTY 正常輸出,可動態取模型
+- 實測模型清單（display name）:Gemini 3.5 Flash (Medium/High/Low)、Gemini 3.1 Pro (Low/High)、Claude Sonnet 4.6 (Thinking)、Claude Opus 4.6 (Thinking)、GPT-OSS 120B (Medium)
+- 與計畫差異:antigravity 模型是動態多選且帶 effort 變體,不是原假設的固定 gemini-3-pro/flash。ModelType 的處理方式待使用者確認（見下）
+- `--model` 接受的確切值格式（display name 或 slug）尚未實測,Task 7 實作時確認
+
+### Codex 模型
+- 採用清單以使用者既有知識為準:gpt-5.3-codex、gpt-5.3-codex-spark（gpt-5.1-codex 已於 2026-03-11 退役）
