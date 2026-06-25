@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useTasks, useClaudeCli, useGeminiCli, useSkills } from '../hooks/useApi'
-import type { Task, CreateTaskInput, McpServer, ModelType, Skill } from '../../../shared/types'
+import { useTasks, useClaudeCli, useGeminiCli, useAiProvider, useSkills } from '../hooks/useApi'
+import type { Task, CreateTaskInput, McpServer, ModelType, Skill, ModelOption } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
 
 interface TaskFormProps {
@@ -23,7 +23,9 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
   const { createTask, updateTask } = useTasks()
   const { listMcps: listClaudeMcps } = useClaudeCli()
   const { listMcps: listGeminiMcps } = useGeminiCli()
+  const { listMcps: listAiMcps, listModels } = useAiProvider()
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills, initProject } = useSkills()
+  const [dynamicModels, setDynamicModels] = useState<ModelOption[]>([])
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
 
   const [loading, setLoading] = useState(false)
@@ -54,7 +56,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             description: task.description || '',
             cron_expression: task.cron_expression || '0 9 * * *',
             prompt: task.prompt || '',
-            cli_tool: (task.cli_tool || 'claude') as 'claude' | 'gemini',
+            cli_tool: (task.cli_tool || 'claude') as 'claude' | 'gemini' | 'codex' | 'antigravity',
             model: (task.model || 'sonnet') as ModelType,
             mcp_tools: task.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
             attachments: task.attachments ? JSON.parse(task.attachments) : [] as string[],
@@ -110,7 +112,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     description: task?.description || '',
     cron_expression: task?.cron_expression || '0 9 * * *',
     prompt: task?.prompt || '',
-    cli_tool: (task?.cli_tool || 'claude') as 'claude' | 'gemini',
+    cli_tool: (task?.cli_tool || 'claude') as 'claude' | 'gemini' | 'codex' | 'antigravity',
     model: (task?.model || 'sonnet') as ModelType,
     mcp_tools: task?.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
     attachments: task?.attachments ? JSON.parse(task.attachments) : [] as string[],
@@ -171,10 +173,12 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
           servers = await listClaudeMcps()
         } else if (formData.cli_tool === 'gemini') {
           servers = await listGeminiMcps()
+        } else if (formData.cli_tool === 'codex') {
+          servers = await listAiMcps('codex')
         }
+        // antigravity returns [] — skip the call
         setMcpServers(servers)
       } catch (err) {
-        console.error(`Failed to fetch MCP servers for ${formData.cli_tool}:`, err)
         setMcpServers([])
       } finally {
         setLoadingMcps(false)
@@ -182,7 +186,25 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     }
 
     fetchMcps()
-  }, [formData.cli_tool, listClaudeMcps, listGeminiMcps])
+  }, [formData.cli_tool, listClaudeMcps, listGeminiMcps, listAiMcps])
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      const tool = formData.cli_tool
+      if (tool === 'gemini') {
+        setDynamicModels([])
+        return
+      }
+      try {
+        const models = await listModels(tool as 'claude' | 'codex' | 'antigravity')
+        setDynamicModels(models)
+      } catch (err) {
+        setDynamicModels([])
+      }
+    }
+
+    fetchModels()
+  }, [formData.cli_tool, listModels])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -611,23 +633,23 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   AI Provider
                 </label>
-                <div className="flex gap-2">
-                  {[
-                    { value: 'claude', label: 'Claude' },
-                    { value: 'gemini', label: 'Gemini' }
-                  ].map((tool) => (
+                <div className="flex gap-2 flex-wrap">
+                  {(
+                    [
+                      { value: 'claude' as const, label: 'Claude', defaultModel: 'sonnet' as ModelType },
+                      { value: 'codex' as const, label: 'Codex', defaultModel: 'gpt-5.3-codex' as ModelType },
+                      { value: 'antigravity' as const, label: 'Antigravity', defaultModel: '' as ModelType },
+                      { value: 'gemini' as const, label: 'Gemini', defaultModel: 'gemini-3' as ModelType }
+                    ]
+                  ).map((tool) => (
                     <button
                       key={tool.value}
                       type="button"
                       onClick={() => {
-                        const toolValue = tool.value as 'claude' | 'gemini'
-                        let defaultModel: ModelType = 'sonnet'
-                        if (toolValue === 'gemini') defaultModel = 'gemini-3'
-
                         setFormData((prev) => ({
                           ...prev,
-                          cli_tool: toolValue,
-                          model: defaultModel,
+                          cli_tool: tool.value,
+                          model: tool.defaultModel,
                           mcp_tools: []
                         }))
                       }}
@@ -647,28 +669,35 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   AI Model
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {(() => {
-                    let models: { value: ModelType, label: string, desc: string }[] = []
-
-                    if (formData.cli_tool === 'claude') {
-                      models = [
-                        { value: 'haiku', label: 'Haiku', desc: 'Fast' },
-                        { value: 'sonnet', label: 'Sonnet', desc: 'Balanced' },
-                        { value: 'opus', label: 'Opus', desc: 'Powerful' }
-                      ]
-                    } else if (formData.cli_tool === 'gemini') {
-                      models = [
+                    if (formData.cli_tool === 'gemini') {
+                      const geminiModels: { value: ModelType; label: string; desc: string }[] = [
                         { value: 'gemini-3', label: 'Auto (Gemini 3)', desc: 'Best for task (3-pro/3-flash)' },
                         { value: 'gemini-2', label: 'Gemini 2', desc: 'Auto (2-pro / 2-flash)' }
                       ]
+                      return geminiModels.map((model) => (
+                        <button
+                          key={model.value}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, model: model.value }))}
+                          className={`flex-1 flex flex-col items-center justify-center p-2.5 h-14 border rounded-lg transition-all ${
+                            formData.model === model.value
+                              ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm'
+                              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="font-medium text-sm">{model.label}</span>
+                          <span className="text-sm opacity-70">{model.desc}</span>
+                        </button>
+                      ))
                     }
 
-                    return models.map((model) => (
+                    return dynamicModels.map((model) => (
                       <button
                         key={model.value}
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, model: model.value }))}
+                        onClick={() => setFormData((prev) => ({ ...prev, model: model.value as ModelType }))}
                         className={`flex-1 flex flex-col items-center justify-center p-2.5 h-14 border rounded-lg transition-all ${
                           formData.model === model.value
                             ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm'
@@ -676,7 +705,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                         }`}
                       >
                         <span className="font-medium text-sm">{model.label}</span>
-                        <span className="text-sm opacity-70">{model.desc}</span>
+                        {model.desc && <span className="text-sm opacity-70">{model.desc}</span>}
                       </button>
                     ))
                   })()}
