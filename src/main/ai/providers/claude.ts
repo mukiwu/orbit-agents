@@ -160,9 +160,6 @@ async function listClaudeMcps(): Promise<McpServer[]> {
     })
 
     proc.on('close', (code) => {
-      console.log('[Claude CLI] mcp list output:', stdout.substring(0, 500))
-      if (stderr) console.log('[Claude CLI] mcp list stderr:', stderr.substring(0, 200))
-
       // Parse text output to extract server names
       // Format: "servername: command... - ✓ Connected" or similar
       const servers: McpServer[] = []
@@ -183,12 +180,10 @@ async function listClaudeMcps(): Promise<McpServer[]> {
         }
       }
 
-      console.log('[Claude CLI] Found MCP servers:', servers.map(s => s.name))
       resolve(servers)
     })
 
     proc.on('error', (err) => {
-      console.log('[Claude CLI] mcp list error:', err.message)
       resolve([])
     })
   })
