@@ -14,12 +14,110 @@
     }
   },
   "settings": {
+    "title": "Settings",
+    "subtitle": "Manage app preferences and connections",
     "language": {
       "label": "Language",
       "description": "Choose the display language for the app.",
       "system": "Follow System",
       "en": "English",
       "zhTW": "Traditional Chinese"
+    },
+    "nav": {
+      "general": {
+        "label": "General",
+        "desc": "App behavior & startup"
+      },
+      "claude": {
+        "label": "Claude CLI",
+        "desc": "Anthropic Claude configuration"
+      },
+      "codex": {
+        "label": "Codex CLI",
+        "desc": "OpenAI Codex configuration"
+      },
+      "antigravity": {
+        "label": "Antigravity CLI",
+        "desc": "Antigravity configuration"
+      },
+      "email": {
+        "label": "Email (SMTP)",
+        "desc": "Notification settings"
+      }
+    },
+    "status": {
+      "saving": "Saving changes...",
+      "synced": "Synced {{time}}",
+      "upToDate": "Up to date"
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "Configure how Orbit Agents behaves on your system.",
+      "launchAtLogin": {
+        "label": "Launch at Login",
+        "description": "Automatically start the application when you log in."
+      },
+      "autoUpdate": {
+        "label": "Auto Update",
+        "description": "Automatically check for and notify about updates."
+      },
+      "softwareUpdate": {
+        "label": "Software Update",
+        "description": "Check if a new version is available."
+      },
+      "checkForUpdates": "Check for Updates"
+    },
+    "update": {
+      "upToDate": "You're running the latest version!",
+      "available": "Version {{version}} is available!",
+      "methodAsar": "A lightweight update is ready for quick download.",
+      "methodFull": "A new version can be downloaded and installed.",
+      "manualDownload": "Manual Download",
+      "download": "Download Update",
+      "downloading": "Downloading update...",
+      "progress": "{{percent}}% complete",
+      "downloaded": "Update downloaded!",
+      "restartNote": "The app will restart to install the update.",
+      "restartInstall": "Restart & Install"
+    },
+    "cli": {
+      "pathLabel": "CLI Path",
+      "testConnection": "Test Connection",
+      "connectionSuccessful": "Connection successful",
+      "connectionFailed": "Connection failed",
+      "defaultPathNote": "Leave empty to use the default system path."
+    },
+    "claude": {
+      "title": "Claude CLI",
+      "description": "Configure the connection to Anthropic's Claude command line tool.",
+      "pathNotePrefix": "Leave empty to use the default system path. Windows users should use",
+      "pathNoteSuffix": "instead of the full path to cli.js."
+    },
+    "codex": {
+      "title": "Codex CLI",
+      "description": "Configure the connection to OpenAI's Codex command line tool.",
+      "placeholder": "Use default (codex in PATH)"
+    },
+    "antigravity": {
+      "title": "Antigravity CLI",
+      "description": "Configure the connection to the Antigravity command line tool.",
+      "placeholder": "Use default (agy in PATH)"
+    },
+    "email": {
+      "title": "Email (SMTP)",
+      "description": "Configure email settings for sending task notifications.",
+      "smtpHost": "SMTP Host",
+      "port": "Port",
+      "username": "Username",
+      "password": "Password",
+      "passwordPlaceholder": "App password",
+      "fromAddress": "From Address",
+      "fromNote": "Optional. Default depends on your SMTP provider.",
+      "testConfig": "Test Configuration",
+      "sendTest": "Send Test",
+      "missingAddress": "Please enter an email address",
+      "testSuccess": "Test email sent successfully!",
+      "testFailed": "Failed to send test email"
     }
   },
   "app": {

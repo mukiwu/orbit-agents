@@ -131,7 +131,7 @@ export default function Settings({}: SettingsProps) {
   // --- Auto-Save Logic ---
   // We use a ref to keep track of the timeout ID so we can clear it
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  
+
   // We use a ref to store the current form data for the save function to access
   // without being in the dependency array (to avoid infinite loops or stale closures)
   const formDataRef = useRef(formData)
@@ -156,7 +156,7 @@ export default function Settings({}: SettingsProps) {
 
   // Trigger auto-save on form change with debounce
   useEffect(() => {
-    if (!isLoaded) return 
+    if (!isLoaded) return
 
     // Clear previous timeout
     if (saveTimeoutRef.current) {
@@ -231,7 +231,7 @@ export default function Settings({}: SettingsProps) {
 
   const handleTestEmail = async () => {
     if (!testEmailAddress) {
-      setEmailResult({ success: false, message: 'Please enter an email address' })
+      setEmailResult({ success: false, message: t('settings.email.missingAddress') })
       return
     }
 
@@ -239,11 +239,11 @@ export default function Settings({}: SettingsProps) {
     setEmailResult(null)
     try {
       await testEmail(testEmailAddress)
-      setEmailResult({ success: true, message: 'Test email sent successfully!' })
+      setEmailResult({ success: true, message: t('settings.email.testSuccess') })
     } catch (err) {
       setEmailResult({
         success: false,
-        message: err instanceof Error ? err.message : 'Failed to send test email'
+        message: err instanceof Error ? err.message : t('settings.email.testFailed')
       })
     } finally {
       setTestingEmail(false)
@@ -270,8 +270,8 @@ export default function Settings({}: SettingsProps) {
       <button
         onClick={() => setActiveTab(tab)}
         className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-start gap-3 group ${
-          isActive 
-            ? 'bg-white shadow-sm ring-1 ring-gray-200' 
+          isActive
+            ? 'bg-white shadow-sm ring-1 ring-gray-200'
             : 'hover:bg-white/50'
         }`}
       >
@@ -297,41 +297,41 @@ export default function Settings({}: SettingsProps) {
       {/* Left Sidebar - Navigation */}
       <div className="w-64 flex-shrink-0 flex flex-col gap-1">
         <div className="mb-6 px-2">
-          <h2 className="text-lg font-bold text-gray-900">Settings</h2>
-          <p className="text-xs text-gray-400 mt-1">Manage app preferences and connections</p>
+          <h2 className="text-lg font-bold text-gray-900">{t('settings.title')}</h2>
+          <p className="text-xs text-gray-400 mt-1">{t('settings.subtitle')}</p>
         </div>
 
         <div className="space-y-1">
-          <NavButton 
-            tab="general" 
-            icon={Settings2} 
-            label="General" 
-            desc="App behavior & startup"
+          <NavButton
+            tab="general"
+            icon={Settings2}
+            label={t('settings.nav.general.label')}
+            desc={t('settings.nav.general.desc')}
           />
           <NavButton
             tab="claude"
             icon={Cpu}
-            label="Claude CLI"
-            desc="Anthropic Claude configuration"
+            label={t('settings.nav.claude.label')}
+            desc={t('settings.nav.claude.desc')}
           />
           <NavButton
             tab="codex"
             icon={Terminal}
-            label="Codex CLI"
-            desc="OpenAI Codex configuration"
+            label={t('settings.nav.codex.label')}
+            desc={t('settings.nav.codex.desc')}
           />
           <NavButton
             tab="antigravity"
             icon={Box}
-            label="Antigravity CLI"
-            desc="Antigravity configuration"
+            label={t('settings.nav.antigravity.label')}
+            desc={t('settings.nav.antigravity.desc')}
           />
 
           <NavButton
-            tab="email" 
-            icon={Mail} 
-            label="Email (SMTP)" 
-            desc="Notification settings"
+            tab="email"
+            icon={Mail}
+            label={t('settings.nav.email.label')}
+            desc={t('settings.nav.email.desc')}
           />
         </div>
 
@@ -341,15 +341,15 @@ export default function Settings({}: SettingsProps) {
             {isSaving ? (
               <>
                 <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
-                <span className="text-gray-500">Saving changes...</span>
+                <span className="text-gray-500">{t('settings.status.saving')}</span>
               </>
             ) : lastSaved ? (
               <>
                 <Check className="w-3 h-3 text-emerald-500" />
-                <span className="text-gray-400">Synced {lastSaved.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                <span className="text-gray-400">{t('settings.status.synced', { time: lastSaved.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) })}</span>
               </>
             ) : (
-              <span className="text-gray-400">Up to date</span>
+              <span className="text-gray-400">{t('settings.status.upToDate')}</span>
             )}
           </div>
         </div>
@@ -357,21 +357,21 @@ export default function Settings({}: SettingsProps) {
 
       {/* Right Panel - Content */}
       <div className="flex-1 bg-gray-50/50 rounded-2xl border border-gray-100 p-8 overflow-y-auto">
-        
+
         {/* General Settings */}
         {activeTab === 'general' && (
           <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">General Settings</h3>
-              <p className="text-sm text-gray-500">Configure how Orbit Agents behaves on your system.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('settings.general.title')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.general.description')}</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
               {/* Launch at Login */}
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block">Launch at Login</label>
-                  <p className="text-xs text-gray-500 mt-1">Automatically start the application when you log in.</p>
+                  <label className="text-sm font-medium text-gray-900 block">{t('settings.general.launchAtLogin.label')}</label>
+                  <p className="text-xs text-gray-500 mt-1">{t('settings.general.launchAtLogin.description')}</p>
                 </div>
                 <button
                   onClick={() => setFormData(prev => ({ ...prev, auto_launch: prev.auto_launch === 'true' ? 'false' : 'true' }))}
@@ -393,8 +393,8 @@ export default function Settings({}: SettingsProps) {
               {/* Auto Update */}
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block">Auto Update</label>
-                  <p className="text-xs text-gray-500 mt-1">Automatically check for and notify about updates.</p>
+                  <label className="text-sm font-medium text-gray-900 block">{t('settings.general.autoUpdate.label')}</label>
+                  <p className="text-xs text-gray-500 mt-1">{t('settings.general.autoUpdate.description')}</p>
                 </div>
                 <button
                   onClick={() => setFormData(prev => ({ ...prev, auto_update: prev.auto_update === 'true' ? 'false' : 'true' }))}
@@ -434,8 +434,8 @@ export default function Settings({}: SettingsProps) {
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-900 block">Software Update</label>
-                    <p className="text-xs text-gray-500 mt-1">Check if a new version is available.</p>
+                    <label className="text-sm font-medium text-gray-900 block">{t('settings.general.softwareUpdate.label')}</label>
+                    <p className="text-xs text-gray-500 mt-1">{t('settings.general.softwareUpdate.description')}</p>
                   </div>
                   <button
                     onClick={handleCheckForUpdates}
@@ -447,7 +447,7 @@ export default function Settings({}: SettingsProps) {
                     ) : (
                       <RefreshCw className="w-3.5 h-3.5" />
                     )}
-                    Check for Updates
+                    {t('settings.general.checkForUpdates')}
                   </button>
                 </div>
 
@@ -466,7 +466,7 @@ export default function Settings({}: SettingsProps) {
                     {!updateStatus.checking && !updateStatus.available && !updateStatus.error && (
                       <div className="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-lg text-xs">
                         <Check className="w-4 h-4" />
-                        <span>You're running the latest version!</span>
+                        <span>{t('settings.update.upToDate')}</span>
                       </div>
                     )}
 
@@ -475,11 +475,11 @@ export default function Settings({}: SettingsProps) {
                       <div className="p-4 bg-blue-50 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-blue-900">Version {updateStatus.version} is available!</p>
+                            <p className="text-sm font-medium text-blue-900">{t('settings.update.available', { version: updateStatus.version })}</p>
                             <p className="text-xs text-blue-700 mt-1">
                               {updateStatus.updateMethod === 'asar'
-                                ? 'A lightweight update is ready for quick download.'
-                                : 'A new version can be downloaded and installed.'}
+                                ? t('settings.update.methodAsar')
+                                : t('settings.update.methodFull')}
                             </p>
                           </div>
                           {updateStatus.releaseUrl ? (
@@ -490,7 +490,7 @@ export default function Settings({}: SettingsProps) {
                               className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors no-underline"
                             >
                               <Download className="w-3.5 h-3.5" />
-                              Manual Download
+                              {t('settings.update.manualDownload')}
                             </a>
                           ) : (
                             <button
@@ -498,7 +498,7 @@ export default function Settings({}: SettingsProps) {
                               className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
                             >
                               <Download className="w-3.5 h-3.5" />
-                              Download Update
+                              {t('settings.update.download')}
                             </button>
                           )}
                         </div>
@@ -510,15 +510,15 @@ export default function Settings({}: SettingsProps) {
                       <div className="p-4 bg-blue-50 rounded-lg">
                         <div className="flex items-center gap-3 mb-2">
                           <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                          <span className="text-sm font-medium text-blue-900">Downloading update...</span>
+                          <span className="text-sm font-medium text-blue-900">{t('settings.update.downloading')}</span>
                         </div>
                         <div className="w-full bg-blue-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${updateStatus.progress}%` }}
                           />
                         </div>
-                        <p className="text-xs text-blue-700 mt-2">{Math.round(updateStatus.progress)}% complete</p>
+                        <p className="text-xs text-blue-700 mt-2">{t('settings.update.progress', { percent: Math.round(updateStatus.progress) })}</p>
                       </div>
                     )}
 
@@ -527,15 +527,15 @@ export default function Settings({}: SettingsProps) {
                       <div className="p-4 bg-emerald-50 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-emerald-900">Update downloaded!</p>
-                            <p className="text-xs text-emerald-700 mt-1">The app will restart to install the update.</p>
+                            <p className="text-sm font-medium text-emerald-900">{t('settings.update.downloaded')}</p>
+                            <p className="text-xs text-emerald-700 mt-1">{t('settings.update.restartNote')}</p>
                           </div>
                           <button
                             onClick={handleInstallUpdate}
                             className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
-                            Restart & Install
+                            {t('settings.update.restartInstall')}
                           </button>
                         </div>
                       </div>
@@ -551,13 +551,13 @@ export default function Settings({}: SettingsProps) {
         {activeTab === 'claude' && (
           <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
              <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Claude CLI</h3>
-              <p className="text-sm text-gray-500">Configure the connection to Anthropic's Claude command line tool.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('settings.claude.title')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.claude.description')}</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.cli.pathLabel')}</label>
                 <input
                   type="text"
                   value={formData.claude_cli_path}
@@ -565,7 +565,9 @@ export default function Settings({}: SettingsProps) {
                   placeholder="~/.local/bin/claude"
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 />
-                <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default system path. Windows users should use <code className="bg-gray-100 px-1 rounded">claude</code> instead of the full path to cli.js.</p>
+                <p className="mt-1.5 text-xs text-gray-400">
+                  {t('settings.claude.pathNotePrefix')} <code className="bg-gray-100 px-1 rounded">claude</code> {t('settings.claude.pathNoteSuffix')}
+                </p>
               </div>
 
               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
@@ -579,9 +581,9 @@ export default function Settings({}: SettingsProps) {
                   ) : (
                     <Terminal className="w-3.5 h-3.5" />
                   )}
-                  Test Connection
+                  {t('settings.cli.testConnection')}
                 </button>
-                
+
                 {claudeResult && (
                   <div className={`flex items-center gap-2 text-xs font-medium ${claudeResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
                     {claudeResult.success ? (
@@ -589,11 +591,11 @@ export default function Settings({}: SettingsProps) {
                     ) : (
                       <AlertCircle className="w-4 h-4" />
                     )}
-                    {claudeResult.success ? 'Connection successful' : 'Connection failed'}
+                    {claudeResult.success ? t('settings.cli.connectionSuccessful') : t('settings.cli.connectionFailed')}
                   </div>
                 )}
               </div>
-              
+
               {claudeResult && !claudeResult.success && claudeResult.error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-mono break-all">
                   {claudeResult.error}
@@ -607,21 +609,21 @@ export default function Settings({}: SettingsProps) {
         {activeTab === 'codex' && (
           <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Codex CLI</h3>
-              <p className="text-sm text-gray-500">Configure the connection to OpenAI's Codex command line tool.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('settings.codex.title')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.codex.description')}</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.cli.pathLabel')}</label>
                 <input
                   type="text"
                   value={formData.codex_cli_path}
                   onChange={(e) => setFormData(prev => ({ ...prev, codex_cli_path: e.target.value }))}
-                  placeholder="Use default (codex in PATH)"
+                  placeholder={t('settings.codex.placeholder')}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 />
-                <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default system path.</p>
+                <p className="mt-1.5 text-xs text-gray-400">{t('settings.cli.defaultPathNote')}</p>
               </div>
 
               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
@@ -635,7 +637,7 @@ export default function Settings({}: SettingsProps) {
                   ) : (
                     <Terminal className="w-3.5 h-3.5" />
                   )}
-                  Test Connection
+                  {t('settings.cli.testConnection')}
                 </button>
 
                 {codexResult && (
@@ -645,7 +647,7 @@ export default function Settings({}: SettingsProps) {
                     ) : (
                       <AlertCircle className="w-4 h-4" />
                     )}
-                    {codexResult.success ? 'Connection successful' : 'Connection failed'}
+                    {codexResult.success ? t('settings.cli.connectionSuccessful') : t('settings.cli.connectionFailed')}
                   </div>
                 )}
               </div>
@@ -663,21 +665,21 @@ export default function Settings({}: SettingsProps) {
         {activeTab === 'antigravity' && (
           <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Antigravity CLI</h3>
-              <p className="text-sm text-gray-500">Configure the connection to the Antigravity command line tool.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('settings.antigravity.title')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.antigravity.description')}</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.cli.pathLabel')}</label>
                 <input
                   type="text"
                   value={formData.antigravity_cli_path}
                   onChange={(e) => setFormData(prev => ({ ...prev, antigravity_cli_path: e.target.value }))}
-                  placeholder="Use default (agy in PATH)"
+                  placeholder={t('settings.antigravity.placeholder')}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 />
-                <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default system path.</p>
+                <p className="mt-1.5 text-xs text-gray-400">{t('settings.cli.defaultPathNote')}</p>
               </div>
 
               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
@@ -691,7 +693,7 @@ export default function Settings({}: SettingsProps) {
                   ) : (
                     <Terminal className="w-3.5 h-3.5" />
                   )}
-                  Test Connection
+                  {t('settings.cli.testConnection')}
                 </button>
 
                 {antigravityResult && (
@@ -701,7 +703,7 @@ export default function Settings({}: SettingsProps) {
                     ) : (
                       <AlertCircle className="w-4 h-4" />
                     )}
-                    {antigravityResult.success ? 'Connection successful' : 'Connection failed'}
+                    {antigravityResult.success ? t('settings.cli.connectionSuccessful') : t('settings.cli.connectionFailed')}
                   </div>
                 )}
               </div>
@@ -719,14 +721,14 @@ export default function Settings({}: SettingsProps) {
         {activeTab === 'email' && (
           <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
              <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Email (SMTP)</h3>
-              <p className="text-sm text-gray-500">Configure email settings for sending task notifications.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('settings.email.title')}</h3>
+              <p className="text-sm text-gray-500">{t('settings.email.description')}</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">SMTP Host</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.email.smtpHost')}</label>
                   <input
                     type="text"
                     value={formData.email_smtp_host}
@@ -736,7 +738,7 @@ export default function Settings({}: SettingsProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Port</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.email.port')}</label>
                   <input
                     type="text"
                     value={formData.email_smtp_port}
@@ -748,7 +750,7 @@ export default function Settings({}: SettingsProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.email.username')}</label>
                 <input
                   type="text"
                   value={formData.email_smtp_user}
@@ -759,18 +761,18 @@ export default function Settings({}: SettingsProps) {
               </div>
 
               <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.email.password')}</label>
                 <input
                   type="password"
                   value={formData.email_smtp_pass}
                   onChange={(e) => setFormData(prev => ({ ...prev, email_smtp_pass: e.target.value }))}
-                  placeholder="App password"
+                  placeholder={t('settings.email.passwordPlaceholder')}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">From Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('settings.email.fromAddress')}</label>
                 <input
                   type="email"
                   value={formData.email_from}
@@ -778,11 +780,11 @@ export default function Settings({}: SettingsProps) {
                   placeholder="noreply@yourdomain.com"
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 />
-                <p className="mt-1.5 text-xs text-gray-400">Optional. Default depends on your SMTP provider.</p>
+                <p className="mt-1.5 text-xs text-gray-400">{t('settings.email.fromNote')}</p>
               </div>
 
               <div className="pt-4 border-t border-gray-100">
-                 <label className="block text-sm font-medium text-gray-700 mb-2">Test Configuration</label>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.email.testConfig')}</label>
                  <div className="flex gap-2">
                     <input
                       type="email"
@@ -801,7 +803,7 @@ export default function Settings({}: SettingsProps) {
                       ) : (
                         <Mail className="w-3.5 h-3.5" />
                       )}
-                      Send Test
+                      {t('settings.email.sendTest')}
                     </button>
                  </div>
                  {emailResult && (

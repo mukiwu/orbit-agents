@@ -14,12 +14,110 @@
     }
   },
   "settings": {
+    "title": "設定",
+    "subtitle": "管理應用程式偏好設定與連線",
     "language": {
       "label": "語言",
       "description": "選擇應用程式的顯示語言",
       "system": "跟隨系統",
       "en": "English",
       "zhTW": "繁體中文"
+    },
+    "nav": {
+      "general": {
+        "label": "一般",
+        "desc": "應用程式行為與啟動"
+      },
+      "claude": {
+        "label": "Claude CLI",
+        "desc": "Anthropic Claude 設定"
+      },
+      "codex": {
+        "label": "Codex CLI",
+        "desc": "OpenAI Codex 設定"
+      },
+      "antigravity": {
+        "label": "Antigravity CLI",
+        "desc": "Antigravity 設定"
+      },
+      "email": {
+        "label": "電子郵件（SMTP）",
+        "desc": "通知設定"
+      }
+    },
+    "status": {
+      "saving": "儲存中...",
+      "synced": "已同步 {{time}}",
+      "upToDate": "已是最新"
+    },
+    "general": {
+      "title": "一般設定",
+      "description": "設定 Orbit Agents 在您系統上的行為",
+      "launchAtLogin": {
+        "label": "登入時啟動",
+        "description": "登入系統時自動啟動應用程式"
+      },
+      "autoUpdate": {
+        "label": "自動更新",
+        "description": "自動檢查並通知有可用更新"
+      },
+      "softwareUpdate": {
+        "label": "軟體更新",
+        "description": "檢查是否有新版本可用"
+      },
+      "checkForUpdates": "檢查更新"
+    },
+    "update": {
+      "upToDate": "您已使用最新版本！",
+      "available": "{{version}} 版本現已推出！",
+      "methodAsar": "輕量更新已備妥，可快速下載",
+      "methodFull": "新版本可供下載並安裝",
+      "manualDownload": "手動下載",
+      "download": "下載更新",
+      "downloading": "正在下載更新...",
+      "progress": "{{percent}}% 完成",
+      "downloaded": "更新已下載！",
+      "restartNote": "應用程式將重新啟動以安裝更新",
+      "restartInstall": "重新啟動並安裝"
+    },
+    "cli": {
+      "pathLabel": "CLI 路徑",
+      "testConnection": "測試連線",
+      "connectionSuccessful": "連線成功",
+      "connectionFailed": "連線失敗",
+      "defaultPathNote": "留空使用系統預設路徑"
+    },
+    "claude": {
+      "title": "Claude CLI",
+      "description": "設定與 Anthropic Claude 命令列工具的連線",
+      "pathNotePrefix": "留空使用系統預設路徑，Windows 使用者請使用",
+      "pathNoteSuffix": "取代完整的 cli.js 路徑"
+    },
+    "codex": {
+      "title": "Codex CLI",
+      "description": "設定與 OpenAI Codex 命令列工具的連線",
+      "placeholder": "使用預設（PATH 中的 codex）"
+    },
+    "antigravity": {
+      "title": "Antigravity CLI",
+      "description": "設定與 Antigravity 命令列工具的連線",
+      "placeholder": "使用預設（PATH 中的 agy）"
+    },
+    "email": {
+      "title": "電子郵件（SMTP）",
+      "description": "設定傳送任務通知的電子郵件",
+      "smtpHost": "SMTP 主機",
+      "port": "連接埠",
+      "username": "使用者名稱",
+      "password": "密碼",
+      "passwordPlaceholder": "應用程式密碼",
+      "fromAddress": "寄件者地址",
+      "fromNote": "選填，預設值由您的 SMTP 提供商決定",
+      "testConfig": "測試設定",
+      "sendTest": "傳送測試信",
+      "missingAddress": "請輸入電子郵件地址",
+      "testSuccess": "測試信件已成功傳送！",
+      "testFailed": "測試信件傳送失敗"
     }
   },
   "app": {
