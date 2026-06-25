@@ -127,10 +127,14 @@ export default function TaskList({
                        <h3 className={`font-semibold text-sm truncate ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
                          {task.name}
                        </h3>
+                       {task.needs_review === 1 && (
+                         <div className="mt-1 mb-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[10px] text-amber-700 font-medium">
+                           Needs review: Gemini removed, reconfigure provider
+                         </div>
+                       )}
                        <div className="flex items-center gap-1.5 mt-1">
                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
                             task.cli_tool === 'claude' ? 'bg-orange-100 text-orange-700' :
-                            task.cli_tool === 'gemini' ? 'bg-teal-100 text-teal-700' :
                             'bg-indigo-100 text-indigo-700'
                          }`}>
                            {task.cli_tool}

@@ -27,10 +27,11 @@ function isBinaryFile(filePath: string): boolean {
   const ext = extname(filePath).toLowerCase()
   return BINARY_EXTENSIONS.has(ext)
 }
-import { executeClaudeCli } from './claude-cli'
-import { executeGeminiCli } from './gemini-cli'
+import { getProvider, runProvider } from './ai'
+import { buildUnattendedInstruction } from './ai/unattended'
+import type { ExecutionContext, ProviderResult } from './ai/types'
 import { sendTaskResultEmail } from './email'
-import type { Task, ExecutionLog, ExecutionLogWithTask, ClaudeCliResult, GeminiCliResult } from '../shared/types'
+import type { Task, ExecutionLog, ExecutionLogWithTask } from '../shared/types'
 
 // Store active cron jobs
 const activeJobs: Map<string, ScheduledTask> = new Map()
@@ -149,14 +150,18 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
     // Parse MCP tools
     const mcpTools = task.mcp_tools ? JSON.parse(task.mcp_tools) as string[] : undefined
 
-    // Parse attachments - separate text files (embed in prompt) from binary files (use --file)
-    let binaryAttachments: string[] | undefined
+    // Parse attachments - separate text files (embed in prompt) from binary files (pass as imagePaths)
+    const binaryFiles: string[] = []
+    const addDirs: Set<string> = new Set()
     let promptWithTextFiles = task.prompt
+
+    if (task.project_path) {
+      addDirs.add(task.project_path)
+    }
 
     if (task.attachments) {
       const attachmentPaths = JSON.parse(task.attachments) as string[]
       const textFileContents: string[] = []
-      const binaryFiles: string[] = []
 
       for (const filePath of attachmentPaths) {
         if (!existsSync(filePath)) {
@@ -176,9 +181,10 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
             console.log(`[Scheduler] Failed to read text file ${filePath}:`, err)
           }
         } else if (isBinaryFile(filePath)) {
-          // Binary files need --file flag (requires session token)
+          // Binary/image files: pass as imagePaths, add directory to addDirs
           binaryFiles.push(filePath)
-          console.log(`[Scheduler] Binary file will use --file: ${fileName}`)
+          addDirs.add(dirname(filePath))
+          console.log(`[Scheduler] Binary file will use imagePaths: ${fileName}`)
         } else {
           // Unknown extension - try to read as text
           try {
@@ -190,11 +196,13 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
               console.log(`[Scheduler] Embedded unknown file as text: ${fileName}`)
             } else {
               binaryFiles.push(filePath)
-              console.log(`[Scheduler] Unknown file appears binary, using --file: ${fileName}`)
+              addDirs.add(dirname(filePath))
+              console.log(`[Scheduler] Unknown file appears binary, using imagePaths: ${fileName}`)
             }
           } catch {
             binaryFiles.push(filePath)
-            console.log(`[Scheduler] Could not read as text, using --file: ${fileName}`)
+            addDirs.add(dirname(filePath))
+            console.log(`[Scheduler] Could not read as text, using imagePaths: ${fileName}`)
           }
         }
       }
@@ -204,10 +212,8 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
         promptWithTextFiles = `${task.prompt}\n\n[Attached Files]${textFileContents.join('\n')}`
       }
 
-      // Set binary attachments for --file flag
+      // Add attachment info to prompt so the AI knows about the binary files
       if (binaryFiles.length > 0) {
-        binaryAttachments = binaryFiles
-        // Add attachment info to prompt so Claude knows about the files
         const fileNames = binaryFiles.map(f => basename(f)).join(', ')
         promptWithTextFiles = `${promptWithTextFiles}\n\n[附件檔案: ${fileNames}] - 請直接分析這些已附加的檔案內容。`
       }
@@ -223,7 +229,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
       promptWithTextFiles += '\n\n在報告最後，請用 <!-- KNOWLEDGE_START --> 和 <!-- KNOWLEDGE_END --> 標記包裹本次分析中值得長期記錄的經驗、查詢技巧、資料陷阱或注意事項。只記錄可複用的知識，不要重複報告內容本身。如果沒有新的經驗值得記錄，就不需要加這個標記。'
     }
 
-    console.log(`[Scheduler] Calling ${task.cli_tool || 'claude'} CLI with prompt length: ${promptWithTextFiles.length}, model: ${task.model || 'default'}, binary attachments: ${binaryAttachments?.length || 0}`)
+    console.log(`[Scheduler] Calling ${task.cli_tool || 'claude'} CLI with prompt length: ${promptWithTextFiles.length}, model: ${task.model || 'default'}, binary attachments: ${binaryFiles.length}`)
 
     // Throttle output updates to avoid too many DB writes
     let lastUpdateTime = 0
@@ -239,7 +245,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
       }
     }
 
-    let result: ClaudeCliResult | GeminiCliResult
+    let result: ProviderResult
     let lastError = ''
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -254,11 +260,17 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
         await sleep(delay)
       }
 
-      if (task.cli_tool === 'gemini') {
-        result = await executeGeminiCli(promptWithTextFiles, task.model, onOutput, binaryAttachments, mcpTools, log.id, task.project_path)
-      } else {
-        result = await executeClaudeCli(promptWithTextFiles, mcpTools, task.model, onOutput, binaryAttachments, task.project_path, task.skip_permissions === 1)
+      const ctx: ExecutionContext = {
+        prompt: promptWithTextFiles,
+        systemInstruction: buildUnattendedInstruction(),
+        model: task.model,
+        mcpTools: mcpTools ?? [],
+        imagePaths: binaryFiles,
+        addDirs: Array.from(addDirs),
+        projectPath: task.project_path,
+        skipPermissions: task.skip_permissions === 1
       }
+      result = await runProvider(getProvider(task.cli_tool), ctx, { executionId: log.id, onOutput })
 
       // If success or non-network error, stop retrying
       if (result.success) {

@@ -29,9 +29,8 @@ import {
   runTaskNow,
   onExecutionUpdate
 } from './scheduler'
-import { writeToProcess } from './process-manager'
-import { testClaudeConnection, listMcpServers } from './claude-cli'
-import { testGeminiConnection, listMcpServers as listGeminiMcpServers } from './gemini-cli'
+import { getProvider } from './ai'
+import type { ProviderId } from './ai/types'
 
 import { scanSkills } from './skills'
 import { resetTransporter, sendTestEmail } from './email'
@@ -122,11 +121,6 @@ function registerIpcHandlers(): void {
     return runTaskNow(id)
   })
 
-  // Process input handler
-  ipcMain.handle('task:process-input', (_, executionId: string, input: string) => {
-    return writeToProcess(executionId, input)
-  })
-
   // Log handlers
   ipcMain.handle('log:list', (_, taskId?: string, limit?: number) => {
     return getExecutionLogs(taskId, limit)
@@ -164,24 +158,10 @@ function registerIpcHandlers(): void {
     await sendTestEmail(toAddress)
   })
 
-  // Claude CLI handlers
-  ipcMain.handle('claude:test', async () => {
-    return testClaudeConnection()
-  })
-
-  ipcMain.handle('claude:list-mcps', async () => {
-    return listMcpServers()
-  })
-
-  // Gemini CLI handlers
-  ipcMain.handle('gemini:test', async () => {
-    return testGeminiConnection()
-  })
-
-  ipcMain.handle('gemini:list-mcps', async () => {
-    return listGeminiMcpServers()
-  })
-
+  // Generalized AI provider handlers
+  ipcMain.handle('ai:test', (_e, provider: ProviderId) => getProvider(provider).test())
+  ipcMain.handle('ai:list-mcps', (_e, provider: ProviderId) => getProvider(provider).listMcps())
+  ipcMain.handle('ai:list-models', (_e, provider: ProviderId) => getProvider(provider).listModels())
 
   // Skill handlers
   ipcMain.handle('skill:scan', (_, projectPath?: string) => {

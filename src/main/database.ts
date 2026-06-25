@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
 import { v4 as uuidv4 } from 'uuid'
+import { mapLegacyTask } from './migrations'
 import type {
   Task,
   CreateTaskInput,
@@ -38,6 +39,7 @@ export function initDatabase(): Database.Database {
       email_to TEXT,
       week_interval INTEGER DEFAULT 1,
       enabled INTEGER DEFAULT 1,
+      needs_review INTEGER DEFAULT 0,
       created_at TEXT,
       updated_at TEXT
     );
@@ -111,6 +113,34 @@ export function initDatabase(): Database.Database {
     // Column already exists, ignore
   }
 
+  // Migration: Add needs_review flag for tasks requiring manual reconfiguration
+  try {
+    db.exec(`ALTER TABLE tasks ADD COLUMN needs_review INTEGER DEFAULT 0`)
+  } catch {
+    // Column already exists, ignore
+  }
+
+  // Migration: Gemini removed -> convert to disabled Claude tasks needing review (idempotent).
+  // Uses mapLegacyTask (single source of truth tested in migrations.test.ts) row-by-row so
+  // the unit-tested logic is exactly what runs in production. Re-running is a no-op because
+  // converted rows have cli_tool='claude' and model='sonnet', so mapLegacyTask returns null.
+  {
+    const legacyRows = db.prepare('SELECT id, cli_tool, model, enabled FROM tasks').all() as
+      Array<{ id: string; cli_tool: string; model: string | null; enabled: number }>
+    const patchStmt = db.prepare(
+      `UPDATE tasks SET cli_tool=@cli_tool, model=@model, enabled=@enabled, needs_review=@needs_review WHERE id=@id`
+    )
+    for (const row of legacyRows) {
+      const patch = mapLegacyTask(row)
+      if (patch) {
+        patchStmt.run({ ...patch, id: row.id })
+      }
+    }
+  }
+
+  // Migration: drop obsolete credential settings
+  db.exec(`DELETE FROM settings WHERE key IN ('gemini_api_key','gemini_cli_path','claude_session_token')`)
+
   return db
 }
 
@@ -160,13 +190,14 @@ export function createTask(input: CreateTaskInput): Task {
     skip_permissions: input.skip_permissions !== false ? 1 : 0,
     week_interval: input.week_interval ?? 1,
     enabled: input.enabled !== false ? 1 : 0,
+    needs_review: 0,
     created_at: now,
     updated_at: now
   }
 
   db.prepare(`
-    INSERT INTO tasks (id, name, description, cron_expression, prompt, cli_tool, model, mcp_tools, attachments, output_type, email_to, knowledge_file, project_path, skip_permissions, week_interval, enabled, created_at, updated_at)
-    VALUES (@id, @name, @description, @cron_expression, @prompt, @cli_tool, @model, @mcp_tools, @attachments, @output_type, @email_to, @knowledge_file, @project_path, @skip_permissions, @week_interval, @enabled, @created_at, @updated_at)
+    INSERT INTO tasks (id, name, description, cron_expression, prompt, cli_tool, model, mcp_tools, attachments, output_type, email_to, knowledge_file, project_path, skip_permissions, week_interval, enabled, needs_review, created_at, updated_at)
+    VALUES (@id, @name, @description, @cron_expression, @prompt, @cli_tool, @model, @mcp_tools, @attachments, @output_type, @email_to, @knowledge_file, @project_path, @skip_permissions, @week_interval, @enabled, @needs_review, @created_at, @updated_at)
   `).run(task)
 
   return task
@@ -203,6 +234,7 @@ export function updateTask(input: UpdateTaskInput): Task {
     skip_permissions: input.skip_permissions !== undefined ? (input.skip_permissions ? 1 : 0) : existing.skip_permissions,
     week_interval: input.week_interval !== undefined ? input.week_interval : existing.week_interval,
     enabled: input.enabled !== undefined ? (input.enabled ? 1 : 0) : existing.enabled,
+    needs_review: 0,
     updated_at: now
   }
 
@@ -223,6 +255,7 @@ export function updateTask(input: UpdateTaskInput): Task {
       skip_permissions = @skip_permissions,
       week_interval = @week_interval,
       enabled = @enabled,
+      needs_review = @needs_review,
       updated_at = @updated_at
     WHERE id = @id
   `).run(updated)

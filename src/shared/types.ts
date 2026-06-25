@@ -1,5 +1,9 @@
 // Task Types
-export type ModelType = 'sonnet' | 'opus' | 'haiku' | 'gemini-3' | 'gemini-2.5' | 'gemini-2'
+export type ClaudeModel = 'haiku' | 'sonnet' | 'opus'
+export type CodexModel = 'gpt-5.3-codex' | 'gpt-5.3-codex-spark'
+// 嚴格 union 用於 claude/codex 的選項與預設值（編譯期安全,呼應使用者偏好）
+// Antigravity 模型由 agy models 動態提供,在執行期驗證,以 string 儲存
+export type ModelType = ClaudeModel | CodexModel
 
 export interface Task {
   id: string
@@ -7,8 +11,8 @@ export interface Task {
   description: string | null
   cron_expression: string
   prompt: string
-  cli_tool: 'claude' | 'gemini'
-  model: ModelType | null // AI model to use
+  cli_tool: 'claude' | 'codex' | 'antigravity'
+  model: string | null // AI model to use (cross-provider, including antigravity dynamic strings)
   mcp_tools: string | null // JSON array of tool patterns
   attachments: string | null // JSON array of file paths
   output_type: 'log' | 'both'
@@ -18,6 +22,7 @@ export interface Task {
   skip_permissions: number // 0 or 1, whether to use --dangerously-skip-permissions
   week_interval: number // Default 1
   enabled: number // 0 or 1
+  needs_review: number // 0 or 1, set when migrated from a removed provider (e.g. Gemini)
   created_at: string
   updated_at: string
 }
@@ -27,8 +32,8 @@ export interface CreateTaskInput {
   description?: string
   cron_expression: string
   prompt: string
-  cli_tool?: 'claude' | 'gemini'
-  model?: ModelType
+  cli_tool?: 'claude' | 'codex' | 'antigravity'
+  model?: string
   mcp_tools?: string[]
   attachments?: string[] // Array of file paths
   output_type?: 'log' | 'both'
@@ -67,9 +72,8 @@ export interface Settings {
   email_smtp_pass?: string
   email_from?: string
   claude_cli_path?: string
-  claude_session_token?: string
-  gemini_cli_path?: string
-  gemini_api_key?: string
+  codex_cli_path?: string
+  antigravity_cli_path?: string
   auto_launch?: string
   auto_update?: string
 }
@@ -88,19 +92,6 @@ export interface UpdateStatus {
   releaseUrl?: string
   platform?: 'darwin' | 'win32' | 'linux'
   updateMethod?: 'asar' | 'full' | null
-}
-
-// Claude CLI Types
-export interface ClaudeCliResult {
-  success: boolean
-  output: string
-  error?: string
-}
-
-export interface GeminiCliResult {
-  success: boolean
-  output: string
-  error?: string
 }
 
 export interface McpServer {
@@ -124,6 +115,21 @@ export interface SkillScanResult {
   errors?: string[]
 }
 
+// AI Provider Types (mirrored from src/main/ai/types.ts to avoid main-process imports)
+export type ProviderId = 'claude' | 'codex' | 'antigravity'
+
+export interface ProviderTestResult {
+  success: boolean
+  output: string
+  error?: string
+}
+
+export interface ModelOption {
+  value: string
+  label: string
+  desc?: string
+}
+
 // IPC API Types
 export interface IpcApi {
   // Task operations
@@ -134,7 +140,6 @@ export interface IpcApi {
   'task:delete': (id: string) => Promise<void>
   'task:toggle': (id: string) => Promise<Task>
   'task:run-now': (id: string) => Promise<ExecutionLog>
-  'task:process-input': (executionId: string, input: string) => Promise<boolean>
 
   // Log operations
   'log:list': (taskId?: string, limit?: number) => Promise<ExecutionLogWithTask[]>
@@ -145,13 +150,10 @@ export interface IpcApi {
   'settings:get': () => Promise<Settings>
   'settings:update': (settings: Partial<Settings>) => Promise<void>
 
-  // Claude CLI operations
-  'claude:test': () => Promise<ClaudeCliResult>
-  'claude:list-mcps': () => Promise<McpServer[]>
-
-  // Gemini CLI operations
-  'gemini:test': () => Promise<GeminiCliResult>
-  'gemini:list-mcps': () => Promise<McpServer[]>
+  // Generalized AI provider operations
+  'ai:test': (provider: ProviderId) => Promise<ProviderTestResult>
+  'ai:list-mcps': (provider: ProviderId) => Promise<McpServer[]>
+  'ai:list-models': (provider: ProviderId) => Promise<ModelOption[]>
 
   // Skill operations
   'skill:scan': (projectPath?: string) => Promise<SkillScanResult>

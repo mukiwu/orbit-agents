@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSettings, useClaudeCli, useGeminiCli } from '../hooks/useApi'
-import type { ClaudeCliResult, GeminiCliResult, UpdateStatus } from '../../../shared/types'
+import { useSettings, useAiProvider } from '../hooks/useApi'
+import type { ProviderTestResult, UpdateStatus } from '../../../shared/types'
 import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw } from 'lucide-react'
 
-type SettingsTab = 'general' | 'claude' | 'gemini' | 'email'
+type SettingsTab = 'general' | 'claude' | 'codex' | 'antigravity' | 'email'
 
 interface SettingsProps {}
 
 export default function Settings({}: SettingsProps) {
   const { settings, loading, updateSettings, testEmail } = useSettings()
-  const { testConnection: testClaude } = useClaudeCli()
-  const { testConnection: testGemini } = useGeminiCli()
-  
+  const { test: testAiProvider } = useAiProvider()
+
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
 
   // Local state for the entire form
@@ -22,9 +21,8 @@ export default function Settings({}: SettingsProps) {
     email_smtp_pass: '',
     email_from: '',
     claude_cli_path: '',
-    claude_session_token: '',
-    gemini_cli_path: '',
-    gemini_api_key: '',
+    codex_cli_path: '',
+    antigravity_cli_path: '',
     auto_launch: 'true',
     auto_update: 'true'
   })
@@ -40,10 +38,13 @@ export default function Settings({}: SettingsProps) {
 
   // Test states
   const [testingClaude, setTestingClaude] = useState(false)
-  const [claudeResult, setClaudeResult] = useState<ClaudeCliResult | null>(null)
-  
-  const [testingGemini, setTestingGemini] = useState(false)
-  const [geminiResult, setGeminiResult] = useState<GeminiCliResult | null>(null)
+  const [claudeResult, setClaudeResult] = useState<ProviderTestResult | null>(null)
+
+  const [testingCodex, setTestingCodex] = useState(false)
+  const [codexResult, setCodexResult] = useState<ProviderTestResult | null>(null)
+
+  const [testingAntigravity, setTestingAntigravity] = useState(false)
+  const [antigravityResult, setAntigravityResult] = useState<ProviderTestResult | null>(null)
 
   const [testingEmail, setTestingEmail] = useState(false)
   const [emailResult, setEmailResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -59,9 +60,8 @@ export default function Settings({}: SettingsProps) {
         email_smtp_pass: settings.email_smtp_pass || '',
         email_from: settings.email_from || '',
         claude_cli_path: settings.claude_cli_path || '',
-        claude_session_token: settings.claude_session_token || '',
-        gemini_cli_path: settings.gemini_cli_path || '',
-        gemini_api_key: settings.gemini_api_key || '',
+        codex_cli_path: settings.codex_cli_path || '',
+        antigravity_cli_path: settings.antigravity_cli_path || '',
         auto_launch: settings.auto_launch ?? 'true',
         auto_update: settings.auto_update ?? 'true'
       })
@@ -176,7 +176,7 @@ export default function Settings({}: SettingsProps) {
     setTestingClaude(true)
     setClaudeResult(null)
     try {
-      const result = await testClaude()
+      const result = await testAiProvider('claude')
       setClaudeResult(result)
     } catch (err) {
       setClaudeResult({
@@ -189,23 +189,39 @@ export default function Settings({}: SettingsProps) {
     }
   }
 
-  const handleTestGemini = async () => {
-    setTestingGemini(true)
-    setGeminiResult(null)
+  const handleTestCodex = async () => {
+    setTestingCodex(true)
+    setCodexResult(null)
     try {
-      const result = await testGemini()
-      setGeminiResult(result)
+      const result = await testAiProvider('codex')
+      setCodexResult(result)
     } catch (err) {
-      setGeminiResult({
+      setCodexResult({
         success: false,
         output: '',
         error: err instanceof Error ? err.message : 'Unknown error'
       })
     } finally {
-      setTestingGemini(false)
+      setTestingCodex(false)
     }
   }
 
+  const handleTestAntigravity = async () => {
+    setTestingAntigravity(true)
+    setAntigravityResult(null)
+    try {
+      const result = await testAiProvider('antigravity')
+      setAntigravityResult(result)
+    } catch (err) {
+      setAntigravityResult({
+        success: false,
+        output: '',
+        error: err instanceof Error ? err.message : 'Unknown error'
+      })
+    } finally {
+      setTestingAntigravity(false)
+    }
+  }
 
   const handleTestEmail = async () => {
     if (!testEmailAddress) {
@@ -280,20 +296,26 @@ export default function Settings({}: SettingsProps) {
             label="General" 
             desc="App behavior & startup"
           />
-          <NavButton 
-            tab="claude" 
-            icon={Cpu} 
-            label="Claude CLI" 
+          <NavButton
+            tab="claude"
+            icon={Cpu}
+            label="Claude CLI"
             desc="Anthropic Claude configuration"
           />
-          <NavButton 
-            tab="gemini" 
-            icon={Box} 
-            label="Gemini CLI" 
-            desc="Google Gemini configuration"
+          <NavButton
+            tab="codex"
+            icon={Terminal}
+            label="Codex CLI"
+            desc="OpenAI Codex configuration"
+          />
+          <NavButton
+            tab="antigravity"
+            icon={Box}
+            label="Antigravity CLI"
+            desc="Antigravity configuration"
           />
 
-          <NavButton 
+          <NavButton
             tab="email" 
             icon={Mail} 
             label="Email (SMTP)" 
@@ -514,20 +536,6 @@ export default function Settings({}: SettingsProps) {
                 <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default system path. Windows users should use <code className="bg-gray-100 px-1 rounded">claude</code> instead of the full path to cli.js.</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Session Token</label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={formData.claude_session_token}
-                    onChange={(e) => setFormData(prev => ({ ...prev, claude_session_token: e.target.value }))}
-                    placeholder="CLAUDE_CODE_SESSION_ACCESS_TOKEN"
-                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors font-mono"
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-gray-400">Required for file uploads. You can find this in your browser cookies on claude.ai.</p>
-              </div>
-
               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
                 <button
                   onClick={handleTestClaude}
@@ -563,12 +571,12 @@ export default function Settings({}: SettingsProps) {
           </div>
         )}
 
-        {/* Gemini CLI */}
-        {activeTab === 'gemini' && (
+        {/* Codex CLI */}
+        {activeTab === 'codex' && (
           <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Gemini CLI</h3>
-              <p className="text-sm text-gray-500">Configure the connection to Google's Gemini command line tool.</p>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Codex CLI</h3>
+              <p className="text-sm text-gray-500">Configure the connection to OpenAI's Codex command line tool.</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
@@ -576,60 +584,104 @@ export default function Settings({}: SettingsProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
                 <input
                   type="text"
-                  value={formData.gemini_cli_path}
-                  onChange={(e) => setFormData(prev => ({ ...prev, gemini_cli_path: e.target.value }))}
-                  placeholder="Use default path"
+                  value={formData.codex_cli_path}
+                  onChange={(e) => setFormData(prev => ({ ...prev, codex_cli_path: e.target.value }))}
+                  placeholder="Use default (codex in PATH)"
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 />
+                <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default system path.</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">API Key</label>
-                <input
-                  type="password"
-                  value={formData.gemini_api_key}
-                  onChange={(e) => setFormData(prev => ({ ...prev, gemini_api_key: e.target.value }))}
-                  placeholder="GEMINI_API_KEY"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors font-mono"
-                />
-                <p className="mt-1.5 text-xs text-gray-400">Optional if configured in system environment variables.</p>
-              </div>
-
-               <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
+              <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
                 <button
-                  onClick={handleTestGemini}
-                  disabled={testingGemini}
+                  onClick={handleTestCodex}
+                  disabled={testingCodex}
                   className="px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors"
                 >
-                  {testingGemini ? (
+                  {testingCodex ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Terminal className="w-3.5 h-3.5" />
                   )}
                   Test Connection
                 </button>
-                
-                {geminiResult && (
-                  <div className={`flex items-center gap-2 text-xs font-medium ${geminiResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {geminiResult.success ? (
+
+                {codexResult && (
+                  <div className={`flex items-center gap-2 text-xs font-medium ${codexResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {codexResult.success ? (
                       <Check className="w-4 h-4" />
                     ) : (
                       <AlertCircle className="w-4 h-4" />
                     )}
-                    {geminiResult.success ? 'Connection successful' : 'Connection failed'}
+                    {codexResult.success ? 'Connection successful' : 'Connection failed'}
                   </div>
                 )}
               </div>
 
-              {geminiResult && !geminiResult.success && geminiResult.error && (
+              {codexResult && !codexResult.success && codexResult.error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-mono break-all">
-                  {geminiResult.error}
+                  {codexResult.error}
                 </div>
               )}
             </div>
           </div>
         )}
 
+        {/* Antigravity CLI */}
+        {activeTab === 'antigravity' && (
+          <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Antigravity CLI</h3>
+              <p className="text-sm text-gray-500">Configure the connection to the Antigravity command line tool.</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">CLI Path</label>
+                <input
+                  type="text"
+                  value={formData.antigravity_cli_path}
+                  onChange={(e) => setFormData(prev => ({ ...prev, antigravity_cli_path: e.target.value }))}
+                  placeholder="Use default (agy in PATH)"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                />
+                <p className="mt-1.5 text-xs text-gray-400">Leave empty to use the default system path.</p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
+                <button
+                  onClick={handleTestAntigravity}
+                  disabled={testingAntigravity}
+                  className="px-4 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                >
+                  {testingAntigravity ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Terminal className="w-3.5 h-3.5" />
+                  )}
+                  Test Connection
+                </button>
+
+                {antigravityResult && (
+                  <div className={`flex items-center gap-2 text-xs font-medium ${antigravityResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {antigravityResult.success ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    {antigravityResult.success ? 'Connection successful' : 'Connection failed'}
+                  </div>
+                )}
+              </div>
+
+              {antigravityResult && !antigravityResult.success && antigravityResult.error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-mono break-all">
+                  {antigravityResult.error}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Email Settings */}
         {activeTab === 'email' && (

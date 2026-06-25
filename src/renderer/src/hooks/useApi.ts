@@ -6,11 +6,12 @@ import type {
   ExecutionLog,
   ExecutionLogWithTask,
   Settings,
-  ClaudeCliResult,
-  GeminiCliResult,
   McpServer,
   Skill,
-  SkillScanResult
+  SkillScanResult,
+  ProviderId,
+  ProviderTestResult,
+  ModelOption
 } from '../../../shared/types'
 
 const api = window.electronApi
@@ -212,30 +213,20 @@ export function useSettings() {
   return { settings, loading, error, fetchSettings, updateSettings, testEmail }
 }
 
-// ============ Claude CLI Hooks ============
-
-export function useClaudeCli() {
-  const testConnection = useCallback(async (): Promise<ClaudeCliResult> => {
-    return api.invoke('claude:test')
-  }, [])
-
-  const listMcps = useCallback(async (): Promise<McpServer[]> => {
-    return api.invoke('claude:list-mcps')
-  }, [])
-
-  return { testConnection, listMcps }
-}
-
-export function useGeminiCli() {
-  const testConnection = useCallback(async (): Promise<GeminiCliResult> => {
-    return api.invoke('gemini:test')
-  }, [])
-
-  const listMcps = useCallback(async (): Promise<McpServer[]> => {
-    return api.invoke('gemini:list-mcps')
-  }, [])
-
-  return { testConnection, listMcps }
+export function useAiProvider() {
+  const test = useCallback(
+    (provider: ProviderId): Promise<ProviderTestResult> => api.invoke('ai:test', provider),
+    []
+  )
+  const listMcps = useCallback(
+    (provider: ProviderId): Promise<McpServer[]> => api.invoke('ai:list-mcps', provider),
+    []
+  )
+  const listModels = useCallback(
+    (provider: ProviderId): Promise<ModelOption[]> => api.invoke('ai:list-models', provider),
+    []
+  )
+  return { test, listMcps, listModels }
 }
 
 // ============ Skills Hooks ============
@@ -281,11 +272,4 @@ export function useSkills() {
   }, [scanSkills])
 
   return { skills, loading, projectPath, setProjectPath, scanSkills, selectProject, clearProject, initProject }
-}
-
-export function useProcessInput() {
-  const sendInput = useCallback(async (executionId: string, input: string): Promise<boolean> => {
-    return api.invoke('task:process-input', executionId, input)
-  }, [])
-  return { sendInput }
 }
