@@ -228,6 +228,39 @@
     "createTask": "建立任務",
     "errorSave": "儲存任務失敗"
   },
+  "schedule": {
+    "weekday": {
+      "short": {
+        "mon": "一",
+        "tue": "二",
+        "wed": "三",
+        "thu": "四",
+        "fri": "五",
+        "sat": "六",
+        "sun": "日"
+      },
+      "long": {
+        "mon": "星期一",
+        "tue": "星期二",
+        "wed": "星期三",
+        "thu": "星期四",
+        "fri": "星期五",
+        "sat": "星期六",
+        "sun": "星期日"
+      }
+    },
+    "unit": {
+      "minutes": "分鐘",
+      "hours": "小時"
+    },
+    "desc": {
+      "everyN": "每隔 {{value}} {{unit}}",
+      "dailyAt": "每天 {{time}}",
+      "weekly": "每週{{days}} {{time}}",
+      "weeklyEveryN": "每 {{n}} 週的{{days}} {{time}}",
+      "monthly": "每月第 {{day}} 天 {{time}}"
+    }
+  },
   "executionLog": {
     "listTitle": "執行記錄",
     "selectAll": "全選",

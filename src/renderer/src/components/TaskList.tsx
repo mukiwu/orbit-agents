@@ -156,7 +156,8 @@ export default function TaskList({
                                params.time,
                                params.weekdays,
                                task.week_interval || 1,
-                               params.monthDay
+                               params.monthDay,
+                               t as (key: string, vars?: Record<string, string | number>) => string
                              )
                            })()}
                          </span>

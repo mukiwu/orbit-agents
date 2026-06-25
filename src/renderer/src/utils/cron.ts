@@ -2,13 +2,13 @@ export type ScheduleMode = 'simple' | 'advanced'
 export type FrequencyType = 'interval' | 'daily' | 'weekly' | 'monthly'
 
 export const WEEKDAYS = [
-  { value: 1, label: 'Mon', fullLabel: 'Monday' },
-  { value: 2, label: 'Tue', fullLabel: 'Tuesday' },
-  { value: 3, label: 'Wed', fullLabel: 'Wednesday' },
-  { value: 4, label: 'Thu', fullLabel: 'Thursday' },
-  { value: 5, label: 'Fri', fullLabel: 'Friday' },
-  { value: 6, label: 'Sat', fullLabel: 'Saturday' },
-  { value: 0, label: 'Sun', fullLabel: 'Sunday' }
+  { value: 1, label: 'Mon', fullLabel: 'Monday', labelKey: 'schedule.weekday.short.mon', fullLabelKey: 'schedule.weekday.long.mon' },
+  { value: 2, label: 'Tue', fullLabel: 'Tuesday', labelKey: 'schedule.weekday.short.tue', fullLabelKey: 'schedule.weekday.long.tue' },
+  { value: 3, label: 'Wed', fullLabel: 'Wednesday', labelKey: 'schedule.weekday.short.wed', fullLabelKey: 'schedule.weekday.long.wed' },
+  { value: 4, label: 'Thu', fullLabel: 'Thursday', labelKey: 'schedule.weekday.short.thu', fullLabelKey: 'schedule.weekday.long.thu' },
+  { value: 5, label: 'Fri', fullLabel: 'Friday', labelKey: 'schedule.weekday.short.fri', fullLabelKey: 'schedule.weekday.long.fri' },
+  { value: 6, label: 'Sat', fullLabel: 'Saturday', labelKey: 'schedule.weekday.short.sat', fullLabelKey: 'schedule.weekday.long.sat' },
+  { value: 0, label: 'Sun', fullLabel: 'Sunday', labelKey: 'schedule.weekday.short.sun', fullLabelKey: 'schedule.weekday.long.sun' }
 ]
 
 export function parseCronToSimple(cron: string): {
@@ -120,6 +120,8 @@ export function simpleToCron(
   }
 }
 
+type TFunc = (key: string, vars?: Record<string, string | number>) => string
+
 export function getScheduleDescription(
   frequency: FrequencyType,
   intervalValue: number,
@@ -127,23 +129,29 @@ export function getScheduleDescription(
   time: string,
   weekdays: number[],
   weekInterval: number,
-  monthDay: number
+  monthDay: number,
+  t: TFunc
 ): string {
-  const [hour, minute] = time.split(':').map(Number)
-  const timeStr = new Date(2000, 0, 1, hour, minute).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-
   switch (frequency) {
-    case 'interval':
-      return `Every ${intervalValue} ${intervalUnit}`
+    case 'interval': {
+      const unit = t(intervalUnit === 'minutes' ? 'schedule.unit.minutes' : 'schedule.unit.hours')
+      return t('schedule.desc.everyN', { value: intervalValue, unit })
+    }
     case 'daily':
-      return `Daily at ${timeStr}`
+      return t('schedule.desc.dailyAt', { time })
     case 'weekly': {
-      const dayNames = weekdays.map(d => WEEKDAYS.find(w => w.value === d)?.label).filter(Boolean)
-      const weekPrefix = weekInterval === 1 ? 'Every' : `Every ${weekInterval} weeks on`
-      return `${weekPrefix} ${dayNames.join(', ')} at ${timeStr}`
+      const dayNames = weekdays
+        .map(d => WEEKDAYS.find(w => w.value === d))
+        .filter((w): w is (typeof WEEKDAYS)[number] => w !== undefined)
+        .map(w => t(w.labelKey))
+        .join(', ')
+      if (weekInterval === 1) {
+        return t('schedule.desc.weekly', { days: dayNames, time })
+      }
+      return t('schedule.desc.weeklyEveryN', { n: weekInterval, days: dayNames, time })
     }
     case 'monthly':
-      return `Monthly on day ${monthDay} at ${timeStr}`
+      return t('schedule.desc.monthly', { day: monthDay, time })
     default:
       return ''
   }

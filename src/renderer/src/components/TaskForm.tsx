@@ -133,8 +133,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
   }, [scheduleMode, frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay])
 
   const scheduleDescription = useMemo(() => {
-    return getScheduleDescription(frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay)
-  }, [frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay])
+    return getScheduleDescription(frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay, t as (key: string, vars?: Record<string, string | number>) => string)
+  }, [frequency, intervalValue, intervalUnit, scheduleTime, selectedWeekdays, weekInterval, monthDay, t])
 
   const toggleWeekday = (day: number) => {
     setSelectedWeekdays(prev => {
@@ -471,9 +471,9 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                                   ? 'bg-blue-100 border-blue-300 text-blue-700'
                                   : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
                               }`}
-                              title={day.fullLabel}
+                              title={t(day.fullLabelKey)}
                             >
-                              {day.label}
+                              {t(day.labelKey)}
                             </button>
                           ))}
                         </div>

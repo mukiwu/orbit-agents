@@ -228,6 +228,39 @@
     "createTask": "Create Task",
     "errorSave": "Failed to save task"
   },
+  "schedule": {
+    "weekday": {
+      "short": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "long": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      }
+    },
+    "unit": {
+      "minutes": "minutes",
+      "hours": "hours"
+    },
+    "desc": {
+      "everyN": "Every {{value}} {{unit}}",
+      "dailyAt": "Daily at {{time}}",
+      "weekly": "Every {{days}} at {{time}}",
+      "weeklyEveryN": "Every {{n}} weeks on {{days}} at {{time}}",
+      "monthly": "Monthly on day {{day}} at {{time}}"
+    }
+  },
   "executionLog": {
     "listTitle": "Execution Logs",
     "selectAll": "Select all",
