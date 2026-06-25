@@ -304,6 +304,7 @@
     "comparison": {
       "sectionTitle": "Why Orbit?",
       "sectionSubtitle": "See how Orbit compares to traditional automation platforms.",
+      "featureColLabel": "Feature",
       "othersHeader": "n8n / Zapier / Others",
       "cost": {
         "label": "Cost",

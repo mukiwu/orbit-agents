@@ -287,7 +287,7 @@
     },
     "steps": {
       "sectionTitle": "三個步驟，就這樣。",
-      "sectionSubtitle": "不需複雜設定，沒有陡峭的學習曲線。",
+      "sectionSubtitle": "不需複雜設定，不需要花時間摸索。",
       "pickAI": {
         "title": "選擇你的 AI",
         "desc": "Claude、Codex 或 Antigravity，選一個最適合你任務的模型。"
@@ -304,6 +304,7 @@
     "comparison": {
       "sectionTitle": "為什麼選 Orbit？",
       "sectionSubtitle": "看看 Orbit 和傳統自動化平台有什麼不同。",
+      "featureColLabel": "功能",
       "othersHeader": "n8n / Zapier / 其他",
       "cost": {
         "label": "費用",
@@ -338,7 +339,7 @@
     },
     "features": {
       "sectionTitle": "核心功能",
-      "sectionSubtitle": "在桌面自動化 AI 任務所需的一切。",
+      "sectionSubtitle": "讓桌面 AI 任務全面自動化的必備功能。",
       "smartScheduling": {
         "title": "智慧排程",
         "desc": "間隔、每天、每週、每月或直接寫 cron 表達式，隨你選擇。"
@@ -381,7 +382,7 @@
         "title": "Windows",
         "desc": "Windows SmartScreen 可能會對未簽署的應用程式顯示警告，點選繼續即可：",
         "step1": "在 SmartScreen 彈窗中點「更多資訊」",
-        "step2": "點「繼續執行」",
+        "step2": "點「仍要執行」",
         "note": "或使用 Portable .zip 版本，免安裝、免 SmartScreen。"
       }
     },

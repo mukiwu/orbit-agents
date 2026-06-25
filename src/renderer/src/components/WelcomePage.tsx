@@ -411,7 +411,7 @@ export default function WelcomePage() {
             <table className="w-full min-w-[500px] text-left">
               <thead>
                 <tr className="bg-gray-50">
-                  <th scope="col" aria-label="Feature" className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider w-1/4" />
+                  <th scope="col" aria-label={t('welcome.comparison.featureColLabel')} className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider w-1/4" />
                   <th scope="col" className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">{t('welcome.comparison.othersHeader')}</th>
                   <th scope="col" className="px-6 py-4 text-sm font-semibold text-blue-600 uppercase tracking-wider bg-blue-50/50">
                     Orbit Agents
