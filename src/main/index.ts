@@ -242,8 +242,23 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Initialize database
-  initDatabase()
+  // Initialize database. If this fails (e.g. the better-sqlite3 native binary was
+  // built for the wrong CPU architecture or Electron version), surface a visible
+  // error instead of leaving the app as an invisible, menu-bar-only zombie.
+  try {
+    initDatabase()
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    dialog.showErrorBox(
+      'Orbit Agents failed to start',
+      'The local database could not be opened, so the app cannot continue.\n\n' +
+        'This usually means the bundled database engine (better-sqlite3) was built ' +
+        'for a different CPU architecture or Electron version.\n\n' +
+        `Details:\n${message}`
+    )
+    app.quit()
+    return
+  }
 
   // Apply auto-launch setting
   const settings = getAllSettings()

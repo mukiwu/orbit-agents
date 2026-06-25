@@ -10,7 +10,8 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",
-    "build:mac": "npm run build && electron-builder --mac",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
+    "build:mac": "npm run build && npm run rebuild:native && electron-builder --mac",
     "build:win": "npm run build && electron-builder --win",
     "build:linux": "npm run build && electron-builder --linux",
     "prepare-asar": "node scripts/prepare-asar.mjs"
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@electron-toolkit/utils": "^3.0.0",
+    "@electron/rebuild": "^3.6.1",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/marked": "^5.0.2",
