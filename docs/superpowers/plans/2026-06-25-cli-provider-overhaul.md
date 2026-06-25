@@ -177,15 +177,17 @@ git commit -m "test: add vitest harness for pure-logic unit tests"
 
 在 `src/shared/types.ts`:
 
-把 `ModelType` 改成（保留 gemini,加 codex / antigravity,維持有限 union）:
+把 `ModelType` 改成（claude/codex 維持嚴格 union;antigravity 模型是動態清單,走 runtime 字串,不進 union；gemini 暫留,Task 13 移除）:
 ```ts
 export type ClaudeModel = 'haiku' | 'sonnet' | 'opus'
 export type CodexModel = 'gpt-5.3-codex' | 'gpt-5.3-codex-spark'
-export type AntigravityModel = 'gemini-3-pro' | 'gemini-3-flash'
-// 以 Task 1 spike 結果為準調整 CodexModel / AntigravityModel 字面值
 export type GeminiModel = 'gemini-3' | 'gemini-2.5' | 'gemini-2' // 待 Task 13 移除
-export type ModelType = ClaudeModel | CodexModel | AntigravityModel | GeminiModel
+// 嚴格 union 用於 claude/codex 的選項與預設值（編譯期安全,呼應使用者偏好）
+// Antigravity 模型由 agy models 動態提供,在執行期驗證,以 string 儲存
+export type ModelType = ClaudeModel | CodexModel | GeminiModel
 ```
+
+把 `Task.model` 與 `CreateTaskInput.model` 的型別改成 `string | null` / `string`（跨 provider 儲存,含 antigravity 的動態字串;claude/codex 的編譯期安全保留在 `ClaudeModel`/`CodexModel` 這兩個 union 被用來建選項與預設值之處）。
 
 把 `cli_tool` 兩處（`Task`、`CreateTaskInput`）改成:
 ```ts
@@ -210,7 +212,7 @@ export type ProviderId = 'claude' | 'codex' | 'antigravity'
 export interface ExecutionContext {
   prompt: string                 // 已嵌入文字附件、email / knowledge 指示後的最終 prompt
   systemInstruction: string      // 無人值守指示（claude 走 --append-system-prompt,其餘 prefix 進 prompt）
-  model: ModelType | null
+  model: string | null           // 跨 provider 儲存（含 antigravity 動態字串）
   mcpTools: string[]
   imagePaths: string[]           // 二進位 / 圖片附件路徑
   addDirs: string[]              // 要授權讀取的目錄（附件所在目錄 + project）
@@ -219,7 +221,7 @@ export interface ExecutionContext {
 }
 
 export interface ModelOption {
-  value: ModelType
+  value: string   // claude/codex 由 ClaudeModel/CodexModel 字面值帶入;antigravity 為 agy models 動態字串
   label: string
   desc?: string
 }
@@ -717,7 +719,7 @@ Expected: FAIL
 
 - [ ] **Step 3: 實作**
 
-Create `src/main/ai/providers/antigravity.ts`。`needsPty` 依 Task 1 spike:若 `agy -p` 直接 spawn 正常吐輸出則 `false`,否則 `true`（runner 對 needsPty 的 provider 走 pty,見 Task 8 備註）。
+Create `src/main/ai/providers/antigravity.ts`。Task 1 spike 已確認 `agy -p` 直接 spawn（非 TTY）正常輸出,故 `needsPty = false`,不需 pty。注意:互動 TUI（例如 `agy doctor`）在非 TTY 會炸,test() 不可用 doctor。
 
 ```ts
 import { spawn } from 'child_process'
@@ -751,7 +753,7 @@ export const antigravityProvider: AiProvider = {
   buildArgs: buildAntigravityArgs,
   buildEnv: () => ({ ...process.env }),
   promptDelivery: 'arg',
-  needsPty: false, // 依 spike 結果改
+  needsPty: false,
   parseOutput: parseAntigravityOutput,
   test: () => testAntigravity(),
   listModels: () => listAntigravityModels(),
@@ -759,8 +761,8 @@ export const antigravityProvider: AiProvider = {
 }
 ```
 
-`testAntigravity()`:spawn `agy --version` 或 `agy doctor`。
-`listAntigravityModels()`:spawn `agy models`,解析輸出成 ModelOption[],解析失敗回退到靜態清單 `[{ value: 'gemini-3-pro', label: 'Gemini 3 Pro' }, { value: 'gemini-3-flash', label: 'Gemini 3 Flash' }]`。
+`testAntigravity()`:spawn `agy --version`（不可用 `agy doctor`,它是互動 TUI,非 TTY 會炸）。
+`listAntigravityModels()`:spawn `agy models`,逐行解析成 ModelOption[]（value 與 label 皆用該行字串,因為 agy 沒有提供 slug;`--model` 接受的確切格式在本 task 用 `agy -p --model "<行字串>" "ping"` 實測確認後採用）。解析失敗回退到 spike 觀察到的靜態清單:`['Gemini 3.5 Flash (Medium)', 'Gemini 3.1 Pro (High)', 'Claude Sonnet 4.6 (Thinking)']` 之類,各包成 `{ value, label }`。
 
 - [ ] **Step 4: 跑測試確認通過**
 
@@ -796,7 +798,7 @@ git commit -m "feat(ai): add antigravity provider adapter"
 Create `src/main/ai/runner.ts`。把 `claude-cli.ts` 的 spawn 主迴圈邏輯一般化:
 - 用 `provider.resolveCommand()`、`provider.buildArgs(ctx)`、`provider.buildEnv()`
 - cwd:`ctx.projectPath` 存在才用,否則 home
-- `promptDelivery === 'stdin'` 時 stdio 第一個為 `pipe`,spawn 後寫入 prompt 並 end;否則 prompt 已在 args
+- `promptDelivery === 'stdin'` 時 stdio 第一個為 `pipe`,spawn 後寫入 prompt 並 end;否則（`'arg'`）stdin 設為 `'ignore'`（spike 發現 `codex exec` 會讀 stdin,不 ignore 會卡等待）
 - idle timeout:沿用 10 分鐘無輸出即 kill（IDLE_TIMEOUT 常數移過來）
 - 安全檢查:對 prompt 先檢查;stdout / stderr 每段 `checkDangerousOperations`,命中即 kill 並回失敗（沿用既有錯誤文案）
 - 串流:累積 stdout,呼叫 `provider.parseOutput`,丟給 `onOutput`
