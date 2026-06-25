@@ -8,16 +8,15 @@ export function resolveAntigravityCommand(): string {
 }
 
 export function buildAntigravityArgs(ctx: ExecutionContext): string[] {
-  const args: string[] = ['--print']
-  if (ctx.skipPermissions) args.push('--dangerously-skip-permissions')
-  if (ctx.model) args.push('--model', ctx.model)
-  for (const dir of ctx.addDirs) args.push('--add-dir', dir)
   const fullPrompt = ctx.systemInstruction
     ? `${ctx.systemInstruction}\n\n${ctx.prompt}`
     : ctx.prompt
-  // agy does not support the `--` separator. The unattended systemInstruction is always
-  // prefixed here, so the positional prompt never begins with `-` in the scheduled flow.
-  args.push(fullPrompt)
+  // agy's --print flag takes the prompt as its value (--print=<prompt>), not a positional arg.
+  // Using --print=<value> form avoids the next flag being swallowed as the --print value.
+  const args: string[] = [`--print=${fullPrompt}`]
+  if (ctx.skipPermissions) args.push('--dangerously-skip-permissions')
+  if (ctx.model) args.push('--model', ctx.model)
+  for (const dir of ctx.addDirs) args.push('--add-dir', dir)
   return args
 }
 

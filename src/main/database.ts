@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
 import { v4 as uuidv4 } from 'uuid'
+import { mapLegacyTask } from './migrations'
 import type {
   Task,
   CreateTaskInput,
@@ -119,8 +120,23 @@ export function initDatabase(): Database.Database {
     // Column already exists, ignore
   }
 
-  // Migration: Gemini removed -> convert to disabled Claude tasks needing review (idempotent)
-  db.exec(`UPDATE tasks SET cli_tool='claude', model='sonnet', enabled=0, needs_review=1 WHERE cli_tool='gemini' OR model LIKE 'gemini%'`)
+  // Migration: Gemini removed -> convert to disabled Claude tasks needing review (idempotent).
+  // Uses mapLegacyTask (single source of truth tested in migrations.test.ts) row-by-row so
+  // the unit-tested logic is exactly what runs in production. Re-running is a no-op because
+  // converted rows have cli_tool='claude' and model='sonnet', so mapLegacyTask returns null.
+  {
+    const legacyRows = db.prepare('SELECT id, cli_tool, model, enabled FROM tasks').all() as
+      Array<{ id: string; cli_tool: string; model: string | null; enabled: number }>
+    const patchStmt = db.prepare(
+      `UPDATE tasks SET cli_tool=@cli_tool, model=@model, enabled=@enabled, needs_review=@needs_review WHERE id=@id`
+    )
+    for (const row of legacyRows) {
+      const patch = mapLegacyTask(row)
+      if (patch) {
+        patchStmt.run({ ...patch, id: row.id })
+      }
+    }
+  }
 
   // Migration: drop obsolete credential settings
   db.exec(`DELETE FROM settings WHERE key IN ('gemini_api_key','gemini_cli_path','claude_session_token')`)

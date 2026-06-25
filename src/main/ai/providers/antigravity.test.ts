@@ -10,8 +10,8 @@ function ctx(over: Partial<ExecutionContext> = {}): ExecutionContext {
 }
 
 describe('buildAntigravityArgs', () => {
-  it('runs non-interactive with --print', () => {
-    expect(buildAntigravityArgs(ctx())).toContain('--print')
+  it('runs non-interactive with --print=<prompt>', () => {
+    expect(buildAntigravityArgs(ctx()).some(a => a.startsWith('--print='))).toBe(true)
   })
   it('adds skip-permissions only when enabled', () => {
     expect(buildAntigravityArgs(ctx({ skipPermissions: true }))).toContain('--dangerously-skip-permissions')
@@ -22,9 +22,12 @@ describe('buildAntigravityArgs', () => {
     expect(args[args.indexOf('--model') + 1]).toBe('gemini-3-pro')
     expect(args).toContain('--add-dir')
   })
-  it('prefixes unattended instruction into the prompt', () => {
+  it('prefixes unattended instruction into the --print value', () => {
     const args = buildAntigravityArgs(ctx({ prompt: 'P', systemInstruction: 'SI' }))
-    expect(args[args.length - 1].startsWith('SI')).toBe(true)
+    const printArg = args.find(a => a.startsWith('--print='))
+    expect(printArg).toBeDefined()
+    expect(printArg!.startsWith('--print=SI')).toBe(true)
+    expect(printArg).toContain('P')
   })
 })
 
