@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useTranslation } from 'react-i18next'
 import { useExecutionLogs, useExecutionLog } from '../hooks/useApi'
 import type { ExecutionLogWithTask } from '../../../shared/types'
 
 export default function ExecutionLog() {
+  const { t } = useTranslation()
   const { logs, loading, error, deleteLogs } = useExecutionLogs(undefined, 200)
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
   const [checkedLogIds, setCheckedLogIds] = useState<Set<string>>(new Set())
@@ -38,12 +40,12 @@ export default function ExecutionLog() {
 
   const handleDeleteSelected = async () => {
     if (checkedLogIds.size === 0) return
-    if (!confirm(`Are you sure you want to delete ${checkedLogIds.size} logs?`)) return
+    if (!confirm(t('executionLog.confirmDelete', { count: checkedLogIds.size }))) return
 
     const idsToDelete = Array.from(checkedLogIds)
     await deleteLogs(idsToDelete)
     setCheckedLogIds(new Set())
-    
+
     // If selected log was deleted, select the first available one
     if (selectedLogId && idsToDelete.includes(selectedLogId)) {
       const remainingLogs = logs.filter(l => !idsToDelete.includes(l.id))
@@ -80,7 +82,7 @@ export default function ExecutionLog() {
         {/* List Header */}
         <div className="mb-4 px-2 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Execution Logs</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('executionLog.listTitle')}</h2>
             <div className="flex items-center gap-2 mt-1">
               <input
                 type="checkbox"
@@ -89,7 +91,7 @@ export default function ExecutionLog() {
                 onChange={(e) => handleSelectAll(e.target.checked)}
                 disabled={logs.length === 0}
               />
-              <p className="text-xs text-gray-400">Select all</p>
+              <p className="text-xs text-gray-400">{t('executionLog.selectAll')}</p>
             </div>
           </div>
           {checkedLogIds.size > 0 && (
@@ -97,7 +99,7 @@ export default function ExecutionLog() {
               onClick={handleDeleteSelected}
               className="text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
             >
-              Delete ({checkedLogIds.size})
+              {t('executionLog.deleteSelected', { count: checkedLogIds.size })}
             </button>
           )}
         </div>
@@ -109,7 +111,7 @@ export default function ExecutionLog() {
                <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                </svg>
-               <p className="text-sm text-gray-500">No logs found.</p>
+               <p className="text-sm text-gray-500">{t('executionLog.noLogsFound')}</p>
             </div>
           ) : (
             <>
@@ -139,8 +141,8 @@ export default function ExecutionLog() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h3 className="text-gray-900 font-medium mb-1">No Log Selected</h3>
-            <p className="text-sm max-w-xs mx-auto">Select an execution log from the list to view its details and output.</p>
+            <h3 className="text-gray-900 font-medium mb-1">{t('executionLog.noLogSelected')}</h3>
+            <p className="text-sm max-w-xs mx-auto">{t('executionLog.noLogSelectedDesc')}</p>
           </div>
         )}
       </div>
@@ -157,6 +159,7 @@ interface LogListItemProps {
 }
 
 function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListItemProps) {
+  const { t } = useTranslation()
   const statusColors = {
     running: 'bg-blue-500',
     success: 'bg-emerald-500',
@@ -167,8 +170,8 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListIt
     <div
       onClick={onClick}
       className={`group w-full flex items-center p-3 rounded-xl transition-all border cursor-pointer relative ${
-        isSelected 
-          ? 'bg-white shadow-md border-blue-200 ring-1 ring-blue-100 z-10' 
+        isSelected
+          ? 'bg-white shadow-md border-blue-200 ring-1 ring-blue-100 z-10'
           : 'bg-white/40 border-transparent hover:bg-white hover:shadow-sm hover:border-gray-200'
       }`}
     >
@@ -179,7 +182,7 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListIt
         onChange={(e) => onCheck(e.target.checked)}
         onClick={(e) => e.stopPropagation()}
       />
-      <div 
+      <div
         className="flex-1 flex items-start gap-3 text-left min-w-0"
       >
         {/* Status indicator */}
@@ -194,12 +197,12 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListIt
         <div className="flex-1 min-w-0">
           {/* Task name */}
           <p className={`text-sm truncate ${isSelected ? 'font-medium text-gray-900' : 'text-gray-700'}`}>
-            {log.task_name || 'Unknown Task'}
+            {log.task_name || t('executionLog.unknownTask')}
           </p>
 
           {/* Time */}
           <p className="text-sm text-gray-400 mt-0.5">
-            {formatRelativeTime(log.started_at)}
+            {formatRelativeTime(log.started_at, t)}
           </p>
         </div>
 
@@ -209,7 +212,7 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListIt
           log.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
           'bg-red-100 text-red-700'
         }`}>
-          {log.status === 'running' ? 'Running' : log.status === 'success' ? 'Done' : 'Failed'}
+          {log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : t('common.failed')}
         </span>
       </div>
     </div>
@@ -221,6 +224,7 @@ interface LogDetailProps {
 }
 
 function LogDetail({ log: initialLog }: LogDetailProps) {
+  const { t } = useTranslation()
   const { log: liveLog } = useExecutionLog(initialLog.id)
   const log = liveLog ? { ...initialLog, ...liveLog } : initialLog
   const outputEndRef = useRef<HTMLDivElement>(null)
@@ -243,50 +247,49 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
   // Extract current activity from output
   const extractCurrentActivity = (output: string): string => {
     if (!output || output.trim().length === 0) {
-      return '正在初始化...'
+      return t('executionLog.activity.initializing')
     }
 
     const lines = output.split('\n').filter(line => line.trim().length > 0)
     const lastLine = lines[lines.length - 1] || ''
-    const lowerLastLine = lastLine.toLowerCase()
 
     // Pattern 1: "I will..." statements (including "I will start by...")
     const willMatch = lastLine.match(/i\s+will\s+(?:start\s+by\s+)?(.+?)(?:\.|$)/i)
     if (willMatch) {
       const action = willMatch[1].trim()
       const actionMap: Record<string, string> = {
-        'search': '正在搜尋',
-        'fetch': '正在獲取',
-        'analyze': '正在分析',
-        'access': '正在存取',
-        'check': '正在檢查',
-        'list': '正在列出',
-        'get': '正在取得',
-        'read': '正在讀取',
-        'process': '正在處理',
-        'execute': '正在執行',
-        'connect': '正在連線',
-        'query': '正在查詢',
-        'calculate': '正在計算',
-        'generate': '正在生成',
-        'create': '正在建立',
-        'update': '正在更新',
-        'retrieve': '正在檢索',
-        'confirm': '正在確認',
-        'identify': '正在識別'
+        'search': t('executionLog.activity.searching'),
+        'fetch': t('executionLog.activity.fetching'),
+        'analyze': t('executionLog.activity.analyzing'),
+        'access': t('executionLog.activity.accessing'),
+        'check': t('executionLog.activity.checking'),
+        'list': t('executionLog.activity.listing'),
+        'get': t('executionLog.activity.getting'),
+        'read': t('executionLog.activity.reading'),
+        'process': t('executionLog.activity.processingAction'),
+        'execute': t('executionLog.activity.executing'),
+        'connect': t('executionLog.activity.connecting'),
+        'query': t('executionLog.activity.querying'),
+        'calculate': t('executionLog.activity.calculating'),
+        'generate': t('executionLog.activity.generating'),
+        'create': t('executionLog.activity.creating'),
+        'update': t('executionLog.activity.updating'),
+        'retrieve': t('executionLog.activity.retrieving'),
+        'confirm': t('executionLog.activity.confirming'),
+        'identify': t('executionLog.activity.identifying')
       }
-      
+
       // Try to extract specific objects (GA4, schema, data, etc.)
       const objectPatterns = [
         { pattern: /ga4\s+(schema|metadata|data|dimension|metric)/i, label: 'GA4' },
-        { pattern: /the\s+ga4\s+(schema|metadata)/i, label: 'GA4 結構' },
-        { pattern: /performance\s+data/i, label: '效能數據' },
-        { pattern: /(dimension|metric)\s+names?/i, label: '維度和指標' },
-        { pattern: /high-traffic\s+articles?/i, label: '高流量文章' },
-        { pattern: /engagement\s+(data|metrics?)/i, label: '互動數據' },
-        { pattern: /bounce\s+rates?/i, label: '跳出率' }
+        { pattern: /the\s+ga4\s+(schema|metadata)/i, label: t('executionLog.activity.ga4Schema') },
+        { pattern: /performance\s+data/i, label: t('executionLog.activity.performanceData') },
+        { pattern: /(dimension|metric)\s+names?/i, label: t('executionLog.activity.dimensionsMetrics') },
+        { pattern: /high-traffic\s+articles?/i, label: t('executionLog.activity.highTrafficArticles') },
+        { pattern: /engagement\s+(data|metrics?)/i, label: t('executionLog.activity.engagementData') },
+        { pattern: /bounce\s+rates?/i, label: t('executionLog.activity.bounceRate') }
       ]
-      
+
       for (const objPattern of objectPatterns) {
         if (action.match(objPattern.pattern)) {
           for (const [key, value] of Object.entries(actionMap)) {
@@ -296,7 +299,7 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
           }
         }
       }
-      
+
       // Fallback: extract action verb and object
       for (const [key, value] of Object.entries(actionMap)) {
         if (action.toLowerCase().includes(key)) {
@@ -311,13 +314,14 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
           return `${value}...`
         }
       }
-      
+
       // If no action found, show the first part of the action
       const shortAction = action.length > 40 ? action.substring(0, 40) + '...' : action
-      return `正在執行: ${shortAction}...`
+      return t('executionLog.activity.executingAction', { action: shortAction })
     }
 
     // Pattern 2: Chinese action patterns "正在..." or "將要..."
+    // These strings are matched from raw CLI output text, not authored UI copy — passthrough as-is
     const chineseMatch = lastLine.match(/(正在|將要|開始)(.+?)(?:[。，\.]|$)/)
     if (chineseMatch) {
       return `${chineseMatch[1]}${chineseMatch[2]}...`
@@ -329,63 +333,64 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
       const action = ingMatch[1]
       const object = ingMatch[2].trim()
       const actionMap: Record<string, string> = {
-        'searching': '正在搜尋',
-        'fetching': '正在獲取',
-        'analyzing': '正在分析',
-        'accessing': '正在存取',
-        'checking': '正在檢查',
-        'processing': '正在處理',
-        'executing': '正在執行',
-        'connecting': '正在連線',
-        'querying': '正在查詢',
-        'calculating': '正在計算',
-        'generating': '正在生成',
-        'creating': '正在建立',
-        'updating': '正在更新',
-        'retrieving': '正在檢索',
-        'loading': '正在載入',
-        'reading': '正在讀取'
+        'searching': t('executionLog.activity.searching'),
+        'fetching': t('executionLog.activity.fetching'),
+        'analyzing': t('executionLog.activity.analyzing'),
+        'accessing': t('executionLog.activity.accessing'),
+        'checking': t('executionLog.activity.checking'),
+        'processing': t('executionLog.activity.processingAction'),
+        'executing': t('executionLog.activity.executing'),
+        'connecting': t('executionLog.activity.connecting'),
+        'querying': t('executionLog.activity.querying'),
+        'calculating': t('executionLog.activity.calculating'),
+        'generating': t('executionLog.activity.generating'),
+        'creating': t('executionLog.activity.creating'),
+        'updating': t('executionLog.activity.updating'),
+        'retrieving': t('executionLog.activity.retrieving'),
+        'loading': t('executionLog.activity.loading'),
+        'reading': t('executionLog.activity.reading')
       }
-      const translatedAction = actionMap[action.toLowerCase()] || `正在${action}`
+      const translatedAction = actionMap[action.toLowerCase()] || t('executionLog.activity.actionGeneric', { verb: action })
       return `${translatedAction} ${object}...`
     }
 
     // Pattern 4: Look for key phrases in the last few sentences
     const recentText = lines.slice(-3).join(' ').toLowerCase()
-    
+
     if (recentText.includes('ga4') || recentText.includes('google analytics')) {
       if (recentText.includes('schema') || recentText.includes('metadata')) {
-        return '正在檢查 GA4 結構...'
+        return t('executionLog.activity.checkingGA4Schema')
       }
       if (recentText.includes('fetch') || recentText.includes('get') || recentText.includes('retrieve')) {
-        return '正在獲取 GA4 數據...'
+        return t('executionLog.activity.fetchingGA4Data')
       }
       if (recentText.includes('analyze') || recentText.includes('analysis')) {
-        return '正在分析 GA4 數據...'
+        return t('executionLog.activity.analyzingGA4Data')
       }
-      return '正在處理 GA4 相關操作...'
+      return t('executionLog.activity.processingGA4')
     }
 
     if (recentText.includes('mcp') || recentText.includes('tool')) {
-      return '正在呼叫 MCP 工具...'
+      return t('executionLog.activity.callingMCPTool')
     }
 
+    // Pattern-match against CLI output text for permission-related keywords — not UI copy
     if (recentText.includes('permission') || recentText.includes('授權') || recentText.includes('權限')) {
-      return '正在處理權限請求...'
+      return t('executionLog.activity.processingPermission')
     }
 
     // Default: show last meaningful sentence
     if (lastLine.length > 50) {
-      return `正在處理: ${lastLine.substring(0, 50)}...`
+      return t('executionLog.activity.processingText', { text: lastLine.substring(0, 50) })
     }
 
-    return '正在處理中...'
+    return t('executionLog.activity.processing')
   }
 
   const currentActivity = log.status === 'running' && log.output
-    ? extractCurrentActivity(log.output) 
-    : log.status === 'running' 
-      ? '正在初始化任務...' 
+    ? extractCurrentActivity(log.output)
+    : log.status === 'running'
+      ? t('executionLog.activity.initializingTask')
       : ''
 
   return (
@@ -394,7 +399,7 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
       <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-gray-900">
-            {initialLog.task_name || 'Unknown Task'}
+            {initialLog.task_name || t('executionLog.unknownTask')}
           </h2>
           <StatusBadge status={log.status} />
         </div>
@@ -409,14 +414,14 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                 <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-emerald-600">Copied!</span>
+                <span className="text-emerald-600">{t('executionLog.copied')}</span>
               </>
             ) : (
               <>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span>Copy</span>
+                <span>{t('executionLog.copy')}</span>
               </>
             )}
           </button>
@@ -448,15 +453,15 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
           {log.status === 'running' && (
             <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2.5 rounded-lg">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent flex-shrink-0"></div>
-              <span className="text-sm font-medium">{currentActivity || '任務執行中...'}</span>
+              <span className="text-sm font-medium">{currentActivity || t('executionLog.taskRunning')}</span>
             </div>
           )}
 
           {/* Error */}
           {log.error && (
             <div className={`rounded-lg p-4 ${
-              log.error.includes('🚫') || log.error.includes('安全檢查') 
-                ? 'bg-red-100 border-2 border-red-400 shadow-lg' 
+              log.error.includes('🚫') || log.error.includes('安全檢查')
+                ? 'bg-red-100 border-2 border-red-400 shadow-lg'
                 : 'bg-red-50 border border-red-200'
             }`}>
               <div className="flex items-center gap-2 mb-2">
@@ -470,19 +475,19 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                   </svg>
                 )}
                 <span className={`font-medium ${
-                  log.error.includes('🚫') || log.error.includes('安全檢查') 
-                    ? 'text-red-800 text-base' 
+                  log.error.includes('🚫') || log.error.includes('安全檢查')
+                    ? 'text-red-800 text-base'
                     : 'text-red-700 text-sm'
                 }`}>
-                  {log.error.includes('🚫') || log.error.includes('安全檢查') ? '🚫 安全檢查失敗' : 'Error'}
+                  {log.error.includes('🚫') || log.error.includes('安全檢查') ? t('executionLog.securityCheckFailed') : t('executionLog.errorLabel')}
                 </span>
               </div>
               <pre className={`whitespace-pre-wrap font-mono mb-3 ${
-                log.error.includes('🚫') || log.error.includes('安全檢查') 
-                  ? 'text-sm text-red-800 font-semibold' 
+                log.error.includes('🚫') || log.error.includes('安全檢查')
+                  ? 'text-sm text-red-800 font-semibold'
                   : 'text-sm text-red-600'
               }`}>{log.error}</pre>
-              
+
               {/* Security check failure - show detailed warning */}
               {(log.error.includes('🚫') || log.error.includes('安全檢查')) && (
                 <div className="bg-red-200 border-2 border-red-400 rounded-lg p-4 mt-3">
@@ -493,41 +498,43 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-sm font-bold text-red-900 mb-2">⚠️ 安全保護機制已啟動</h4>
+                      <h4 className="text-sm font-bold text-red-900 mb-2">{t('executionLog.securityWarning.title')}</h4>
                       <p className="text-xs text-red-800 mb-2">
-                        系統檢測到嘗試執行危險的刪除操作，已自動停止執行以保護您的系統安全。
+                        {t('executionLog.securityWarning.desc')}
                       </p>
                       <div className="bg-red-300 rounded p-2 mt-2">
-                        <p className="text-xs font-semibold text-red-900 mb-1">保護措施：</p>
+                        <p className="text-xs font-semibold text-red-900 mb-1">{t('executionLog.securityWarning.measuresTitle')}</p>
                         <ul className="text-xs text-red-800 list-disc list-inside space-y-1">
-                          <li>嚴格禁止在未經使用者授權下主動刪除項目</li>
-                          <li>自動檢測並阻止危險的刪除命令（如 rm -rf）</li>
-                          <li>執行已立即停止，不會對系統造成任何影響</li>
+                          <li>{t('executionLog.securityWarning.measure1')}</li>
+                          <li>{t('executionLog.securityWarning.measure2')}</li>
+                          <li>{t('executionLog.securityWarning.measure3')}</li>
                         </ul>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
-              
+
               {/* Policy denied error */}
-              {!log.error.includes('🚫') && !log.error.includes('安全檢查') && 
+              {/* Condition checks parse CLI output content for 'Denied by policy', '政策拒絕', '系統政策' — not UI strings */}
+              {!log.error.includes('🚫') && !log.error.includes('安全檢查') &&
                (log.error.includes('Denied by policy') || log.error.includes('政策拒絕') || log.error.includes('系統政策')) && (
                 <div className="bg-red-100 border border-red-300 rounded p-3 text-xs text-red-800 mt-3">
-                  <p className="font-medium mb-2">🔧 MCP 工具政策拒絕 - 解決步驟：</p>
+                  <p className="font-medium mb-2">{t('executionLog.policyDenied.title')}</p>
                   <ol className="list-decimal list-inside space-y-1">
-                    <li>檢查 CLI 配置文件中的 MCP 設定</li>
-                    <li>為您的 MCP server 添加 <code className="bg-red-200 px-1 rounded">"trust": true</code> 設定</li>
-                    <li>確認 MCP Server 已正確啟動</li>
-                    <li>確認 API 權限已正確配置</li>
-                    <li>重新啟動 CLI 或應用程式</li>
+                    <li>{t('executionLog.policyDenied.step1')}</li>
+                    <li>{t('executionLog.policyDenied.step2pre')}<code className="bg-red-200 px-1 rounded">&quot;trust&quot;: true</code>{t('executionLog.policyDenied.step2post')}</li>
+                    <li>{t('executionLog.policyDenied.step3')}</li>
+                    <li>{t('executionLog.policyDenied.step4')}</li>
+                    <li>{t('executionLog.policyDenied.step5')}</li>
                   </ol>
                 </div>
               )}
             </div>
           )}
-          
+
           {/* Policy Denied Warning in Output */}
+          {/* Condition checks parse CLI output for 'Denied by policy', '操作遭到系統政策拒絕', '政策拒絕' — not UI strings */}
           {log.output && (log.output.includes('Denied by policy') || log.output.includes('操作遭到系統政策拒絕') || log.output.includes('政策拒絕')) && !log.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-start gap-3">
@@ -537,14 +544,14 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-red-900 mb-2">MCP 工具被系統政策拒絕</h4>
+                  <h4 className="text-sm font-semibold text-red-900 mb-2">{t('executionLog.mcpDenied.title')}</h4>
                   <div className="bg-red-100 border border-red-300 rounded p-3 text-xs text-red-800 mb-3">
-                    <p className="font-medium mb-2">🔧 解決步驟：</p>
+                    <p className="font-medium mb-2">{t('executionLog.mcpDenied.stepsTitle')}</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>檢查 CLI 配置文件中的 MCP 設定</li>
-                      <li>為 MCP server 添加 <code className="bg-red-200 px-1 rounded">"trust": true</code></li>
-                      <li>確認 MCP Server 已啟動</li>
-                      <li>檢查 API 權限配置</li>
+                      <li>{t('executionLog.mcpDenied.step1')}</li>
+                      <li>{t('executionLog.mcpDenied.step2pre')}<code className="bg-red-200 px-1 rounded">&quot;trust&quot;: true</code>{t('executionLog.mcpDenied.step2post')}</li>
+                      <li>{t('executionLog.mcpDenied.step3')}</li>
+                      <li>{t('executionLog.mcpDenied.step4')}</li>
                     </ol>
                   </div>
                 </div>
@@ -562,7 +569,7 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
               <div ref={outputEndRef} />
             </div>
           ) : log.status === 'running' ? (
-            <div className="text-gray-400 text-sm">Waiting for output...</div>
+            <div className="text-gray-400 text-sm">{t('executionLog.waitingForOutput')}</div>
           ) : null}
         </div>
       </div>
@@ -621,6 +628,7 @@ interface StatusBadgeProps {
 }
 
 function StatusBadge({ status }: StatusBadgeProps) {
+  const { t } = useTranslation()
   const styles = {
     running: 'bg-blue-100 text-blue-700',
     success: 'bg-emerald-100 text-emerald-700',
@@ -628,9 +636,9 @@ function StatusBadge({ status }: StatusBadgeProps) {
   }
 
   const labels = {
-    running: 'Running',
-    success: 'Completed',
-    failed: 'Failed'
+    running: t('common.running'),
+    success: t('executionLog.statusBadge.completed'),
+    failed: t('common.failed')
   }
 
   return (
@@ -653,7 +661,7 @@ function formatDateTime(isoString: string): string {
   })
 }
 
-function formatRelativeTime(isoString: string): string {
+function formatRelativeTime(isoString: string, t: (key: string, options?: Record<string, unknown>) => string): string {
   const date = new Date(isoString)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
@@ -661,10 +669,10 @@ function formatRelativeTime(isoString: string): string {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
 
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffMins < 1) return t('executionLog.time.justNow')
+  if (diffMins < 60) return t('executionLog.time.minutesAgo', { count: diffMins })
+  if (diffHours < 24) return t('executionLog.time.hoursAgo', { count: diffHours })
+  if (diffDays < 7) return t('executionLog.time.daysAgo', { count: diffDays })
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
