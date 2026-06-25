@@ -58,7 +58,9 @@ export default function TaskList({
 
   const handleDelete = async (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation()
-    if (!confirm(t('taskList.confirmDelete'))) {
+    const found = tasks.find((task) => task.id === taskId)
+    const name = found?.name ?? taskId
+    if (!confirm(t('taskList.confirmDelete', { name }))) {
       return
     }
 
@@ -80,6 +82,7 @@ export default function TaskList({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-gray-500">{t('taskList.loading')}</span>
       </div>
     )
   }
@@ -87,7 +90,7 @@ export default function TaskList({
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 m-8">
-        {error}
+        <span className="font-medium">{t('taskList.error')}</span> {error}
       </div>
     )
   }

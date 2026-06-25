@@ -33,7 +33,9 @@
   "taskList": {
     "title": "任務",
     "subtitle": "管理自動化工作流程",
-    "confirmDelete": "確定要刪除這個任務嗎？",
+    "loading": "載入中...",
+    "error": "發生錯誤：",
+    "confirmDelete": "確定刪除「{{name}}」？",
     "emptyState": "目前沒有任務",
     "createOne": "建立一個",
     "needsReview": "需要確認：Gemini 已移除，請重新設定供應商",

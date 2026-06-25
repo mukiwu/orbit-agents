@@ -33,7 +33,9 @@
   "taskList": {
     "title": "Tasks",
     "subtitle": "Manage automated workflows",
-    "confirmDelete": "Are you sure you want to delete this task?",
+    "loading": "Loading...",
+    "error": "Error:",
+    "confirmDelete": "Delete \"{{name}}\"?",
     "emptyState": "No tasks found.",
     "createOne": "Create one",
     "needsReview": "Needs review: Gemini removed, reconfigure provider",
