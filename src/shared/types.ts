@@ -1,6 +1,6 @@
 // Task Types
 export type ClaudeModel = 'haiku' | 'sonnet' | 'opus'
-export type CodexModel = 'gpt-5.3-codex' | 'gpt-5.3-codex-spark'
+export type CodexModel = 'gpt-5.5' | 'gpt-5.4'
 // 嚴格 union 用於 claude/codex 的選項與預設值（編譯期安全,呼應使用者偏好）
 // Antigravity 模型由 agy models 動態提供,在執行期驗證,以 string 儲存
 export type ModelType = ClaudeModel | CodexModel

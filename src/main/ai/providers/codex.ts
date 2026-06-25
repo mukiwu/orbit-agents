@@ -154,8 +154,8 @@ export const codexProvider: AiProvider = {
   parseOutput: parseCodexOutput,
   test: () => testCodex(),
   listModels: async (): Promise<ModelOption[]> => [
-    { value: 'gpt-5.3-codex', label: 'GPT-5.3 Codex', desc: 'Default' },
-    { value: 'gpt-5.3-codex-spark', label: 'GPT-5.3 Codex Spark', desc: 'Fast' }
+    { value: 'gpt-5.5', label: 'GPT-5.5', desc: 'Recommended' },
+    { value: 'gpt-5.4', label: 'GPT-5.4', desc: 'Stable' }
   ],
   listMcps: () => listCodexMcps()
 }

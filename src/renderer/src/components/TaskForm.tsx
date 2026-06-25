@@ -638,7 +638,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   {(
                     [
                       { value: 'claude' as const, label: 'Claude', defaultModel: 'sonnet' as ModelType },
-                      { value: 'codex' as const, label: 'Codex', defaultModel: 'gpt-5.3-codex' as ModelType },
+                      { value: 'codex' as const, label: 'Codex', defaultModel: 'gpt-5.5' as ModelType },
                       { value: 'antigravity' as const, label: 'Antigravity', defaultModel: '' as ModelType }
                     ]
                   ).map((tool) => (
@@ -669,25 +669,17 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   {t('taskForm.model.label')}
                 </label>
-                <div className="flex gap-2 flex-wrap">
-                  {(() => {
-                    return dynamicModels.map((model) => (
-                      <button
-                        key={model.value}
-                        type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, model: model.value as ModelType }))}
-                        className={`flex-1 flex flex-col items-center justify-center p-2.5 h-14 border rounded-lg transition-all ${
-                          formData.model === model.value
-                            ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        <span className="font-medium text-sm">{model.label}</span>
-                        {model.desc && <span className="text-sm opacity-70">{model.desc}</span>}
-                      </button>
-                    ))
-                  })()}
-                </div>
+                <select
+                  value={formData.model}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, model: e.target.value as ModelType }))}
+                  className="w-full h-14 px-3 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                >
+                  {dynamicModels.map((model) => (
+                    <option key={model.value} value={model.value}>
+                      {model.label}{model.desc ? ` (${model.desc})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

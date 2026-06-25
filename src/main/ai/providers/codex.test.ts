@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { buildCodexArgs, parseCodexOutput } from './codex'
+import { buildCodexArgs, parseCodexOutput, codexProvider } from './codex'
 import type { ExecutionContext } from '../types'
 
 function ctx(over: Partial<ExecutionContext> = {}): ExecutionContext {
   return {
-    prompt: 'do the thing', systemInstruction: 'UNATTENDED', model: 'gpt-5.3-codex',
+    prompt: 'do the thing', systemInstruction: 'UNATTENDED', model: 'gpt-5.5',
     mcpTools: [], imagePaths: [], addDirs: [], projectPath: null, skipPermissions: false, ...over
   }
 }
@@ -23,8 +23,8 @@ describe('buildCodexArgs', () => {
   })
 
   it('passes model, working dir and images', () => {
-    const args = buildCodexArgs(ctx({ model: 'gpt-5.3-codex', projectPath: '/proj', imagePaths: ['/a.png', '/b.png'] }))
-    expect(args[args.indexOf('-m') + 1]).toBe('gpt-5.3-codex')
+    const args = buildCodexArgs(ctx({ model: 'gpt-5.5', projectPath: '/proj', imagePaths: ['/a.png', '/b.png'] }))
+    expect(args[args.indexOf('-m') + 1]).toBe('gpt-5.5')
     expect(args[args.indexOf('-C') + 1]).toBe('/proj')
     expect(args.filter(a => a === '-i')).toHaveLength(2)
   })
@@ -35,6 +35,15 @@ describe('buildCodexArgs', () => {
     expect(prompt.startsWith('SI')).toBe(true)
     expect(prompt).toContain('P')
     expect(args[args.length - 2]).toBe('--')
+  })
+})
+
+describe('codexProvider.listModels', () => {
+  it('offers the supported gpt-5.5 and gpt-5.4 models and not the deprecated gpt-5.3-codex', async () => {
+    const values = (await codexProvider.listModels()).map(m => m.value)
+    expect(values).toContain('gpt-5.5')
+    expect(values).toContain('gpt-5.4')
+    expect(values).not.toContain('gpt-5.3-codex')
   })
 })
 
