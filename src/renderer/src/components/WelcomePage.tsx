@@ -1,12 +1,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import screenshot from '../assets/screenshot.png'
 import screenshotLog from '../assets/screenshot-log.png'
 
-const SLIDES = [
-  { src: screenshot, alt: 'Orbit Agents — task scheduling interface' },
-  { src: screenshotLog, alt: 'Orbit Agents — execution log with AI output' },
-]
 import pkg from '../../../../package.json'
 
 const LATEST_VERSION = pkg.version
@@ -23,11 +20,15 @@ function detectPlatform(): 'mac' | 'windows' | 'unknown' {
   return 'unknown'
 }
 
-const STEPS = [
+const SLIDE_SOURCES = [
+  { src: screenshot, altKey: 'welcome.slides.alt0' },
+  { src: screenshotLog, altKey: 'welcome.slides.alt1' },
+]
+
+const STEP_META = [
   {
     number: '1',
-    title: 'Pick your AI',
-    description: 'Claude, Codex, or Antigravity — choose the model that fits your task.',
+    key: 'pickAI',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -39,8 +40,7 @@ const STEPS = [
   },
   {
     number: '2',
-    title: 'Write your prompt',
-    description: 'Describe what you want done in plain language, or use a slash command — no node wiring needed.',
+    key: 'writePrompt',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -52,8 +52,7 @@ const STEPS = [
   },
   {
     number: '3',
-    title: 'Set a schedule',
-    description: 'Daily, weekly, or custom cron — Orbit runs it on time, every time.',
+    key: 'setSchedule',
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -65,19 +64,9 @@ const STEPS = [
   },
 ]
 
-const COMPARISON = [
-  { label: 'Cost', others: 'Cloud subscription fees', orbit: 'Free, runs locally' },
-  { label: 'Setup', others: 'Wire nodes & connectors', orbit: 'Write a prompt' },
-  { label: 'AI integration', others: 'Requires add-ons', orbit: 'Claude, Codex & Antigravity built-in' },
-  { label: 'Data', others: 'Stored in the cloud', orbit: '100% on your machine' },
-  { label: 'Platform', others: 'Browser-based / macOS only', orbit: 'macOS + Windows' },
-  { label: 'Source code', others: 'Closed / limited', orbit: 'Open source (MIT)' },
-]
-
-const FEATURES = [
+const FEATURE_META = [
   {
-    title: 'Smart Scheduling',
-    description: 'Interval, daily, weekly, monthly, or raw cron expressions — pick what works for you.',
+    key: 'smartScheduling',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -87,8 +76,7 @@ const FEATURES = [
     bg: 'bg-blue-50',
   },
   {
-    title: 'Deep AI Integration',
-    description: 'First-class support for Claude, Codex, and Antigravity CLI, with MCP server connections.',
+    key: 'deepAI',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -98,8 +86,7 @@ const FEATURES = [
     bg: 'bg-purple-50',
   },
   {
-    title: 'Execution Logs',
-    description: 'Full visibility into every run — see what the agent did, step by step.',
+    key: 'executionLogs',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -109,8 +96,7 @@ const FEATURES = [
     bg: 'bg-emerald-50',
   },
   {
-    title: 'Email Notifications',
-    description: 'Get notified when tasks complete or fail — never miss a result.',
+    key: 'emailNotifications',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -120,8 +106,7 @@ const FEATURES = [
     bg: 'bg-orange-50',
   },
   {
-    title: 'Cross-Platform',
-    description: 'Native desktop app for macOS and Windows. No browser tab required.',
+    key: 'crossPlatform',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -131,8 +116,7 @@ const FEATURES = [
     bg: 'bg-cyan-50',
   },
   {
-    title: 'Auto-Retry on Failure',
-    description: 'Network hiccup? Orbit retries automatically so your scheduled tasks stay on track.',
+    key: 'autoRetry',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -143,11 +127,21 @@ const FEATURES = [
   },
 ]
 
+const COMPARISON_KEYS = [
+  'cost',
+  'setup',
+  'aiIntegration',
+  'data',
+  'platform',
+  'sourceCode',
+] as const
+
 function ScreenshotSlider() {
+  const { t } = useTranslation()
   const [current, setCurrent] = useState(0)
 
-  const next = useCallback(() => setCurrent((i) => (i + 1) % SLIDES.length), [])
-  const prev = useCallback(() => setCurrent((i) => (i - 1 + SLIDES.length) % SLIDES.length), [])
+  const next = useCallback(() => setCurrent((i) => (i + 1) % SLIDE_SOURCES.length), [])
+  const prev = useCallback(() => setCurrent((i) => (i - 1 + SLIDE_SOURCES.length) % SLIDE_SOURCES.length), [])
 
   // Auto-advance every 5 seconds
   useEffect(() => {
@@ -160,11 +154,11 @@ function ScreenshotSlider() {
       <div className="relative group">
         {/* Image container — fixed aspect ratio prevents layout shift */}
         <div className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-gray-900/10 relative aspect-[16/10] bg-white">
-          {SLIDES.map((slide, i) => (
+          {SLIDE_SOURCES.map((slide, i) => (
             <img
               key={i}
               src={slide.src}
-              alt={slide.alt}
+              alt={t(slide.altKey)}
               className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${
                 i === current ? 'opacity-100' : 'opacity-0'
               }`}
@@ -176,7 +170,7 @@ function ScreenshotSlider() {
         <button
           onClick={prev}
           className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg ring-1 ring-black/5 flex items-center justify-center text-gray-600 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Previous screenshot"
+          aria-label={t('welcome.screenshots.prev')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -185,7 +179,7 @@ function ScreenshotSlider() {
         <button
           onClick={next}
           className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg ring-1 ring-black/5 flex items-center justify-center text-gray-600 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Next screenshot"
+          aria-label={t('welcome.screenshots.next')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -195,14 +189,14 @@ function ScreenshotSlider() {
 
       {/* Dots */}
       <div className="flex justify-center gap-2 mt-4">
-        {SLIDES.map((_, i) => (
+        {SLIDE_SOURCES.map((_, i) => (
           <button
             key={i}
             onClick={() => setCurrent(i)}
             className={`w-2 h-2 rounded-full transition-all ${
               i === current ? 'bg-blue-600 w-6' : 'bg-gray-300 hover:bg-gray-400'
             }`}
-            aria-label={`Go to screenshot ${i + 1}`}
+            aria-label={t('welcome.screenshots.goTo', { index: i + 1 })}
           />
         ))}
       </div>
@@ -211,9 +205,39 @@ function ScreenshotSlider() {
 }
 
 export default function WelcomePage() {
+  const { t } = useTranslation()
   const platform = useMemo(() => detectPlatform(), [])
   const primaryDownloadUrl = platform === 'windows' ? WIN_DOWNLOAD_URL : MAC_DOWNLOAD_URL
-  const primaryDownloadLabel = platform === 'windows' ? 'Download for Windows' : 'Download for Mac'
+
+  const steps = useMemo(
+    () =>
+      STEP_META.map((s) => ({
+        ...s,
+        title: t(`welcome.steps.${s.key}.title`),
+        description: t(`welcome.steps.${s.key}.desc`),
+      })),
+    [t]
+  )
+
+  const features = useMemo(
+    () =>
+      FEATURE_META.map((f) => ({
+        ...f,
+        title: t(`welcome.features.${f.key}.title`),
+        description: t(`welcome.features.${f.key}.desc`),
+      })),
+    [t]
+  )
+
+  const comparison = useMemo(
+    () =>
+      COMPARISON_KEYS.map((key) => ({
+        label: t(`welcome.comparison.${key}.label`),
+        others: t(`welcome.comparison.${key}.others`),
+        orbit: t(`welcome.comparison.${key}.orbit`),
+      })),
+    [t]
+  )
 
   return (
     <div className="min-h-screen bg-[#F8F7F6] flex flex-col relative overflow-hidden">
@@ -261,7 +285,7 @@ export default function WelcomePage() {
               href={primaryDownloadUrl}
               className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors"
             >
-              Download
+              {t('welcome.nav.download')}
             </a>
           </div>
         </div>
@@ -274,7 +298,7 @@ export default function WelcomePage() {
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium">
               <span className="w-2 h-2 rounded-full bg-blue-500 motion-safe:animate-pulse" />
-              Free &amp; Open Source
+              {t('welcome.hero.badge')}
             </div>
             <a
               href="https://www.producthunt.com/products/orbit-agents?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-orbit-agents"
@@ -291,16 +315,14 @@ export default function WelcomePage() {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold font-display text-gray-900 tracking-tight mb-6 leading-[1.1]">
-            Your AI tasks,{' '}
+            {t('welcome.hero.title')}{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-cyan-600">
-              on autopilot.
+              {t('welcome.hero.titleHighlight')}
             </span>
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed font-display">
-            Schedule Claude, Codex, or Antigravity to run automatically on your desktop.
-            No servers, no cloud fees, no node wiring — just write a prompt,
-            pick a schedule, and let it work for you.
+            {t('welcome.hero.subtitle')}
           </p>
 
           {/* CTA Buttons */}
@@ -312,7 +334,7 @@ export default function WelcomePage() {
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 19.349c-.854 1.25-1.764 2.495-3.13 2.52-1.353.025-1.788-.804-3.34-.804-1.536 0-2.004.78-3.296.828-1.304.049-2.296-1.325-3.125-2.524C2.378 16.63 1.01 12.062 2.72 8.996c.884-1.556 2.464-2.537 4.195-2.564 1.305-.022 2.535.877 3.333.877.785 0 2.256-1.085 3.826-.917.653.027 2.49.255 3.655 1.964-.093.058-2.186 1.275-2.164 3.81.025 3.012 2.67 4.025 2.697 4.036-.026.069-.418 1.436-1.365 2.809l-.248.34zM12.984 3.52c.732-.888 1.225-2.122 1.09-3.267-1.056.042-2.336.78-3.087 1.635-.678.756-1.27 1.96-1.096 3.12 1.183.091 2.39-.63 3.093-1.488z" />
               </svg>
-              Download for Mac
+              {t('welcome.hero.downloadMac')}
             </a>
 
             <a
@@ -324,7 +346,7 @@ export default function WelcomePage() {
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
               </svg>
-              View on GitHub
+              {t('welcome.hero.viewGitHub')}
             </a>
           </div>
 
@@ -334,11 +356,11 @@ export default function WelcomePage() {
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24"/>
               </svg>
-              Windows
+              {t('welcome.hero.downloadWindows')}
             </a>
             <span className="text-gray-300">|</span>
             <a href={WIN_ZIP_DOWNLOAD_URL} className="text-sm text-gray-500 hover:text-blue-600 font-medium transition-colors">
-              Portable (.zip)
+              {t('welcome.hero.downloadPortable')}
             </a>
           </div>
 
@@ -351,14 +373,14 @@ export default function WelcomePage() {
       <section className="relative z-10 py-24">
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4 font-display">
-            Three steps. That&apos;s it.
+            {t('welcome.steps.sectionTitle')}
           </h2>
           <p className="text-lg text-gray-500 text-center mb-16 max-w-xl mx-auto">
-            No complex setup, no steep learning curve.
+            {t('welcome.steps.sectionSubtitle')}
           </p>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {STEPS.map((step) => (
+            {steps.map((step) => (
               <div
                 key={step.number}
                 className="relative bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-900/5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
@@ -379,10 +401,10 @@ export default function WelcomePage() {
       <section className="relative z-10 py-24 bg-white/50">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4 font-display">
-            Why Orbit?
+            {t('welcome.comparison.sectionTitle')}
           </h2>
           <p className="text-lg text-gray-500 text-center mb-16 max-w-xl mx-auto">
-            See how Orbit compares to traditional automation platforms.
+            {t('welcome.comparison.sectionSubtitle')}
           </p>
 
           <div className="overflow-x-auto rounded-2xl ring-1 ring-gray-900/5 shadow-sm">
@@ -390,14 +412,14 @@ export default function WelcomePage() {
               <thead>
                 <tr className="bg-gray-50">
                   <th scope="col" aria-label="Feature" className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider w-1/4" />
-                  <th scope="col" className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">n8n / Zapier / Others</th>
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">{t('welcome.comparison.othersHeader')}</th>
                   <th scope="col" className="px-6 py-4 text-sm font-semibold text-blue-600 uppercase tracking-wider bg-blue-50/50">
                     Orbit Agents
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {COMPARISON.map((row, i) => (
+                {comparison.map((row, i) => (
                   <tr key={row.label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-700">{row.label}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{row.others}</td>
@@ -421,16 +443,16 @@ export default function WelcomePage() {
       <section className="relative z-10 py-24">
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4 font-display">
-            Key Features
+            {t('welcome.features.sectionTitle')}
           </h2>
           <p className="text-lg text-gray-500 text-center mb-16 max-w-xl mx-auto">
-            Everything you need to automate AI tasks on your desktop.
+            {t('welcome.features.sectionSubtitle')}
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((feature) => (
+            {features.map((feature) => (
               <div
-                key={feature.title}
+                key={feature.key}
                 className="bg-white rounded-2xl p-6 shadow-sm ring-1 ring-gray-900/5 hover:shadow-md transition-shadow duration-300"
               >
                 <div className={`w-11 h-11 ${feature.bg} rounded-xl flex items-center justify-center ${feature.color} mb-4`}>
@@ -448,10 +470,10 @@ export default function WelcomePage() {
       <section className="relative z-10 py-24 bg-white/50">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4 font-display">
-            Installation
+            {t('welcome.installation.sectionTitle')}
           </h2>
           <p className="text-lg text-gray-500 text-center mb-12 max-w-xl mx-auto">
-            Download, install, and you&apos;re ready to go.
+            {t('welcome.installation.sectionSubtitle')}
           </p>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -463,32 +485,32 @@ export default function WelcomePage() {
                     <path d="M17.05 19.349c-.854 1.25-1.764 2.495-3.13 2.52-1.353.025-1.788-.804-3.34-.804-1.536 0-2.004.78-3.296.828-1.304.049-2.296-1.325-3.125-2.524C2.378 16.63 1.01 12.062 2.72 8.996c.884-1.556 2.464-2.537 4.195-2.564 1.305-.022 2.535.877 3.333.877.785 0 2.256-1.085 3.826-.917.653.027 2.49.255 3.655 1.964-.093.058-2.186 1.275-2.164 3.81.025 3.012 2.67 4.025 2.697 4.036-.026.069-.418 1.436-1.365 2.809l-.248.34zM12.984 3.52c.732-.888 1.225-2.122 1.09-3.267-1.056.042-2.336.78-3.087 1.635-.678.756-1.27 1.96-1.096 3.12 1.183.091 2.39-.63 3.093-1.488z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 font-display">macOS</h3>
+                <h3 className="text-xl font-bold text-gray-900 font-display">{t('welcome.installation.macos.title')}</h3>
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                Since Orbit Agents doesn&apos;t have an Apple Developer certificate yet, macOS Gatekeeper may block the app. Fix it with either method:
+                {t('welcome.installation.macos.desc')}
               </p>
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 mb-2">Option 1: Terminal command (Recommended)</p>
+                  <p className="text-sm font-semibold text-gray-800 mb-2">{t('welcome.installation.macos.option1Title')}</p>
                   <code className="block bg-gray-50 rounded-lg px-4 py-3 text-xs font-mono text-gray-800 border border-gray-100">
                     xattr -cr /Applications/Orbit\ Agents.app
                   </code>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 mb-2">Option 2: Right-click to open</p>
+                  <p className="text-sm font-semibold text-gray-800 mb-2">{t('welcome.installation.macos.option2Title')}</p>
                   <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
-                    <li>Right-click (or Control-click) the app in Finder</li>
-                    <li>Select <strong>&quot;Open&quot;</strong></li>
-                    <li>Click <strong>&quot;Open&quot;</strong> again in the dialog</li>
+                    <li>{t('welcome.installation.macos.option2Step1')}</li>
+                    <li>{t('welcome.installation.macos.option2Step2')}</li>
+                    <li>{t('welcome.installation.macos.option2Step3')}</li>
                   </ol>
                 </div>
 
                 <p className="text-xs text-gray-400 pt-1">
-                  Only needed the first time — after that, the app opens normally.
+                  {t('welcome.installation.macos.note')}
                 </p>
               </div>
             </div>
@@ -501,21 +523,21 @@ export default function WelcomePage() {
                     <path d="M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24"/>
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 font-display">Windows</h3>
+                <h3 className="text-xl font-bold text-gray-900 font-display">{t('welcome.installation.windows.title')}</h3>
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                Windows SmartScreen may show a warning for unsigned apps. Click through to proceed:
+                {t('welcome.installation.windows.desc')}
               </p>
 
               <div>
                 <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
-                  <li>Click <strong>&quot;More info&quot;</strong> on the SmartScreen popup</li>
-                  <li>Click <strong>&quot;Run anyway&quot;</strong></li>
+                  <li>{t('welcome.installation.windows.step1')}</li>
+                  <li>{t('welcome.installation.windows.step2')}</li>
                 </ol>
 
                 <p className="text-xs text-gray-400 pt-4">
-                  Or use the portable .zip version — no installer, no SmartScreen.
+                  {t('welcome.installation.windows.note')}
                 </p>
               </div>
             </div>
@@ -527,10 +549,10 @@ export default function WelcomePage() {
       <section className="relative z-10 py-20 text-center">
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-display">
-            Ready to put your AI on autopilot?
+            {t('welcome.cta.title')}
           </h2>
           <p className="text-lg text-gray-500 mb-10">
-            Free, open source, no signup required.
+            {t('welcome.cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
@@ -540,7 +562,7 @@ export default function WelcomePage() {
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 19.349c-.854 1.25-1.764 2.495-3.13 2.52-1.353.025-1.788-.804-3.34-.804-1.536 0-2.004.78-3.296.828-1.304.049-2.296-1.325-3.125-2.524C2.378 16.63 1.01 12.062 2.72 8.996c.884-1.556 2.464-2.537 4.195-2.564 1.305-.022 2.535.877 3.333.877.785 0 2.256-1.085 3.826-.917.653.027 2.49.255 3.655 1.964-.093.058-2.186 1.275-2.164 3.81.025 3.012 2.67 4.025 2.697 4.036-.026.069-.418 1.436-1.365 2.809l-.248.34zM12.984 3.52c.732-.888 1.225-2.122 1.09-3.267-1.056.042-2.336.78-3.087 1.635-.678.756-1.27 1.96-1.096 3.12 1.183.091 2.39-.63 3.093-1.488z" />
               </svg>
-              Download for Mac
+              {t('welcome.cta.downloadMac')}
             </a>
             <a
               href={WIN_DOWNLOAD_URL}
@@ -549,7 +571,7 @@ export default function WelcomePage() {
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M0 3.449L9.75 2.1v9.451H0m9.75 9.413L0 19.488V12h9.75m2.25-10.413L24 0v11.458H12M24 24l-12-1.583v-9.967H24"/>
               </svg>
-              Download for Windows
+              {t('welcome.cta.downloadWindows')}
             </a>
           </div>
         </div>
@@ -559,10 +581,11 @@ export default function WelcomePage() {
       <footer className="relative z-10 py-8 border-t border-gray-200/40 bg-white/30 backdrop-blur-sm mt-auto">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-sm text-gray-500">
-            MIT License &middot; Made by{' '}
+            {t('welcome.footer.creditPre')}{' '}
             <a href="https://www.facebook.com/mukispace" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
               Muki Wu
             </a>
+            {t('welcome.footer.creditPost')}
           </div>
 
           <div className="flex items-center gap-6">
@@ -594,7 +617,7 @@ export default function WelcomePage() {
               href={primaryDownloadUrl}
               className="text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors"
             >
-              Download
+              {t('welcome.footer.download')}
             </a>
           </div>
         </div>

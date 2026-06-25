@@ -262,6 +262,141 @@
       "daySeparator": "、"
     }
   },
+  "welcome": {
+    "slides": {
+      "alt0": "Orbit Agents — 任務排程介面",
+      "alt1": "Orbit Agents — AI 輸出執行記錄"
+    },
+    "nav": {
+      "download": "下載"
+    },
+    "hero": {
+      "badge": "免費 & 開源",
+      "title": "你的 AI 任務，",
+      "titleHighlight": "全都自動化。",
+      "subtitle": "讓 Claude、Codex 或 Antigravity 自動在你的電腦上執行。不用伺服器、不用月費、不用拉節點，只要寫提示詞、設排程，剩下的交給它。",
+      "downloadMac": "下載 Mac 版",
+      "viewGitHub": "在 GitHub 查看",
+      "downloadWindows": "Windows",
+      "downloadPortable": "Portable (.zip)"
+    },
+    "screenshots": {
+      "prev": "上一張截圖",
+      "next": "下一張截圖",
+      "goTo": "跳至第 {{index}} 張截圖"
+    },
+    "steps": {
+      "sectionTitle": "三個步驟，就這樣。",
+      "sectionSubtitle": "不需複雜設定，沒有陡峭的學習曲線。",
+      "pickAI": {
+        "title": "選擇你的 AI",
+        "desc": "Claude、Codex 或 Antigravity，選一個最適合你任務的模型。"
+      },
+      "writePrompt": {
+        "title": "寫下提示詞",
+        "desc": "用自然語言描述你想完成的事，或使用斜線指令，不需要拉線接節點。"
+      },
+      "setSchedule": {
+        "title": "設定排程",
+        "desc": "每天、每週或自訂 cron 表達式，Orbit 準時執行，每次都不漏。"
+      }
+    },
+    "comparison": {
+      "sectionTitle": "為什麼選 Orbit？",
+      "sectionSubtitle": "看看 Orbit 和傳統自動化平台有什麼不同。",
+      "othersHeader": "n8n / Zapier / 其他",
+      "cost": {
+        "label": "費用",
+        "others": "雲端訂閱費",
+        "orbit": "免費，在本機執行"
+      },
+      "setup": {
+        "label": "設定方式",
+        "others": "拉線接節點",
+        "orbit": "寫提示詞就搞定"
+      },
+      "aiIntegration": {
+        "label": "AI 整合",
+        "others": "需要額外擴充",
+        "orbit": "Claude、Codex 與 Antigravity 內建支援"
+      },
+      "data": {
+        "label": "資料",
+        "others": "儲存在雲端",
+        "orbit": "100% 在你自己的機器上"
+      },
+      "platform": {
+        "label": "平台",
+        "others": "瀏覽器 / 僅限 macOS",
+        "orbit": "macOS + Windows"
+      },
+      "sourceCode": {
+        "label": "原始碼",
+        "others": "封閉 / 受限",
+        "orbit": "開放原始碼（MIT）"
+      }
+    },
+    "features": {
+      "sectionTitle": "核心功能",
+      "sectionSubtitle": "在桌面自動化 AI 任務所需的一切。",
+      "smartScheduling": {
+        "title": "智慧排程",
+        "desc": "間隔、每天、每週、每月或直接寫 cron 表達式，隨你選擇。"
+      },
+      "deepAI": {
+        "title": "深度 AI 整合",
+        "desc": "原生支援 Claude、Codex 與 Antigravity CLI，並可連接 MCP 伺服器。"
+      },
+      "executionLogs": {
+        "title": "執行記錄",
+        "desc": "完整呈現每次執行的過程，逐步追蹤 AI 做了什麼。"
+      },
+      "emailNotifications": {
+        "title": "電子郵件通知",
+        "desc": "任務完成或失敗時立即通知，不錯過任何結果。"
+      },
+      "crossPlatform": {
+        "title": "跨平台支援",
+        "desc": "macOS 與 Windows 原生桌面應用程式，不需要開瀏覽器。"
+      },
+      "autoRetry": {
+        "title": "失敗自動重試",
+        "desc": "網路不穩？Orbit 會自動重試，讓排程任務持續正常運行。"
+      }
+    },
+    "installation": {
+      "sectionTitle": "安裝說明",
+      "sectionSubtitle": "下載、安裝，就可以開始使用了。",
+      "macos": {
+        "title": "macOS",
+        "desc": "由於 Orbit Agents 尚未取得 Apple 開發者憑證，macOS Gatekeeper 可能會阻擋應用程式。用以下任一方式解決：",
+        "option1Title": "方法一：在終端機執行指令（推薦）",
+        "option2Title": "方法二：右鍵點擊開啟",
+        "option2Step1": "在 Finder 中右鍵點擊（或 Control + 點擊）應用程式",
+        "option2Step2": "選擇「開啟」",
+        "option2Step3": "在對話框中再次點擊「開啟」",
+        "note": "只有第一次需要這樣做，之後就可以直接開啟。"
+      },
+      "windows": {
+        "title": "Windows",
+        "desc": "Windows SmartScreen 可能會對未簽署的應用程式顯示警告，點選繼續即可：",
+        "step1": "在 SmartScreen 彈窗中點「更多資訊」",
+        "step2": "點「繼續執行」",
+        "note": "或使用 Portable .zip 版本，免安裝、免 SmartScreen。"
+      }
+    },
+    "cta": {
+      "title": "準備好讓你的 AI 自動執行了嗎？",
+      "subtitle": "免費、開源，不需要註冊。",
+      "downloadMac": "下載 Mac 版",
+      "downloadWindows": "下載 Windows 版"
+    },
+    "footer": {
+      "creditPre": "MIT License · 由",
+      "creditPost": " 製作",
+      "download": "下載"
+    }
+  },
   "executionLog": {
     "listTitle": "執行記錄",
     "selectAll": "全選",

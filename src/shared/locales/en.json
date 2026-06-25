@@ -262,6 +262,141 @@
       "daySeparator": ", "
     }
   },
+  "welcome": {
+    "slides": {
+      "alt0": "Orbit Agents — task scheduling interface",
+      "alt1": "Orbit Agents — execution log with AI output"
+    },
+    "nav": {
+      "download": "Download"
+    },
+    "hero": {
+      "badge": "Free & Open Source",
+      "title": "Your AI tasks,",
+      "titleHighlight": "on autopilot.",
+      "subtitle": "Schedule Claude, Codex, or Antigravity to run automatically on your desktop. No servers, no cloud fees, no node wiring — just write a prompt, pick a schedule, and let it work for you.",
+      "downloadMac": "Download for Mac",
+      "viewGitHub": "View on GitHub",
+      "downloadWindows": "Windows",
+      "downloadPortable": "Portable (.zip)"
+    },
+    "screenshots": {
+      "prev": "Previous screenshot",
+      "next": "Next screenshot",
+      "goTo": "Go to screenshot {{index}}"
+    },
+    "steps": {
+      "sectionTitle": "Three steps. That's it.",
+      "sectionSubtitle": "No complex setup, no steep learning curve.",
+      "pickAI": {
+        "title": "Pick your AI",
+        "desc": "Claude, Codex, or Antigravity — choose the model that fits your task."
+      },
+      "writePrompt": {
+        "title": "Write your prompt",
+        "desc": "Describe what you want done in plain language, or use a slash command — no node wiring needed."
+      },
+      "setSchedule": {
+        "title": "Set a schedule",
+        "desc": "Daily, weekly, or custom cron — Orbit runs it on time, every time."
+      }
+    },
+    "comparison": {
+      "sectionTitle": "Why Orbit?",
+      "sectionSubtitle": "See how Orbit compares to traditional automation platforms.",
+      "othersHeader": "n8n / Zapier / Others",
+      "cost": {
+        "label": "Cost",
+        "others": "Cloud subscription fees",
+        "orbit": "Free, runs locally"
+      },
+      "setup": {
+        "label": "Setup",
+        "others": "Wire nodes & connectors",
+        "orbit": "Write a prompt"
+      },
+      "aiIntegration": {
+        "label": "AI integration",
+        "others": "Requires add-ons",
+        "orbit": "Claude, Codex & Antigravity built-in"
+      },
+      "data": {
+        "label": "Data",
+        "others": "Stored in the cloud",
+        "orbit": "100% on your machine"
+      },
+      "platform": {
+        "label": "Platform",
+        "others": "Browser-based / macOS only",
+        "orbit": "macOS + Windows"
+      },
+      "sourceCode": {
+        "label": "Source code",
+        "others": "Closed / limited",
+        "orbit": "Open source (MIT)"
+      }
+    },
+    "features": {
+      "sectionTitle": "Key Features",
+      "sectionSubtitle": "Everything you need to automate AI tasks on your desktop.",
+      "smartScheduling": {
+        "title": "Smart Scheduling",
+        "desc": "Interval, daily, weekly, monthly, or raw cron expressions — pick what works for you."
+      },
+      "deepAI": {
+        "title": "Deep AI Integration",
+        "desc": "First-class support for Claude, Codex, and Antigravity CLI, with MCP server connections."
+      },
+      "executionLogs": {
+        "title": "Execution Logs",
+        "desc": "Full visibility into every run — see what the agent did, step by step."
+      },
+      "emailNotifications": {
+        "title": "Email Notifications",
+        "desc": "Get notified when tasks complete or fail — never miss a result."
+      },
+      "crossPlatform": {
+        "title": "Cross-Platform",
+        "desc": "Native desktop app for macOS and Windows. No browser tab required."
+      },
+      "autoRetry": {
+        "title": "Auto-Retry on Failure",
+        "desc": "Network hiccup? Orbit retries automatically so your scheduled tasks stay on track."
+      }
+    },
+    "installation": {
+      "sectionTitle": "Installation",
+      "sectionSubtitle": "Download, install, and you're ready to go.",
+      "macos": {
+        "title": "macOS",
+        "desc": "Since Orbit Agents doesn't have an Apple Developer certificate yet, macOS Gatekeeper may block the app. Fix it with either method:",
+        "option1Title": "Option 1: Terminal command (Recommended)",
+        "option2Title": "Option 2: Right-click to open",
+        "option2Step1": "Right-click (or Control-click) the app in Finder",
+        "option2Step2": "Select \"Open\"",
+        "option2Step3": "Click \"Open\" again in the dialog",
+        "note": "Only needed the first time — after that, the app opens normally."
+      },
+      "windows": {
+        "title": "Windows",
+        "desc": "Windows SmartScreen may show a warning for unsigned apps. Click through to proceed:",
+        "step1": "Click \"More info\" on the SmartScreen popup",
+        "step2": "Click \"Run anyway\"",
+        "note": "Or use the portable .zip version — no installer, no SmartScreen."
+      }
+    },
+    "cta": {
+      "title": "Ready to put your AI on autopilot?",
+      "subtitle": "Free, open source, no signup required.",
+      "downloadMac": "Download for Mac",
+      "downloadWindows": "Download for Windows"
+    },
+    "footer": {
+      "creditPre": "MIT License · Made by",
+      "creditPost": "",
+      "download": "Download"
+    }
+  },
   "executionLog": {
     "listTitle": "Execution Logs",
     "selectAll": "Select all",
