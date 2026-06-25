@@ -403,7 +403,9 @@ export function getAllSettings(): Settings {
 
   const settings: Settings = {}
   for (const row of rows) {
-    settings[row.key as SettingKey] = row.value
+    // All settings values are stored as raw strings in SQLite; narrower union
+    // types (e.g. language) are validated at the call sites, not here.
+    ;(settings as Record<string, string>)[row.key] = row.value
   }
   return settings
 }

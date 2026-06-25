@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSettings, useAiProvider } from '../hooks/useApi'
+import { applyLanguagePreference } from '../i18n'
+import type { LanguagePreference } from '../../../shared/i18n/resolveLocale'
 import type { ProviderTestResult, UpdateStatus } from '../../../shared/types'
 import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw } from 'lucide-react'
 
@@ -8,10 +11,12 @@ type SettingsTab = 'general' | 'claude' | 'codex' | 'antigravity' | 'email'
 interface SettingsProps {}
 
 export default function Settings({}: SettingsProps) {
+  const { t } = useTranslation()
   const { settings, loading, updateSettings, testEmail } = useSettings()
   const { test: testAiProvider } = useAiProvider()
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
+  const [language, setLanguage] = useState<LanguagePreference>('system')
 
   // Local state for the entire form
   const [formData, setFormData] = useState({
@@ -65,6 +70,7 @@ export default function Settings({}: SettingsProps) {
         auto_launch: settings.auto_launch ?? 'true',
         auto_update: settings.auto_update ?? 'true'
       })
+      setLanguage(settings.language ?? 'system')
       setIsLoaded(true)
     }
   }, [loading, settings, isLoaded])
@@ -244,6 +250,12 @@ export default function Settings({}: SettingsProps) {
     }
   }
 
+  const handleLanguageChange = async (newLang: LanguagePreference) => {
+    setLanguage(newLang)
+    applyLanguagePreference(newLang)
+    await updateSettings({ language: newLang })
+  }
+
   if (loading && !isLoaded) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -396,6 +408,26 @@ export default function Settings({}: SettingsProps) {
                     }`}
                   />
                 </button>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-100" />
+
+              {/* Language Selector */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-900 block">{t('settings.language.label')}</label>
+                  <p className="text-xs text-gray-500 mt-1">{t('settings.language.description')}</p>
+                </div>
+                <select
+                  value={language}
+                  onChange={(e) => handleLanguageChange(e.target.value as LanguagePreference)}
+                  className="px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                >
+                  <option value="system">{t('settings.language.system')}</option>
+                  <option value="en">{t('settings.language.en')}</option>
+                  <option value="zh-TW">{t('settings.language.zhTW')}</option>
+                </select>
               </div>
 
               {/* Check for Updates */}

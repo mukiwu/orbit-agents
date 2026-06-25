@@ -34,6 +34,8 @@ import type { ProviderId } from './ai/types'
 
 import { scanSkills } from './skills'
 import { resetTransporter, sendTestEmail } from './email'
+import { setMainLocale } from './i18n'
+import { resolveLocale } from '../shared/i18n/resolveLocale'
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -151,6 +153,11 @@ function registerIpcHandlers(): void {
       })
     }
 
+    // Sync main-process locale when language preference changes
+    if (settings.language !== undefined) {
+      setMainLocale(resolveLocale(settings.language, app.getLocale()))
+    }
+
     resetTransporter() // Reset transporter so new settings take effect
   })
 
@@ -240,7 +247,7 @@ app.whenReady().then(() => {
     return
   }
 
-  // Apply auto-launch setting
+  // Apply auto-launch setting and initial locale
   const settings = getAllSettings()
   const autoLaunch = settings.auto_launch === 'true'
   // Only set if explicitly enabled/disabled to avoid overwriting OS state if not set
@@ -250,6 +257,9 @@ app.whenReady().then(() => {
       openAsHidden: false
     })
   }
+
+  // Apply persisted language preference to the main process
+  setMainLocale(resolveLocale(settings.language ?? 'system', app.getLocale()))
 
   // Register IPC handlers
   registerIpcHandlers()

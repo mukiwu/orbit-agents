@@ -12,5 +12,14 @@
     "test": {
       "greeting": "Hi {{name}}"
     }
+  },
+  "settings": {
+    "language": {
+      "label": "Language",
+      "description": "Choose the display language for the app.",
+      "system": "Follow System",
+      "en": "English",
+      "zhTW": "Traditional Chinese"
+    }
   }
 }

@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TaskList from './components/TaskList'
 import TaskForm from './components/TaskForm'
 import ExecutionLog from './components/ExecutionLog'
 import Settings from './components/Settings'
 import WelcomePage from './components/WelcomePage'
+import { useSettings } from './hooks/useApi'
+import { applyLanguagePreference } from './i18n'
 import type { Task } from '../../shared/types'
 
 type View = 'tasks' | 'logs' | 'settings'
@@ -12,7 +14,20 @@ export default function App() {
   // Check synchronously to avoid flash of wrong content and potential crashes in hooks
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [isElectron] = useState(() => (window as any).electronApi !== undefined)
-  
+
+  // Hooks must be called before any early return (React rules).
+  // In non-Electron environments, useSettings fails gracefully (no-op) and
+  // the effect below guards on isElectron, so WelcomePage is never affected.
+  const { settings, loading } = useSettings()
+
+  // Apply persisted language preference on startup (Electron only).
+  // Keyed on settings.language so it also re-fires if the value changes while
+  // the app is open, though the Settings component handles live switches directly.
+  useEffect(() => {
+    if (!isElectron || loading) return
+    applyLanguagePreference(settings.language ?? 'system')
+  }, [isElectron, loading, settings.language])
+
   const [currentView, setCurrentView] = useState<View>('tasks')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [showTaskForm, setShowTaskForm] = useState(false)

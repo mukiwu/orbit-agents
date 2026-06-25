@@ -76,6 +76,7 @@ export interface Settings {
   antigravity_cli_path?: string
   auto_launch?: string
   auto_update?: string
+  language?: 'system' | 'en' | 'zh-TW'
 }
 
 export type SettingKey = keyof Settings
