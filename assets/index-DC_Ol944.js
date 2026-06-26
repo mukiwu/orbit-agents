@@ -9793,7 +9793,8 @@ function useExecutionLog(id2) {
       api.off("execution:update", handleUpdate);
     };
   }, [id2]);
-  return { log, loading, error, refetch: fetchLog };
+  const cancel = reactExports.useCallback(() => api.invoke("log:cancel", id2), [id2]);
+  return { log, loading, error, refetch: fetchLog, cancel };
 }
 function useSettings() {
   const [settings2, setSettings] = reactExports.useState({});
@@ -22293,14 +22294,14 @@ function enterCell(token) {
 function exitCodeText(token) {
   let value = this.resume();
   if (this.data.inTable) {
-    value = value.replace(/\\([\\|])/g, replace);
+    value = value.replace(/\\([\\|])/g, replace$1);
   }
   const node2 = this.stack[this.stack.length - 1];
   ok$1(node2.type === "inlineCode");
   node2.value = value;
   this.exit(token);
 }
-function replace($0, $1) {
+function replace$1($0, $1) {
   return $1 === "|" ? $1 : $0;
 }
 function gfmTableToMarkdown(options) {
@@ -23773,6 +23774,36 @@ function remarkGfm(options) {
   fromMarkdownExtensions.push(gfmFromMarkdown());
   toMarkdownExtensions.push(gfmToMarkdown(settings2));
 }
+function newlineToBreak(tree) {
+  findAndReplace(tree, [/\r?\n|\r/g, replace]);
+}
+function replace() {
+  return { type: "break" };
+}
+function remarkBreaks() {
+  return function(tree) {
+    newlineToBreak(tree);
+  };
+}
+const SAFE_PROTOCOL = /^(https?|ircs?|mailto|xmpp|tel|file):/i;
+function safeMarkdownUrl(url) {
+  const value = url.trim();
+  const colon = value.indexOf(":");
+  if (colon === -1) return value;
+  const slash = value.indexOf("/");
+  const question = value.indexOf("?");
+  const hash = value.indexOf("#");
+  if (slash !== -1 && colon > slash || question !== -1 && colon > question || hash !== -1 && colon > hash) {
+    return value;
+  }
+  return SAFE_PROTOCOL.test(value) ? value : "";
+}
+function linkifyIframes(markdown, label) {
+  return markdown.replace(
+    /<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>(?:\s*<\/iframe>)?/gi,
+    (_match, src) => `[${label}](<${src}>)`
+  );
+}
 function ExecutionLog() {
   const { t: t2 } = useTranslation();
   const { logs, loading, error, deleteLogs } = useExecutionLogs(void 0, 200);
@@ -23876,7 +23907,8 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }) {
   const statusColors = {
     running: "bg-blue-500",
     success: "bg-emerald-500",
-    failed: "bg-red-500"
+    failed: "bg-red-500",
+    cancelled: "bg-amber-500"
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
@@ -23904,7 +23936,7 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }) {
                 /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: `text-sm truncate ${isSelected ? "font-medium text-gray-900" : "text-gray-700"}`, children: log.task_name || t2("executionLog.unknownTask") }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-400 mt-0.5", children: formatRelativeTime(log.started_at, t2) })
               ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `text-sm font-medium px-1.5 py-0.5 rounded ${log.status === "running" ? "bg-blue-100 text-blue-700" : log.status === "success" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`, children: log.status === "running" ? t2("common.running") : log.status === "success" ? t2("common.done") : t2("common.failed") })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `text-sm font-medium px-1.5 py-0.5 rounded ${log.status === "running" ? "bg-blue-100 text-blue-700" : log.status === "success" ? "bg-emerald-100 text-emerald-700" : log.status === "cancelled" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`, children: log.status === "running" ? t2("common.running") : log.status === "success" ? t2("common.done") : log.status === "cancelled" ? t2("common.cancelled") : t2("common.failed") })
             ]
           }
         )
@@ -23914,7 +23946,7 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }) {
 }
 function LogDetail({ log: initialLog }) {
   const { t: t2 } = useTranslation();
-  const { log: liveLog } = useExecutionLog(initialLog.id);
+  const { log: liveLog, cancel } = useExecutionLog(initialLog.id);
   const log = liveLog ? { ...initialLog, ...liveLog } : initialLog;
   const outputEndRef = reactExports.useRef(null);
   const [copied, setCopied] = reactExports.useState(false);
@@ -23929,6 +23961,10 @@ function LogDetail({ log: initialLog }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2e3);
     }
+  };
+  const handleCancel = async () => {
+    if (!confirm(t2("executionLog.confirmStop"))) return;
+    await cancel();
   };
   const extractCurrentActivity = (output) => {
     if (!output || output.trim().length === 0) {
@@ -24052,20 +24088,33 @@ function LogDetail({ log: initialLog }) {
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-base font-semibold text-gray-900", children: initialLog.task_name || t2("executionLog.unknownTask") }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(StatusBadge, { status: log.status })
       ] }),
-      log.output && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          onClick: handleCopy,
-          className: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors",
-          children: copied ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5 text-emerald-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M5 13l4 4L19 7" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: t2("executionLog.copied") })
-          ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" }) }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t2("executionLog.copy") })
-          ] })
-        }
-      )
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1", children: [
+        log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            onClick: handleCancel,
+            className: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "5", y: "5", width: "10", height: "10", rx: "1.5" }) }),
+              t2("executionLog.stop")
+            ]
+          }
+        ),
+        log.output && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            onClick: handleCopy,
+            className: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors",
+            children: copied ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5 text-emerald-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M5 13l4 4L19 7" }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-emerald-600", children: t2("executionLog.copied") })
+            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t2("executionLog.copy") })
+            ] })
+          }
+        )
+      ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto overflow-x-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-6 py-4 space-y-4 min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-6 text-sm text-gray-500", children: [
@@ -24151,10 +24200,34 @@ function LogDetail({ log: initialLog }) {
   ] });
 }
 function ChatMessage({ content: content2, isStreaming }) {
+  const { t: t2 } = useTranslation();
+  const rendered = linkifyIframes(content2, t2("executionLog.openPreview"));
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-3", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-4 h-4 text-white", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" }) }) }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 min-w-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-white rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "prose prose-sm max-w-none overflow-hidden\n            prose-headings:text-gray-900 prose-headings:font-semibold\n            prose-h1:text-lg prose-h1:mt-4 prose-h1:mb-3\n            prose-h2:text-base prose-h2:mt-3 prose-h2:mb-2\n            prose-h3:text-sm prose-h3:mt-2 prose-h3:mb-1\n            prose-p:text-gray-700 prose-p:leading-relaxed prose-p:break-words prose-p:my-2\n            prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-a:break-all\n            prose-strong:text-gray-900 prose-strong:font-semibold\n            prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-normal prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-code:break-all\n            prose-pre:bg-gray-950 prose-pre:text-gray-300 prose-pre:rounded-xl prose-pre:overflow-x-auto prose-pre:text-xs prose-pre:my-3 prose-pre:p-4 prose-pre:leading-relaxed prose-pre:shadow-inner\n            [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit [&_pre_code]:text-xs [&_pre_code]:leading-relaxed [&_pre_code]:rounded-none [&_pre_code]:shadow-none\n            prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-2 prose-ol:my-2\n            prose-li:marker:text-gray-400\n            [&_table]:w-full [&_table]:table-fixed [&_table]:text-sm [&_table]:border-collapse [&_table]:my-2\n            [&_thead]:bg-gray-50\n            [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold [&_th]:text-gray-600 [&_th]:uppercase [&_th]:tracking-wider [&_th]:px-2 [&_th]:py-2 [&_th]:border-b [&_th]:border-gray-200 [&_th]:break-words\n            [&_td]:px-2 [&_td]:py-2 [&_td]:text-gray-600 [&_td]:border-b [&_td]:border-gray-100 [&_td]:align-top [&_td]:break-words [&_td]:overflow-hidden\n            [&_tr:last-child_td]:border-b-0\n            [&_tbody_tr:hover]:bg-gray-50\n          ", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Markdown, { remarkPlugins: [remarkGfm], children: content2 }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Markdown,
+        {
+          remarkPlugins: [remarkGfm, remarkBreaks],
+          urlTransform: safeMarkdownUrl,
+          components: {
+            a({ href, children }) {
+              return /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "a",
+                {
+                  href,
+                  onClick: (e) => {
+                    e.preventDefault();
+                    if (href) window.electronApi.invoke("link:open", href);
+                  },
+                  children
+                }
+              );
+            }
+          },
+          children: rendered
+        }
+      ),
       isStreaming && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse" })
     ] }) }) })
   ] });
@@ -24164,12 +24237,14 @@ function StatusBadge({ status }) {
   const styles = {
     running: "bg-blue-100 text-blue-700",
     success: "bg-emerald-100 text-emerald-700",
-    failed: "bg-red-100 text-red-700"
+    failed: "bg-red-100 text-red-700",
+    cancelled: "bg-amber-100 text-amber-700"
   };
   const labels = {
     running: t2("common.running"),
     success: t2("executionLog.statusBadge.completed"),
-    failed: t2("common.failed")
+    failed: t2("common.failed"),
+    cancelled: t2("executionLog.statusBadge.cancelled")
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: `inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium ${styles[status]}`, children: [
     status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-2.5 w-2.5 border border-blue-700 border-t-transparent" }),
@@ -24215,7 +24290,8 @@ const common$1 = {
   loading: "Loading...",
   running: "Running",
   done: "Done",
-  failed: "Failed"
+  failed: "Failed",
+  cancelled: "Cancelled"
 };
 const main$1 = {
   test: {
@@ -24665,8 +24741,12 @@ const executionLog$1 = {
     step3: "Confirm MCP Server is running",
     step4: "Check API permissions configuration"
   },
+  stop: "Stop",
+  confirmStop: "Stop this running task?",
+  openPreview: "Open preview",
   statusBadge: {
-    completed: "Completed"
+    completed: "Completed",
+    cancelled: "Cancelled"
   },
   time: {
     justNow: "Just now",
@@ -24733,7 +24813,8 @@ const common = {
   loading: "載入中...",
   running: "執行中",
   done: "完成",
-  failed: "失敗"
+  failed: "失敗",
+  cancelled: "已中止"
 };
 const main = {
   test: {
@@ -25183,8 +25264,12 @@ const executionLog = {
     step3: "確認 MCP Server 已啟動",
     step4: "檢查 API 權限配置"
   },
+  stop: "中止",
+  confirmStop: "確定要中止這個執行中的任務嗎？",
+  openPreview: "開啟預覽",
   statusBadge: {
-    completed: "已完成"
+    completed: "已完成",
+    cancelled: "已中止"
   },
   time: {
     justNow: "剛才",

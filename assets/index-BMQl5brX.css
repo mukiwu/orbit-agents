@@ -1807,9 +1807,17 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(248 247 246 / var(--tw-bg-opacity, 1));
 }
+.bg-amber-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 243 199 / var(--tw-bg-opacity, 1));
+}
 .bg-amber-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(255 251 235 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(245 158 11 / var(--tw-bg-opacity, 1));
 }
 .bg-black\/40 {
   background-color: rgb(0 0 0 / 0.4);
