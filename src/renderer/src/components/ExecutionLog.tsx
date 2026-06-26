@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import { useTranslation } from 'react-i18next'
 import { useExecutionLogs, useExecutionLog } from '../hooks/useApi'
+import { linkifyIframes, safeMarkdownUrl } from '../utils/markdown'
 import type { ExecutionLogWithTask } from '../../../shared/types'
 
 export default function ExecutionLog() {
@@ -163,7 +165,8 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListIt
   const statusColors = {
     running: 'bg-blue-500',
     success: 'bg-emerald-500',
-    failed: 'bg-red-500'
+    failed: 'bg-red-500',
+    cancelled: 'bg-amber-500'
   }
 
   return (
@@ -210,9 +213,10 @@ function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListIt
         <span className={`text-sm font-medium px-1.5 py-0.5 rounded ${
           log.status === 'running' ? 'bg-blue-100 text-blue-700' :
           log.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
+          log.status === 'cancelled' ? 'bg-amber-100 text-amber-700' :
           'bg-red-100 text-red-700'
         }`}>
-          {log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : t('common.failed')}
+          {log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : log.status === 'cancelled' ? t('common.cancelled') : t('common.failed')}
         </span>
       </div>
     </div>
@@ -225,7 +229,7 @@ interface LogDetailProps {
 
 function LogDetail({ log: initialLog }: LogDetailProps) {
   const { t } = useTranslation()
-  const { log: liveLog } = useExecutionLog(initialLog.id)
+  const { log: liveLog, cancel } = useExecutionLog(initialLog.id)
   const log = liveLog ? { ...initialLog, ...liveLog } : initialLog
   const outputEndRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
@@ -242,6 +246,11 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+  }
+
+  const handleCancel = async () => {
+    if (!confirm(t('executionLog.confirmStop'))) return
+    await cancel()
   }
 
   // Extract current activity from output
@@ -404,7 +413,19 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
           <StatusBadge status={log.status} />
         </div>
 
-        {log.output && (
+        <div className="flex items-center gap-1">
+          {log.status === 'running' && (
+            <button
+              onClick={handleCancel}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <rect x="5" y="5" width="10" height="10" rx="1.5" />
+              </svg>
+              {t('executionLog.stop')}
+            </button>
+          )}
+          {log.output && (
           <button
             onClick={handleCopy}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
@@ -425,7 +446,8 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
               </>
             )}
           </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -578,6 +600,8 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
 }
 
 function ChatMessage({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+  const { t } = useTranslation()
+  const rendered = linkifyIframes(content, t('executionLog.openPreview'))
   return (
     <div className="flex gap-3">
       {/* Avatar */}
@@ -612,7 +636,7 @@ function ChatMessage({ content, isStreaming }: { content: string; isStreaming: b
             [&_tr:last-child_td]:border-b-0
             [&_tbody_tr:hover]:bg-gray-50
           ">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} urlTransform={safeMarkdownUrl}>{rendered}</ReactMarkdown>
             {isStreaming && (
               <span className="inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse" />
             )}
@@ -624,7 +648,7 @@ function ChatMessage({ content, isStreaming }: { content: string; isStreaming: b
 }
 
 interface StatusBadgeProps {
-  status: 'running' | 'success' | 'failed'
+  status: 'running' | 'success' | 'failed' | 'cancelled'
 }
 
 function StatusBadge({ status }: StatusBadgeProps) {
@@ -632,13 +656,15 @@ function StatusBadge({ status }: StatusBadgeProps) {
   const styles = {
     running: 'bg-blue-100 text-blue-700',
     success: 'bg-emerald-100 text-emerald-700',
-    failed: 'bg-red-100 text-red-700'
+    failed: 'bg-red-100 text-red-700',
+    cancelled: 'bg-amber-100 text-amber-700'
   }
 
   const labels = {
     running: t('common.running'),
     success: t('executionLog.statusBadge.completed'),
-    failed: t('common.failed')
+    failed: t('common.failed'),
+    cancelled: t('executionLog.statusBadge.cancelled')
   }
 
   return (

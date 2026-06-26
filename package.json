@@ -29,6 +29,7 @@
     "nodemailer": "^6.9.16",
     "react-i18next": "^17.0.8",
     "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "uuid": "^11.0.3"
   },

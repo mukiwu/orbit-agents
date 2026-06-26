@@ -171,7 +171,11 @@ export function useExecutionLog(id: string) {
     }
   }, [id])
 
-  return { log, loading, error, refetch: fetchLog }
+  // Stop a running execution. The final 'cancelled' status arrives via the
+  // execution:update push once the killed process closes.
+  const cancel = useCallback((): Promise<boolean> => api.invoke('log:cancel', id), [id])
+
+  return { log, loading, error, refetch: fetchLog, cancel }
 }
 
 // ============ Settings Hooks ============

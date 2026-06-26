@@ -9,6 +9,10 @@ export function setMainLocale(locale: ResolvedLocale): void {
   current = locale
 }
 
+export function getMainLocale(): ResolvedLocale {
+  return current
+}
+
 function lookup(obj: Record<string, unknown>, key: string): string | undefined {
   const val = key.split('.').reduce<unknown>(
     (acc, k) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined),

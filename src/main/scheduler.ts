@@ -29,9 +29,10 @@ function isBinaryFile(filePath: string): boolean {
 }
 import { getProvider, runProvider } from './ai'
 import { buildUnattendedInstruction } from './ai/unattended'
+import { wasCancelled, clearCancelled } from './process-manager'
 import type { ExecutionContext, ProviderResult } from './ai/types'
 import { sendTaskResultEmail } from './email'
-import { t } from './i18n'
+import { t, getMainLocale } from './i18n'
 import type { Task, ExecutionLog, ExecutionLogWithTask } from '../shared/types'
 
 // Store active cron jobs
@@ -263,7 +264,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
 
       const ctx: ExecutionContext = {
         prompt: promptWithTextFiles,
-        systemInstruction: buildUnattendedInstruction(),
+        systemInstruction: buildUnattendedInstruction(getMainLocale()),
         model: task.model,
         mcpTools: mcpTools ?? [],
         imagePaths: binaryFiles,
@@ -272,6 +273,11 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
         skipPermissions: task.skip_permissions === 1
       }
       result = await runProvider(getProvider(task.cli_tool), ctx, { executionId: log.id, onOutput })
+
+      // User cancelled this execution — stop immediately, do not retry
+      if (wasCancelled(log.id)) {
+        break
+      }
 
       // If success or non-network error, stop retrying
       if (result.success) {
@@ -302,15 +308,23 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
       cleanOutput = extractAndSaveKnowledge(task, result!.output)
     }
 
+    // A user-cancelled run is recorded as 'cancelled' (not 'failed') so the UI
+    // can show it distinctly. executeTask is the only writer of the final status,
+    // which avoids racing with the cancel handler.
+    const cancelled = wasCancelled(log.id)
+    if (cancelled) clearCancelled(log.id)
+
     // Update execution log
     const updatedLog = updateExecutionLog(log.id, {
-      status: result!.success ? 'success' : 'failed',
+      status: cancelled ? 'cancelled' : result!.success ? 'success' : 'failed',
       output: cleanOutput,
-      error: result!.error
+      error: cancelled ? undefined : result!.error
     })
 
     notifyExecutionUpdate(updatedLog)
-    showCompletionNotification(task.name, result!.success)
+    if (!cancelled) {
+      showCompletionNotification(task.name, result!.success)
+    }
 
     // Send email if configured (only on success — failures stay in logs)
     if (task.output_type === 'both' && task.email_to && updatedLog.status === 'success') {
@@ -323,6 +337,7 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
 
     return updatedLog
   } catch (error) {
+    clearCancelled(log.id)
     const errorMessage = error instanceof Error ? error.message : String(error)
     const updatedLog = updateExecutionLog(log.id, {
       status: 'failed',

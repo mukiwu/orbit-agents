@@ -6,7 +6,8 @@
     "loading": "Loading...",
     "running": "Running",
     "done": "Done",
-    "failed": "Failed"
+    "failed": "Failed",
+    "cancelled": "Cancelled"
   },
   "main": {
     "test": {
@@ -456,8 +457,12 @@
       "step3": "Confirm MCP Server is running",
       "step4": "Check API permissions configuration"
     },
+    "stop": "Stop",
+    "confirmStop": "Stop this running task?",
+    "openPreview": "Open preview",
     "statusBadge": {
-      "completed": "Completed"
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     },
     "time": {
       "justNow": "Just now",

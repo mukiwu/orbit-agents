@@ -6,7 +6,8 @@
     "loading": "載入中...",
     "running": "執行中",
     "done": "完成",
-    "failed": "失敗"
+    "failed": "失敗",
+    "cancelled": "已中止"
   },
   "main": {
     "test": {
@@ -456,8 +457,12 @@
       "step3": "確認 MCP Server 已啟動",
       "step4": "檢查 API 權限配置"
     },
+    "stop": "中止",
+    "confirmStop": "確定要中止這個執行中的任務嗎？",
+    "openPreview": "開啟預覽",
     "statusBadge": {
-      "completed": "已完成"
+      "completed": "已完成",
+      "cancelled": "已中止"
     },
     "time": {
       "justNow": "剛才",

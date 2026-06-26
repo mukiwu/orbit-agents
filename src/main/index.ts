@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { join } from 'path'
+import { fileURLToPath } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fixPath from 'fix-path'
 import { initAutoUpdater, registerAutoUpdaterIpcHandlers } from './auto-updater'
@@ -30,6 +31,8 @@ import {
   onExecutionUpdate
 } from './scheduler'
 import { getProvider } from './ai'
+import { cancelProcess } from './process-manager'
+import { isPreviewableFileUrl } from './safe-open'
 import type { ProviderId } from './ai/types'
 
 import { scanSkills } from './skills'
@@ -71,6 +74,24 @@ function createWindow(): void {
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  // Links inside log output (e.g. a generated file:// path) should open in the
+  // user's default browser/app, not navigate the app's own window away. Dev
+  // server reloads keep their normal in-window navigation.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const devUrl = process.env['ELECTRON_RENDERER_URL']
+    if (is.dev && devUrl && url.startsWith(devUrl)) return
+    event.preventDefault()
+    if (url.startsWith('file://')) {
+      // Agent output can contain file:// links. Only open known-safe document
+      // types so a crafted link cannot launch an executable/script via openPath.
+      if (isPreviewableFileUrl(url)) {
+        shell.openPath(fileURLToPath(url))
+      }
+      return
+    }
+    shell.openExternal(url)
   })
 
   // Load the remote URL for development or the local html file for production
@@ -134,6 +155,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('log:delete', (_, ids: string[]) => {
     return deleteExecutionLogs(ids)
+  })
+
+  ipcMain.handle('log:cancel', (_, id: string) => {
+    return cancelProcess(id)
   })
 
   // Settings handlers

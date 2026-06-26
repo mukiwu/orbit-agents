@@ -315,7 +315,7 @@ export function createExecutionLog(taskId: string): ExecutionLog {
 
 export function updateExecutionLog(
   id: string,
-  update: { status: 'success' | 'failed'; output?: string; error?: string }
+  update: { status: 'success' | 'failed' | 'cancelled'; output?: string; error?: string }
 ): ExecutionLog {
   const db = getDatabase()
   const now = new Date().toISOString()

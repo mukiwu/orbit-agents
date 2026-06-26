@@ -55,7 +55,7 @@ export interface ExecutionLog {
   task_id: string
   started_at: string
   finished_at: string | null
-  status: 'running' | 'success' | 'failed'
+  status: 'running' | 'success' | 'failed' | 'cancelled'
   output: string | null
   error: string | null
 }
@@ -146,6 +146,7 @@ export interface IpcApi {
   'log:list': (taskId?: string, limit?: number) => Promise<ExecutionLogWithTask[]>
   'log:get': (id: string) => Promise<ExecutionLog | null>
   'log:delete': (ids: string[]) => Promise<void>
+  'log:cancel': (id: string) => Promise<boolean>
 
   // Settings operations
   'settings:get': () => Promise<Settings>
