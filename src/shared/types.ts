@@ -148,6 +148,9 @@ export interface IpcApi {
   'log:delete': (ids: string[]) => Promise<void>
   'log:cancel': (id: string) => Promise<boolean>
 
+  // Open a link from log output externally (browser / default app), safely
+  'link:open': (url: string) => Promise<void>
+
   // Settings operations
   'settings:get': () => Promise<Settings>
   'settings:update': (settings: Partial<Settings>) => Promise<void>

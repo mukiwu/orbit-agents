@@ -33,6 +33,19 @@ import {
 import { getProvider } from './ai'
 import { cancelProcess } from './process-manager'
 import { isPreviewableFileUrl } from './safe-open'
+
+// Open a link found in log output (agent markdown / preview). file:// links are
+// restricted to safe document types so a crafted link cannot run executables;
+// everything else goes to the default browser.
+function openAgentLink(url: string): void {
+  if (url.startsWith('file://')) {
+    if (isPreviewableFileUrl(url)) {
+      shell.openPath(fileURLToPath(url))
+    }
+    return
+  }
+  shell.openExternal(url)
+}
 import type { ProviderId } from './ai/types'
 
 import { scanSkills } from './skills'
@@ -83,15 +96,7 @@ function createWindow(): void {
     const devUrl = process.env['ELECTRON_RENDERER_URL']
     if (is.dev && devUrl && url.startsWith(devUrl)) return
     event.preventDefault()
-    if (url.startsWith('file://')) {
-      // Agent output can contain file:// links. Only open known-safe document
-      // types so a crafted link cannot launch an executable/script via openPath.
-      if (isPreviewableFileUrl(url)) {
-        shell.openPath(fileURLToPath(url))
-      }
-      return
-    }
-    shell.openExternal(url)
+    openAgentLink(url)
   })
 
   // Load the remote URL for development or the local html file for production
@@ -159,6 +164,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('log:cancel', (_, id: string) => {
     return cancelProcess(id)
+  })
+
+  ipcMain.handle('link:open', (_, url: string) => {
+    openAgentLink(url)
   })
 
   // Settings handlers

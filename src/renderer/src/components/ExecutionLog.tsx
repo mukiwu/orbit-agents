@@ -636,7 +636,25 @@ function ChatMessage({ content, isStreaming }: { content: string; isStreaming: b
             [&_tr:last-child_td]:border-b-0
             [&_tbody_tr:hover]:bg-gray-50
           ">
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} urlTransform={safeMarkdownUrl}>{rendered}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              urlTransform={safeMarkdownUrl}
+              components={{
+                a({ href, children }) {
+                  return (
+                    <a
+                      href={href}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (href) window.electronApi.invoke('link:open', href)
+                      }}
+                    >
+                      {children}
+                    </a>
+                  )
+                }
+              }}
+            >{rendered}</ReactMarkdown>
             {isStreaming && (
               <span className="inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse" />
             )}

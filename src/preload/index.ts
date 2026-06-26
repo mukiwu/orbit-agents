@@ -29,6 +29,7 @@ export const api: ElectronApi = {
       'log:get',
       'log:delete',
       'log:cancel',
+      'link:open',
       'settings:get',
       'settings:update',
       'settings:test-email',

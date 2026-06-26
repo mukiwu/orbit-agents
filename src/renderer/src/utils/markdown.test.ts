@@ -21,7 +21,12 @@ describe('safeMarkdownUrl', () => {
 describe('linkifyIframes', () => {
   it('turns an <iframe src> into a markdown link so it opens externally', () => {
     const md = '前言\n<iframe src="file:///x/weekly.html" width="100%"></iframe>\n後語'
-    expect(linkifyIframes(md, '開啟預覽')).toBe('前言\n[開啟預覽](file:///x/weekly.html)\n後語')
+    expect(linkifyIframes(md, '開啟預覽')).toBe('前言\n[開啟預覽](<file:///x/weekly.html>)\n後語')
+  })
+
+  it('angle-brackets the url so paths with spaces survive markdown parsing', () => {
+    const md = '<iframe src="file:///a b/weekly blog.html"></iframe>'
+    expect(linkifyIframes(md, 'open')).toBe('[open](<file:///a b/weekly blog.html>)')
   })
 
   it('leaves content without iframes unchanged', () => {

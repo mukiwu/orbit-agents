@@ -29,8 +29,10 @@ export function safeMarkdownUrl(url: string): string {
 // HTML file. We never render raw HTML; rewrite it to a normal link so the user
 // can open the preview in their browser instead.
 export function linkifyIframes(markdown: string, label: string): string {
+  // Angle-bracket the destination so paths containing spaces (e.g. iCloud's
+  // "Mobile Documents") aren't truncated by the markdown link parser.
   return markdown.replace(
     /<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>(?:\s*<\/iframe>)?/gi,
-    (_match, src) => `[${label}](${src})`
+    (_match, src) => `[${label}](<${src}>)`
   )
 }
