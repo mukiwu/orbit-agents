@@ -1,9 +1,9 @@
 # Orbit Agents
 
-[English Version](./README.md)
+[English Version](./Readme.md)
 
 
-Orbit Agents 是一個基於 Electron 開發的 AI 驅動桌面端排程管理工具。它結合了現代化的 Cron 排程系統與強大的 AI 整合（Claude & Gemini），讓您可以自動化執行各種任務，從簡單的腳本執行到複雜的 AI 輔助工作流。
+Orbit Agents 是一個基於 Electron 開發的 AI 驅動桌面端排程管理工具。它結合了現代化的 Cron 排程系統與強大的 AI 整合（Claude、Codex、Antigravity），讓您可以自動化執行各種任務，從簡單的腳本執行到複雜的 AI 輔助工作流。
 
 ## 主要功能
 
@@ -14,8 +14,9 @@ Orbit Agents 是一個基於 Electron 開發的 AI 驅動桌面端排程管理�
   - 即時執行功能 (Run Now)
 
 - **AI 深度整合**
-  - 內建 Anthropic Claude CLI 整合
-  - 內建 Google Gemini CLI 整合
+  - 內建 Anthropic Claude Code CLI 整合
+  - 內建 OpenAI Codex CLI 整合
+  - 內建 Google Antigravity CLI 整合
   - 支援 MCP (Model Context Protocol) 伺服器
   - 讓 AI 成為您的自動化助手
 

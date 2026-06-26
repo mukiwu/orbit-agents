@@ -4,7 +4,7 @@
 
 ### Your AI tasks, on autopilot.
 
-Schedule Claude or Gemini to run automatically on your desktop. No servers, no cloud fees, no node wiring — just write a prompt, pick a schedule, and let it work for you.
+Schedule Claude, Codex, or Antigravity to run automatically on your desktop. No servers, no cloud fees, no node wiring — just write a prompt, pick a schedule, and let it work for you.
 
 [中文說明 (Traditional Chinese)](./Readme_zh-tw.md)
 
@@ -12,7 +12,7 @@ Schedule Claude or Gemini to run automatically on your desktop. No servers, no c
 
 ## Get Started in 3 Steps
 
-1. **Pick your AI** → Claude (Sonnet / Opus / Haiku) or Gemini (2 / 2.5 / 3)
+1. **Pick your AI** → Claude (Sonnet / Opus / Haiku), Codex (GPT-5.5 / GPT-5.4), or Antigravity (Gemini / Claude / GPT-OSS)
 2. **Write your prompt** → Tell the AI what to do in plain language
 3. **Set a schedule** → Daily, weekly, monthly, or custom cron expression
 
@@ -24,7 +24,7 @@ That's it. Orbit handles the rest.
 |--|--|--|
 | Cost | Cloud hosting fees | **Free**, runs locally |
 | Setup | Visual node wiring | **Write a prompt** |
-| AI | Requires extra integration | **Claude & Gemini built-in** |
+| AI | Requires extra integration | **Claude, Codex & Antigravity built-in** |
 | Data | Stored in the cloud | **100% on your machine** |
 | Source | Proprietary / limited | **Open source (MIT)** |
 
@@ -37,8 +37,9 @@ That's it. Orbit handles the rest.
   - Instant execution (Run Now)
 
 - **Deep AI Integration**
-  - Built-in Anthropic Claude CLI integration
-  - Built-in Google Gemini CLI integration
+  - Built-in Anthropic Claude Code CLI integration
+  - Built-in OpenAI Codex CLI integration
+  - Built-in Google Antigravity CLI integration
   - Supports MCP (Model Context Protocol) servers
   - Turn AI into your automation assistant
 
