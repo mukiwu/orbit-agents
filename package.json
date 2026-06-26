@@ -1,6 +1,6 @@
 {
   "name": "orbit-agents",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AI-Powered Cron Scheduler for Desktop",
   "main": "./out/main/index.js",
   "author": "Muki Wu",
