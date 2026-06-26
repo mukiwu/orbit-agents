@@ -1,4 +1,5 @@
 import { spawn } from 'child_process'
+import { StringDecoder } from 'string_decoder'
 import { existsSync } from 'fs'
 import { checkDangerousOperations } from '../security-check'
 import { registerProcess } from '../process-manager'
@@ -49,6 +50,10 @@ export async function runProvider(
     let stderr = ''
     let killed = false
     let lastActivityTime = Date.now()
+    // Decode incrementally so multi-byte UTF-8 characters split across chunk
+    // boundaries are buffered and reassembled instead of becoming U+FFFD.
+    const stdoutDecoder = new StringDecoder('utf8')
+    const stderrDecoder = new StringDecoder('utf8')
 
     const proc = spawn(command, args, {
       shell: process.platform === 'win32',
@@ -84,7 +89,7 @@ export async function runProvider(
     }, 30_000)
 
     proc.stdout!.on('data', (data: Buffer) => {
-      const text = data.toString()
+      const text = stdoutDecoder.write(data)
 
       const securityCheck = checkDangerousOperations(text)
       if (securityCheck.isDangerous) {
@@ -108,7 +113,7 @@ export async function runProvider(
     })
 
     proc.stderr!.on('data', (data: Buffer) => {
-      const text = data.toString()
+      const text = stderrDecoder.write(data)
 
       const securityCheck = checkDangerousOperations(text)
       if (securityCheck.isDangerous) {
@@ -131,6 +136,8 @@ export async function runProvider(
       clearInterval(idleChecker)
       if (killed) return
 
+      stdout += stdoutDecoder.end()
+      stderr += stderrDecoder.end()
       const output = provider.parseOutput(stdout)
 
       if (code === 0) {
