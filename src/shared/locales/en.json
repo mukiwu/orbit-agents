@@ -218,15 +218,21 @@
       "label": "Skills",
       "changeProject": "Change Project",
       "selectProject": "Select Project",
+      "clearProject": "Remove project",
       "scanning": "Scanning skills...",
       "noneInProject": "No skills found in this project",
       "selectProjectHint": "Select a project to load project skills",
       "scopeProject": " (project)",
-      "scopeUser": " (user)"
+      "scopeUser": " (user)",
+      "openPicker": "Search and insert a skill ({{count}})",
+      "searchLabel": "Search skills",
+      "searchPlaceholder": "Search names or descriptions",
+      "noResults": "No matching skills",
+      "results": "{{count}} skills"
     },
     "prompt": {
       "label": "AI Prompt",
-      "placeholder": "Enter the prompt for Claude to execute..."
+      "placeholder": "Enter the prompt for the AI to execute..."
     },
     "provider": {
       "label": "AI Provider"
@@ -246,7 +252,14 @@
     "mcpTools": {
       "label": "MCP Tools",
       "loading": "Loading MCP servers...",
-      "noneConfigured": "No MCP servers configured in {{tool}} CLI"
+      "noneConfigured": "No MCP servers configured in {{tool}} CLI",
+      "openPicker": "Select and insert MCP tools ({{selected}} of {{count}} selected)",
+      "searchLabel": "Search MCP tools",
+      "searchPlaceholder": "Search servers or tools",
+      "noResults": "No matching MCP tools",
+      "results": "{{count}} MCP tools",
+      "unavailable": "Unavailable",
+      "promptReference": "Use the {{name}} MCP server when needed."
     },
     "attachments": {
       "label": "Attachments",
@@ -272,7 +285,7 @@
       "description": "When enabled, the CLI runs without approval prompts or sandbox restrictions. Use only for tasks you trust."
     },
     "enable": {
-      "label": "Enable task immediately"
+      "label": "Enable schedule"
     },
     "saveChanges": "Save Changes",
     "createTask": "Create Task",

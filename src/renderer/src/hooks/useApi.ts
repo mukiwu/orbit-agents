@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type {
   Task,
   CreateTaskInput,
@@ -297,40 +297,44 @@ export function useSkills() {
   const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(false)
   const [projectPath, setProjectPath] = useState<string | null>(null)
+  const scanSequence = useRef(0)
 
-  const scanSkills = useCallback(async (path?: string) => {
+  const scanSkills = useCallback(async (path?: string, provider: ProviderId = 'claude') => {
+    const sequence = ++scanSequence.current
     setLoading(true)
     try {
-      const result: SkillScanResult = await api.invoke('skill:scan', path)
-      setSkills(result.skills)
-      if (result.projectPath) setProjectPath(result.projectPath)
+      const result: SkillScanResult = await api.invoke('skill:scan', path, provider)
+      if (sequence === scanSequence.current) {
+        setSkills(result.skills)
+        if (result.projectPath) setProjectPath(result.projectPath)
+      }
       return result
     } catch (err) {
       console.error('Failed to scan skills:', err)
       return { skills: [], errors: [String(err)] }
     } finally {
-      setLoading(false)
+      if (sequence === scanSequence.current) setLoading(false)
     }
   }, [])
 
-  const selectProject = useCallback(async () => {
+  const selectProject = useCallback(async (provider: ProviderId) => {
     const dirPath = await (api.invoke as (channel: string) => Promise<string | null>)('dialog:open-directory')
     if (dirPath) {
       setProjectPath(dirPath)
-      await scanSkills(dirPath)
+      await scanSkills(dirPath, provider)
       return dirPath
     }
     return null
   }, [scanSkills])
 
-  const clearProject = useCallback(async () => {
+  const clearProject = useCallback(async (provider: ProviderId) => {
     setProjectPath(null)
-    await scanSkills()
+    await scanSkills(undefined, provider)
   }, [scanSkills])
 
-  const initProject = useCallback(async (path: string) => {
+  const initProject = useCallback(async (path: string, provider: ProviderId) => {
     setProjectPath(path)
-    await scanSkills(path)
+    await scanSkills(path, provider)
   }, [scanSkills])
 
   return { skills, loading, projectPath, setProjectPath, scanSkills, selectProject, clearProject, initProject }

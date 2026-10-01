@@ -218,15 +218,21 @@
       "label": "技能",
       "changeProject": "更換專案",
       "selectProject": "選擇專案",
+      "clearProject": "移除專案",
       "scanning": "正在掃描技能...",
       "noneInProject": "此專案中沒有技能",
       "selectProjectHint": "選擇專案以載入專案技能",
       "scopeProject": "（專案）",
-      "scopeUser": "（使用者）"
+      "scopeUser": "（使用者）",
+      "openPicker": "搜尋並插入技能（{{count}}）",
+      "searchLabel": "搜尋技能",
+      "searchPlaceholder": "搜尋技能名稱或說明",
+      "noResults": "找不到符合的技能",
+      "results": "{{count}} 個技能"
     },
     "prompt": {
       "label": "AI 提示詞",
-      "placeholder": "輸入要讓 Claude 執行的提示詞..."
+      "placeholder": "輸入要讓 AI 執行的提示詞..."
     },
     "provider": {
       "label": "AI 供應商"
@@ -246,7 +252,14 @@
     "mcpTools": {
       "label": "MCP 工具",
       "loading": "正在載入 MCP 伺服器...",
-      "noneConfigured": "{{tool}} CLI 中沒有設定 MCP 伺服器"
+      "noneConfigured": "{{tool}} CLI 中沒有設定 MCP 伺服器",
+      "openPicker": "選取並插入 MCP 工具（已選 {{selected}}／{{count}}）",
+      "searchLabel": "搜尋 MCP 工具",
+      "searchPlaceholder": "搜尋伺服器或工具名稱",
+      "noResults": "找不到符合的 MCP 工具",
+      "results": "{{count}} 個 MCP 工具",
+      "unavailable": "目前不可用",
+      "promptReference": "需要時請使用 {{name}} MCP 工具。"
     },
     "attachments": {
       "label": "附件",
@@ -272,7 +285,7 @@
       "description": "啟用後，CLI 會以略過審批與沙箱的模式執行。僅對你信任的任務使用。"
     },
     "enable": {
-      "label": "立即啟用任務"
+      "label": "啟用排程"
     },
     "saveChanges": "儲存變更",
     "createTask": "建立任務",

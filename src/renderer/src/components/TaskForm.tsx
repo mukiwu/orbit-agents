@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
-import type { Task, CreateTaskInput, McpServer, ProviderId, Skill, ModelOption } from '../../../shared/types'
+import type { Task, CreateTaskInput, McpServer, ProviderId, ModelOption } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
 import ModelSelect from './ModelSelect'
+import QuickPicker from './QuickPicker'
 
 interface TaskFormProps {
   task: Task | null
@@ -27,6 +28,26 @@ function normalizeSavedModel(provider: ProviderId | undefined, model: string): s
   return provider === 'antigravity' ? model.split('\t', 1)[0].trim() : model
 }
 
+function skillInvocation(name: string, provider: ProviderId): string {
+  return `${provider === 'codex' ? '$' : '/'}${name}`
+}
+
+function removePromptToken(prompt: string, token: string): string {
+  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return prompt.replace(new RegExp(`(^|\\s)${escaped}([ \\t]?)(?=\\s|$)`, 'g'),
+    (match, before: string, _after: string, offset: number) =>
+      before === ' ' && offset + match.length === prompt.length ? '' : before
+  )
+}
+
+function removePromptSnippet(prompt: string, snippet: string): string {
+  const index = prompt.indexOf(snippet)
+  if (index < 0) return prompt
+  const before = prompt.slice(0, index).replace(/\n{1,2}$/, '')
+  const after = prompt.slice(index + snippet.length).replace(/^\n{1,2}/, '')
+  return before && after ? `${before}\n\n${after}` : before + after
+}
+
 export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
   const { t } = useTranslation()
   const { createTask, updateTask } = useTasks()
@@ -37,7 +58,10 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
   const [loadingModels, setLoadingModels] = useState(true)
   const [modelListNotice, setModelListNotice] = useState<{ text: string; tone: 'success' | 'warning' | 'error' } | null>(null)
   const modelRequestSequence = useRef(0)
-  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
+  const promptRef = useRef<HTMLTextAreaElement>(null)
+  const promptSelectionRef = useRef<{ start: number; end: number } | null>(null)
+  const insertedMcpReferencesRef = useRef(new Set<string>())
+  const insertedSkillTokensRef = useRef(new Set<string>())
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,6 +75,9 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
 
   // Reset form when task changes
   useEffect(() => {
+    promptSelectionRef.current = null
+    insertedMcpReferencesRef.current.clear()
+    insertedSkillTokensRef.current.clear()
     const parsed = parseCronToSimple(task?.cron_expression || '0 9 * * *')
     setScheduleMode(parsed.mode)
     setFrequency(parsed.frequency)
@@ -81,15 +108,15 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
         // Restore saved project path or clear it (sync only, scan separately)
         if (task.project_path) {
             setProjectPath(task.project_path)
-            scanSkills(task.project_path)
+            scanSkills(task.project_path, task.cli_tool)
         } else {
             setProjectPath(null)
-            scanSkills()
+            scanSkills(undefined, task.cli_tool)
         }
     } else {
         // Reset to default for new task
         setProjectPath(null)
-        scanSkills()
+        scanSkills(undefined, 'claude')
         setFormData({
             name: '',
             description: '',
@@ -158,22 +185,99 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     })
   }
 
-  // Load user scope skills on mount
-  useEffect(() => {
-    scanSkills()
-  }, [scanSkills])
-
-  const handleSelectSkill = (skill: Skill) => {
-    setSelectedSkill(skill)
-    setFormData(prev => ({
-      ...prev,
-      prompt: skill.content
-    }))
+  const rememberPromptSelection = () => {
+    const textarea = promptRef.current
+    if (textarea) promptSelectionRef.current = { start: textarea.selectionStart, end: textarea.selectionEnd }
   }
 
-  const handleClearSkill = () => {
-    setSelectedSkill(null)
+  const insertPromptText = (snippet: string) => {
+    const text = snippet.trim()
+    if (!text) return
+    const prompt = formData.prompt
+    const selection = promptSelectionRef.current
+    const start = selection ? Math.min(selection.start, prompt.length) : prompt.length
+    const end = selection ? Math.min(selection.end, prompt.length) : prompt.length
+    const before = prompt.slice(0, start)
+    const after = prompt.slice(end)
+    const leading = before && !before.endsWith('\n') ? '\n\n' : ''
+    const trailing = after && !after.startsWith('\n') ? '\n\n' : ''
+    const nextPrompt = `${before}${leading}${text}${trailing}${after}`
+    const caret = before.length + leading.length + text.length
+
+    setFormData((prev) => ({ ...prev, prompt: nextPrompt }))
+    promptSelectionRef.current = { start: caret, end: caret }
+    requestAnimationFrame(() => {
+      promptRef.current?.focus()
+      promptRef.current?.setSelectionRange(caret, caret)
+    })
   }
+
+  const insertPromptToken = (token: string) => {
+    if (formData.cli_tool !== 'codex') {
+      // Slash skills are commands in the CLI prompt, so keep the invocation first.
+      const prompt = [...insertedSkillTokensRef.current].reduce(removePromptToken, formData.prompt)
+      insertedSkillTokensRef.current.clear()
+      const nextPrompt = `${token} ${prompt}`
+      const caret = token.length + 1
+      setFormData((prev) => ({ ...prev, prompt: nextPrompt }))
+      promptSelectionRef.current = { start: caret, end: caret }
+      requestAnimationFrame(() => {
+        promptRef.current?.focus()
+        promptRef.current?.setSelectionRange(caret, caret)
+      })
+      return
+    }
+
+    const prompt = formData.prompt
+    const selection = promptSelectionRef.current
+    const start = selection ? Math.min(selection.start, prompt.length) : prompt.length
+    const end = selection ? Math.min(selection.end, prompt.length) : prompt.length
+    const before = prompt.slice(0, start)
+    const after = prompt.slice(end)
+    const leading = before && !/\s$/.test(before) ? ' ' : ''
+    const trailing = !after || !/^\s/.test(after) ? ' ' : ''
+    const nextPrompt = `${before}${leading}${token}${trailing}${after}`
+    const caret = before.length + leading.length + token.length + trailing.length
+
+    setFormData((prev) => ({ ...prev, prompt: nextPrompt }))
+    promptSelectionRef.current = { start: caret, end: caret }
+    requestAnimationFrame(() => {
+      promptRef.current?.focus()
+      promptRef.current?.setSelectionRange(caret, caret)
+    })
+  }
+
+  const skillPickerItems = useMemo(() => [...skills]
+    .sort((a, b) => (a.scope === b.scope ? a.name.localeCompare(b.name) : a.scope === 'project' ? -1 : 1))
+    .map((skill) => ({
+      id: skill.filePath,
+      name: skillInvocation(skill.name, formData.cli_tool),
+      description: skill.description,
+      badge: t(skill.scope === 'project' ? 'taskForm.skills.scopeProject' : 'taskForm.skills.scopeUser')
+    })), [skills, formData.cli_tool, t])
+
+  const mcpPickerItems = useMemo(() => {
+    const availableNames = new Set(mcpServers.map((server) => server.name))
+    const missing = formData.mcp_tools
+      .filter((pattern: string) => pattern.startsWith('mcp__') && pattern.endsWith('__*'))
+      .map((pattern: string) => pattern.slice(5, -3))
+      .filter((name: string) => !availableNames.has(name))
+      .map((name: string) => ({
+        id: name,
+        name,
+        badge: t('taskForm.mcpTools.unavailable'),
+        selected: true
+      }))
+    const available = [...mcpServers]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((server) => ({
+        id: server.name,
+        name: server.name,
+        description: server.tools.filter((tool) => tool !== '*').join(', ') || undefined,
+        selected: formData.mcp_tools.includes(`mcp__${server.name}__*`)
+      }))
+    return [...missing, ...available]
+  }, [mcpServers, formData.mcp_tools, t])
 
   useEffect(() => {
     const fetchMcps = async () => {
@@ -287,13 +391,24 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     }
   }
 
-  const toggleMcpTool = (toolPattern: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      mcp_tools: prev.mcp_tools.includes(toolPattern)
-        ? prev.mcp_tools.filter((t: string) => t !== toolPattern)
-        : [...prev.mcp_tools, toolPattern]
-    }))
+  const toggleMcpTool = (serverName: string) => {
+    const toolPattern = `mcp__${serverName}__*`
+    const reference = t('taskForm.mcpTools.promptReference', { name: serverName })
+    if (formData.mcp_tools.includes(toolPattern)) {
+      const removeReference = insertedMcpReferencesRef.current.delete(toolPattern)
+      setFormData((prev) => ({
+        ...prev,
+        mcp_tools: prev.mcp_tools.filter((tool: string) => tool !== toolPattern),
+        prompt: removeReference ? removePromptSnippet(prev.prompt, reference) : prev.prompt
+      }))
+      promptSelectionRef.current = null
+    } else {
+      setFormData((prev) => ({ ...prev, mcp_tools: [...prev.mcp_tools, toolPattern] }))
+      if (!formData.prompt.includes(reference)) {
+        insertedMcpReferencesRef.current.add(toolPattern)
+        insertPromptText(reference)
+      }
+    }
   }
 
   const content = (
@@ -580,13 +695,13 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             {/* Skills */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-600">
+                <span className="block text-sm font-medium text-gray-600">
                   <Sparkles className="w-3.5 h-3.5 inline mr-1" />
                   {t('taskForm.skills.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
-                </label>
+                </span>
                 <button
                   type="button"
-                  onClick={selectProject}
+                  onClick={() => void selectProject(formData.cli_tool)}
                   className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <FolderOpen className="w-3.5 h-3.5" />
@@ -602,7 +717,8 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   </span>
                   <button
                     type="button"
-                    onClick={clearProject}
+                    onClick={() => void clearProject(formData.cli_tool)}
+                    aria-label={t('taskForm.skills.clearProject')}
                     className="text-blue-400 hover:text-blue-600 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -616,34 +732,22 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                   {t('taskForm.skills.scanning')}
                 </div>
               ) : skills.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.map((skill) => {
-                    const isSelected = selectedSkill?.filePath === skill.filePath
-                    return (
-                      <button
-                        key={skill.filePath}
-                        type="button"
-                        onClick={() => isSelected ? handleClearSkill() : handleSelectSkill(skill)}
-                        title={`${skill.description}${skill.scope === 'project' ? t('taskForm.skills.scopeProject') : t('taskForm.skills.scopeUser')}`}
-                        className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
-                          isSelected
-                            ? 'bg-purple-100 border-purple-300 text-purple-700'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        {isSelected && (
-                          <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        {skill.name}
-                        {skill.scope === 'project' && (
-                          <span className="ml-1 text-xs opacity-60">P</span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
+                <QuickPicker
+                  items={skillPickerItems}
+                  triggerLabel={t('taskForm.skills.openPicker', { count: skills.length })}
+                  searchLabel={t('taskForm.skills.searchLabel')}
+                  searchPlaceholder={t('taskForm.skills.searchPlaceholder')}
+                  emptyLabel={t('taskForm.skills.noResults')}
+                  resultsLabel={(count) => t('taskForm.skills.results', { count })}
+                  onPick={(id) => {
+                    const skill = skills.find((candidate) => candidate.filePath === id)
+                    if (skill) {
+                      const token = skillInvocation(skill.name, formData.cli_tool)
+                      insertPromptToken(token)
+                      insertedSkillTokensRef.current.add(token)
+                    }
+                  }}
+                />
               ) : (
                 <p className="text-sm text-gray-400">
                   {projectPath ? t('taskForm.skills.noneInProject') : t('taskForm.skills.selectProjectHint')}
@@ -657,9 +761,17 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 {t('taskForm.prompt.label')} <span className="text-red-500">*</span>
               </label>
               <textarea
+                ref={promptRef}
                 required
                 value={formData.prompt}
-                onChange={(e) => setFormData((prev) => ({ ...prev, prompt: e.target.value }))}
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, prompt: e.target.value }))
+                  rememberPromptSelection()
+                }}
+                onSelect={rememberPromptSelection}
+                onClick={rememberPromptSelection}
+                onKeyUp={rememberPromptSelection}
+                onBlur={rememberPromptSelection}
                 rows={8}
                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-y"
                 placeholder={t('taskForm.prompt.placeholder')}
@@ -685,6 +797,14 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                       type="button"
                       onClick={() => {
                         if (formData.cli_tool === tool.value) return
+                        const insertedReferences = [...insertedMcpReferencesRef.current].map((pattern) =>
+                          t('taskForm.mcpTools.promptReference', { name: pattern.slice(5, -3) })
+                        )
+                        const insertedSkillTokens = [...insertedSkillTokensRef.current]
+                        insertedMcpReferencesRef.current.clear()
+                        insertedSkillTokensRef.current.clear()
+                        promptSelectionRef.current = null
+                        void scanSkills(projectPath ?? undefined, tool.value)
                         setLoadingModels(true)
                         setDynamicModels([])
                         setModelsProvider(null)
@@ -693,6 +813,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                           ...prev,
                           cli_tool: tool.value,
                           model: '',
+                          prompt: insertedSkillTokens.reduce(removePromptToken, insertedReferences.reduce(removePromptSnippet, prev.prompt)),
                           mcp_tools: []
                         }))
                       }}
@@ -749,40 +870,24 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
 
             {/* MCP Tools */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <span className="block text-sm font-medium text-gray-600 mb-2">
                 {t('taskForm.mcpTools.label')} <span className="text-gray-400 font-normal">{t('taskForm.optional')}</span>
-              </label>
+              </span>
               {loadingMcps ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                   <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
                   {t('taskForm.mcpTools.loading')}
                 </div>
-              ) : mcpServers.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {mcpServers.map((server) => {
-                    const toolPattern = `mcp__${server.name}__*`
-                    const isSelected = formData.mcp_tools.includes(toolPattern)
-                    return (
-                      <button
-                        key={server.name}
-                        type="button"
-                        onClick={() => toggleMcpTool(toolPattern)}
-                        className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
-                          isSelected
-                            ? 'bg-blue-100 border-blue-300 text-blue-700'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        {isSelected && (
-                          <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        {server.name}
-                      </button>
-                    )
-                  })}
-                </div>
+              ) : mcpPickerItems.length > 0 ? (
+                <QuickPicker
+                  items={mcpPickerItems}
+                  triggerLabel={t('taskForm.mcpTools.openPicker', { count: mcpPickerItems.length, selected: formData.mcp_tools.length })}
+                  searchLabel={t('taskForm.mcpTools.searchLabel')}
+                  searchPlaceholder={t('taskForm.mcpTools.searchPlaceholder')}
+                  emptyLabel={t('taskForm.mcpTools.noResults')}
+                  resultsLabel={(count) => t('taskForm.mcpTools.results', { count })}
+                  onPick={toggleMcpTool}
+                />
               ) : (
                 <p className="text-sm text-gray-400">
                   {t('taskForm.mcpTools.noneConfigured', { tool: formData.cli_tool })}

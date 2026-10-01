@@ -208,8 +208,8 @@ function registerIpcHandlers(): void {
   ipcMain.handle('codex:logout', () => logoutCodex())
 
   // Skill handlers
-  ipcMain.handle('skill:scan', (_, projectPath?: string) => {
-    return scanSkills(projectPath)
+  ipcMain.handle('skill:scan', (_, projectPath?: string, provider?: ProviderId) => {
+    return scanSkills(projectPath, provider)
   })
 
   ipcMain.handle('dialog:open-directory', async () => {

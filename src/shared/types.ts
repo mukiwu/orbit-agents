@@ -100,9 +100,7 @@ export interface McpServer {
 export interface Skill {
   name: string
   description: string
-  invocation?: string
   filePath: string
-  content: string
   scope: 'user' | 'project'
 }
 
@@ -171,7 +169,7 @@ export interface IpcApi {
   'codex:logout': () => Promise<void>
 
   // Skill operations
-  'skill:scan': (projectPath?: string) => Promise<SkillScanResult>
+  'skill:scan': (projectPath?: string, provider?: ProviderId) => Promise<SkillScanResult>
   'dialog:open-directory': () => Promise<string | null>
 
   // Auto-updater operations
