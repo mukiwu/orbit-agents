@@ -60,6 +60,18 @@ export interface ExecutionLogWithTask extends ExecutionLog {
   task_name?: string
 }
 
+export interface LogSearchInput {
+  query?: string
+  status?: ExecutionLog['status'] | 'all'
+  offset?: number
+  limit?: number
+}
+
+export interface LogSearchResult {
+  logs: ExecutionLogWithTask[]
+  total: number
+}
+
 export interface DashboardRun {
   id: string
   task_id: string
@@ -176,6 +188,7 @@ export interface IpcApi {
 
   // Log operations
   'log:list': (taskId?: string, limit?: number) => Promise<ExecutionLogWithTask[]>
+  'log:search': (input: LogSearchInput) => Promise<LogSearchResult>
   'log:get': (id: string) => Promise<ExecutionLogWithTask | null>
   'log:delete': (ids: string[]) => Promise<void>
   'log:cancel': (id: string) => Promise<boolean>

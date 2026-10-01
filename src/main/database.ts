@@ -9,6 +9,8 @@ import type {
   UpdateTaskInput,
   ExecutionLog,
   ExecutionLogWithTask,
+  LogSearchInput,
+  LogSearchResult,
   DashboardData,
   Settings,
   SettingKey
@@ -365,6 +367,41 @@ export function getExecutionLogs(taskId?: string, limit = 100): ExecutionLogWith
     ORDER BY el.started_at DESC
     LIMIT ?
   `).all(limit) as ExecutionLogWithTask[]
+}
+
+export function searchExecutionLogs(input: LogSearchInput): LogSearchResult {
+  const db = getDatabase()
+  const query = typeof input?.query === 'string' ? input.query.trim().slice(0, 120) : ''
+  const status = input?.status
+  const requestedLimit = typeof input?.limit === 'number' && Number.isFinite(input.limit) ? input.limit : 50
+  const requestedOffset = typeof input?.offset === 'number' && Number.isFinite(input.offset) ? input.offset : 0
+  const limit = Math.min(100, Math.max(1, Math.trunc(requestedLimit)))
+  const offset = Math.max(0, Math.trunc(requestedOffset))
+  const conditions: string[] = []
+  const params: Array<string> = []
+
+  if (query) {
+    conditions.push("instr(lower(COALESCE(t.name, '')), lower(?)) > 0")
+    params.push(query)
+  }
+  if (status && status !== 'all' && ['running', 'success', 'failed', 'cancelled'].includes(status)) {
+    conditions.push('el.status = ?')
+    params.push(status)
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+  const total = (db.prepare(`
+    SELECT COUNT(*) AS total FROM execution_logs el
+    LEFT JOIN tasks t ON t.id = el.task_id ${where}
+  `).get(...params) as { total: number }).total
+  const logs = db.prepare(`
+    SELECT el.id, el.task_id, el.started_at, el.finished_at, el.status,
+      NULL AS output, NULL AS error, t.name AS task_name
+    FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
+    ${where} ORDER BY el.started_at DESC, el.id DESC LIMIT ? OFFSET ?
+  `).all(...params, limit, offset) as ExecutionLogWithTask[]
+
+  return { logs, total }
 }
 
 export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions24h' | 'activity24h' | 'recent_runs' | 'recent_failures' | 'top_tasks'> {

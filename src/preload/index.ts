@@ -27,6 +27,7 @@ export const api: ElectronApi = {
       'task:toggle',
       'task:run-now',
       'log:list',
+      'log:search',
       'log:get',
       'log:delete',
       'log:cancel',

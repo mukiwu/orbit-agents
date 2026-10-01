@@ -1,37 +1,147 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Search } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { useTranslation } from 'react-i18next'
-import { useExecutionLogs, useExecutionLog } from '../hooks/useApi'
+import { useExecutionLog } from '../hooks/useApi'
 import { linkifyIframes, safeMarkdownUrl } from '../utils/markdown'
-import type { ExecutionLogWithTask } from '../../../shared/types'
+import type { ExecutionLog, ExecutionLogWithTask } from '../../../shared/types'
+
+const pageSize = 50
+type StatusFilter = ExecutionLog['status'] | 'all'
 
 export default function ExecutionLog({ initialLogId = null }: { initialLogId?: string | null }) {
-  const { t } = useTranslation()
-  const { logs, loading, error, deleteLogs } = useExecutionLogs(undefined, 200)
+  const { t, i18n } = useTranslation()
+  const locale = i18n.resolvedLanguage || i18n.language
+  const [logs, setLogs] = useState<ExecutionLogWithTask[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [searchInput, setSearchInput] = useState('')
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [selectedLogId, setSelectedLogId] = useState<string | null>(initialLogId)
   const [selectedLogFallback, setSelectedLogFallback] = useState<ExecutionLogWithTask | null>(null)
   const [checkedLogIds, setCheckedLogIds] = useState<Set<string>>(new Set())
+  const requestId = useRef(0)
+  const loadedCount = useRef(pageSize)
+  const hasMounted = useRef(false)
+  const selectAllRef = useRef<HTMLInputElement>(null)
+  const checkedVisibleCount = logs.filter((log) => checkedLogIds.has(log.id)).length
 
-  // Auto-select first log when logs load
   useEffect(() => {
-    if (logs.length > 0 && !selectedLogId) {
-      setSelectedLogId(logs[0].id)
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = checkedVisibleCount > 0 && checkedVisibleCount < logs.length
     }
-  }, [logs, selectedLogId])
+  }, [checkedVisibleCount, logs.length])
 
   useEffect(() => {
-    if (!initialLogId || logs.some((log) => log.id === initialLogId) || selectedLogFallback?.id === initialLogId) return
+    setCheckedLogIds((previous) => {
+      const visible = new Set(logs.map((log) => log.id))
+      const next = new Set([...previous].filter((id) => visible.has(id)))
+      return next.size === previous.size ? previous : next
+    })
+  }, [logs])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(searchInput.trim()), 250)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
+
+  const fetchLogs = useCallback(async (offset: number, limit: number, append = false, quiet = false) => {
+    const currentRequest = ++requestId.current
+    if (append) setLoadingMore(true)
+    else if (!quiet) setLoading(true)
+    try {
+      const result = await window.electronApi.invoke('log:search', {
+        query, status: statusFilter, offset, limit
+      })
+      if (currentRequest !== requestId.current) return
+      setLogs((previous) => append
+        ? [...new Map([...previous, ...result.logs].map((log) => [log.id, log])).values()]
+        : result.logs)
+      setTotal(result.total)
+      loadedCount.current = offset + result.logs.length
+      setError(null)
+    } catch (cause) {
+      if (currentRequest === requestId.current) {
+        setError(cause instanceof Error ? cause.message : String(cause))
+      }
+    } finally {
+      if (currentRequest === requestId.current) {
+        setLoading(false)
+        setLoadingMore(false)
+      }
+    }
+  }, [query, statusFilter])
+
+  useEffect(() => {
+    loadedCount.current = pageSize
+    setCheckedLogIds(new Set())
+    if (hasMounted.current) {
+      setSelectedLogId(null)
+      setSelectedLogFallback(null)
+    } else {
+      hasMounted.current = true
+    }
+    void fetchLogs(0, pageSize)
+  }, [fetchLogs])
+
+  useEffect(() => {
+    let pending: number | null = null
+    const onExecutionUpdate = () => {
+      if (pending !== null) return
+      pending = window.setTimeout(() => {
+        pending = null
+        void fetchLogs(0, Math.max(pageSize, loadedCount.current), false, true)
+      }, 1200)
+    }
+    window.electronApi.on('execution:update', onExecutionUpdate)
+    return () => {
+      if (pending !== null) window.clearTimeout(pending)
+      window.electronApi.off('execution:update', onExecutionUpdate)
+    }
+  }, [fetchLogs])
+
+  useEffect(() => {
+    if (!loading && logs.length > 0 && !selectedLogId) setSelectedLogId(logs[0].id)
+  }, [logs, loading, selectedLogId])
+
+  useEffect(() => {
+    if (!initialLogId || selectedLogId !== initialLogId || logs.some((log) => log.id === initialLogId) || selectedLogFallback?.id === initialLogId) return
     let cancelled = false
     void window.electronApi.invoke('log:get', initialLogId).then((log) => {
       if (!cancelled) setSelectedLogFallback(log)
     }).catch(() => undefined)
     return () => { cancelled = true }
-  }, [initialLogId, logs, selectedLogFallback])
+  }, [initialLogId, logs, selectedLogFallback, selectedLogId])
+
+  const dateGroups = useMemo(() => {
+    const groups: Array<{ key: string; label: string; logs: ExecutionLogWithTask[] }> = []
+    for (const log of logs) {
+      const date = new Date(log.started_at)
+      const key = `${date.getFullYear()}-${date.getMonth()}`
+      if (groups[groups.length - 1]?.key !== key) {
+        const label = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long' }).format(date)
+        groups.push({ key, label, logs: [] })
+      }
+      groups[groups.length - 1].logs.push(log)
+    }
+    return groups
+  }, [logs, locale])
 
   const selectedLog = logs.find(l => l.id === selectedLogId)
     || (selectedLogFallback?.id === selectedLogId ? selectedLogFallback : null)
+
+  const statusOptions: Array<{ value: StatusFilter; label: string }> = [
+    { value: 'all', label: t('executionLog.filter.all') },
+    { value: 'running', label: t('common.running') },
+    { value: 'failed', label: t('common.failed') },
+    { value: 'success', label: t('common.done') },
+    { value: 'cancelled', label: t('common.cancelled') }
+  ]
 
   const handleCheck = (id: string, checked: boolean) => {
     const newChecked = new Set(checkedLogIds)
@@ -56,90 +166,78 @@ export default function ExecutionLog({ initialLogId = null }: { initialLogId?: s
     if (!confirm(t('executionLog.confirmDelete', { count: checkedLogIds.size }))) return
 
     const idsToDelete = Array.from(checkedLogIds)
-    await deleteLogs(idsToDelete)
-    setCheckedLogIds(new Set())
-
-    // If selected log was deleted, select the first available one
-    if (selectedLogId && idsToDelete.includes(selectedLogId)) {
-      const remainingLogs = logs.filter(l => !idsToDelete.includes(l.id))
-      if (remainingLogs.length > 0) {
-        setSelectedLogId(remainingLogs[0].id)
-      } else {
+    try {
+      await window.electronApi.invoke('log:delete', idsToDelete)
+      setCheckedLogIds(new Set())
+      if (selectedLogId && idsToDelete.includes(selectedLogId)) {
         setSelectedLogId(null)
+        setSelectedLogFallback(null)
       }
+      await fetchLogs(0, Math.max(pageSize, loadedCount.current), false, true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
     }
   }
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-white rounded-tl-2xl">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="h-full bg-white rounded-tl-2xl p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          {error}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex h-full gap-8">
+    <div className="flex h-full gap-6">
       {/* Left Panel - Log List */}
-      <div className="w-80 flex-shrink-0 flex flex-col gap-1">
+      <div className="w-[clamp(290px,32vw,380px)] flex-shrink-0 flex flex-col min-h-0">
         {/* List Header */}
-        <div className="mb-4 px-2 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">{t('executionLog.listTitle')}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
-                checked={logs.length > 0 && checkedLogIds.size === logs.length}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                disabled={logs.length === 0}
-              />
-              <p className="text-xs text-gray-400">{t('executionLog.selectAll')}</p>
-            </div>
+        <div className="shrink-0 space-y-3 pb-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">{t('executionLog.listTitle')}</h2>
+            <span className="text-xs tabular-nums text-gray-400">{t('executionLog.shown', { shown: logs.length, total })}</span>
           </div>
-          {checkedLogIds.size > 0 && (
-            <button
-              onClick={handleDeleteSelected}
-              className="text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
-            >
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)}
+              aria-label={t('executionLog.searchPlaceholder')} placeholder={t('executionLog.searchPlaceholder')}
+              className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
+          </label>
+          <div className="flex gap-1 overflow-x-auto pb-0.5" role="group" aria-label={t('executionLog.filter.label')}>
+            {statusOptions.map((option) => <button key={option.value} type="button" onClick={() => setStatusFilter(option.value)}
+              aria-pressed={statusFilter === option.value}
+              className={`shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${statusFilter === option.value ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}`}>
+              {option.label}
+            </button>)}
+          </div>
+          <div className="flex min-h-7 items-center justify-between gap-2 text-xs">
+            <label className="inline-flex items-center gap-2 text-gray-500">
+              <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                ref={selectAllRef}
+                checked={logs.length > 0 && checkedVisibleCount === logs.length}
+                onChange={(event) => handleSelectAll(event.target.checked)} disabled={logs.length === 0} />
+              {t('executionLog.selectVisible')}
+            </label>
+            {checkedLogIds.size > 0 && <button type="button" onClick={() => void handleDeleteSelected()}
+              className="rounded-md px-2 py-1 font-medium text-red-600 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500">
               {t('executionLog.deleteSelected', { count: checkedLogIds.size })}
-            </button>
-          )}
+            </button>}
+          </div>
         </div>
 
         {/* Log List */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-2">
-          {logs.length === 0 ? (
-            <div className="text-center py-12 px-4 border-2 border-dashed border-gray-200 rounded-xl">
-               <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-               </svg>
-               <p className="text-sm text-gray-500">{t('executionLog.noLogsFound')}</p>
-            </div>
-          ) : (
-            <>
-              {logs.map((log) => (
-                <LogListItem
-                  key={log.id}
-                  log={log}
-                  isSelected={selectedLogId === log.id}
-                  isChecked={checkedLogIds.has(log.id)}
-                  onCheck={(checked) => handleCheck(log.id, checked)}
-                  onClick={() => setSelectedLogId(log.id)}
-                />
-              ))}
-            </>
-          )}
+        <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+          {error && <div role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">{error}</div>}
+          {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500"><span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />{t('common.loading')}</div>
+            : logs.length === 0 ? <div className="rounded-xl bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">
+              <p>{query || statusFilter !== 'all' ? t('executionLog.noMatching') : t('executionLog.noLogsFound')}</p>
+              {(query || statusFilter !== 'all') && <button type="button" onClick={() => { setSearchInput(''); setQuery(''); setStatusFilter('all') }} className="mt-2 font-medium text-blue-600 hover:underline">{t('executionLog.clearFilters')}</button>}
+            </div> : <>
+              {dateGroups.map((group) => <div key={group.key}>
+                <div className="sticky top-0 z-10 bg-white/95 px-3 pb-1 pt-3 text-xs font-semibold text-gray-400 backdrop-blur-sm">{group.label}</div>
+                <div className="space-y-1">
+                  {group.logs.map((log) => <LogListItem key={log.id} log={log} locale={locale}
+                    isSelected={selectedLogId === log.id} isChecked={checkedLogIds.has(log.id)}
+                    onCheck={(checked) => handleCheck(log.id, checked)} onClick={() => setSelectedLogId(log.id)} />)}
+                </div>
+              </div>)}
+              {logs.length < total && <button type="button" onClick={() => void fetchLogs(logs.length, pageSize, true)} disabled={loadingMore}
+                className="my-4 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50">
+                {loadingMore ? t('common.loading') : t('executionLog.loadMore')}
+              </button>}
+            </>}
         </div>
       </div>
 
@@ -165,71 +263,56 @@ export default function ExecutionLog({ initialLogId = null }: { initialLogId?: s
 
 interface LogListItemProps {
   log: ExecutionLogWithTask
+  locale: string
   isSelected: boolean
   isChecked: boolean
   onCheck: (checked: boolean) => void
   onClick: () => void
 }
 
-function LogListItem({ log, isSelected, isChecked, onCheck, onClick }: LogListItemProps) {
+function LogListItem({ log, locale, isSelected, isChecked, onCheck, onClick }: LogListItemProps) {
   const { t } = useTranslation()
-  const statusColors = {
+  const statusColors: Record<ExecutionLog['status'], string> = {
     running: 'bg-blue-500',
     success: 'bg-emerald-500',
     failed: 'bg-red-500',
     cancelled: 'bg-amber-500'
   }
+  const statusLabel = log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : log.status === 'cancelled' ? t('common.cancelled') : t('common.failed')
+  const date = new Date(log.started_at)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  const dateLabel = date.toDateString() === today.toDateString() ? t('executionLog.today')
+    : date.toDateString() === yesterday.toDateString() ? t('executionLog.yesterday')
+      : new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(date)
+  const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
+  const duration = log.finished_at ? formatDuration(log.started_at, log.finished_at) : null
 
   return (
-    <div
-      onClick={onClick}
-      className={`group w-full flex items-center p-3 rounded-xl transition-all border cursor-pointer relative ${
-        isSelected
-          ? 'bg-white shadow-md border-blue-200 ring-1 ring-blue-100 z-10'
-          : 'bg-white/40 border-transparent hover:bg-white hover:shadow-sm hover:border-gray-200'
-      }`}
-    >
+    <div className={`flex min-h-[62px] items-center gap-2 rounded-lg px-2 transition-colors ${isSelected ? 'bg-blue-50 ring-1 ring-inset ring-blue-200' : 'hover:bg-gray-50'}`}>
       <input
         type="checkbox"
-        className="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        className="h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         checked={isChecked}
-        onChange={(e) => onCheck(e.target.checked)}
-        onClick={(e) => e.stopPropagation()}
+        onChange={(event) => onCheck(event.target.checked)}
+        aria-label={t('executionLog.selectLog', { name: log.task_name || t('executionLog.unknownTask') })}
       />
-      <div
-        className="flex-1 flex items-start gap-3 text-left min-w-0"
-      >
-        {/* Status indicator */}
-        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${statusColors[log.status]}`}>
-          {log.status === 'running' && (
-            <span className="flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
-            </span>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {/* Task name */}
-          <p className={`text-sm truncate ${isSelected ? 'font-medium text-gray-900' : 'text-gray-700'}`}>
-            {log.task_name || t('executionLog.unknownTask')}
-          </p>
-
-          {/* Time */}
-          <p className="text-sm text-gray-400 mt-0.5">
-            {formatRelativeTime(log.started_at, t)}
-          </p>
-        </div>
-
-        {/* Status badge */}
-        <span className={`text-sm font-medium px-1.5 py-0.5 rounded ${
-          log.status === 'running' ? 'bg-blue-100 text-blue-700' :
-          log.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
-          log.status === 'cancelled' ? 'bg-amber-100 text-amber-700' :
-          'bg-red-100 text-red-700'
-        }`}>
-          {log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : log.status === 'cancelled' ? t('common.cancelled') : t('common.failed')}
+      <button type="button" onClick={onClick} aria-pressed={isSelected}
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-1 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+        <span className={`relative h-2 w-2 shrink-0 rounded-full ${statusColors[log.status]}`}>
+          {log.status === 'running' && <span className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-60" />}
         </span>
-      </div>
+        <span className="min-w-0 flex-1">
+          <span className={`block truncate text-sm ${isSelected ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`} title={log.task_name || t('executionLog.unknownTask')}>
+            {log.task_name || t('executionLog.unknownTask')}
+          </span>
+          <span className="mt-0.5 block text-xs tabular-nums text-gray-400">{dateLabel} · {time}{duration ? ` · ${duration}` : ''}</span>
+        </span>
+        <span className={`shrink-0 text-xs font-medium ${log.status === 'failed' ? 'rounded bg-red-50 px-1.5 py-1 text-red-700' : log.status === 'running' ? 'text-blue-700' : log.status === 'cancelled' ? 'text-amber-700' : 'text-emerald-700'}`}>
+          {statusLabel}
+        </span>
+      </button>
     </div>
   )
 }
@@ -239,7 +322,7 @@ interface LogDetailProps {
 }
 
 function LogDetail({ log: initialLog }: LogDetailProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { log: liveLog, cancel } = useExecutionLog(initialLog.id)
   const log = liveLog ? { ...initialLog, ...liveLog } : initialLog
   const outputEndRef = useRef<HTMLDivElement>(null)
@@ -470,7 +553,7 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>{formatDateTime(log.started_at)}</span>
+              <span>{formatDateTime(log.started_at, i18n.resolvedLanguage || i18n.language)}</span>
             </div>
             {log.finished_at && (
               <div className="flex items-center gap-1.5">
@@ -706,9 +789,9 @@ function StatusBadge({ status }: StatusBadgeProps) {
   )
 }
 
-function formatDateTime(isoString: string): string {
+function formatDateTime(isoString: string, locale: string): string {
   const date = new Date(isoString)
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString(locale, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -716,31 +799,18 @@ function formatDateTime(isoString: string): string {
   })
 }
 
-function formatRelativeTime(isoString: string, t: (key: string, options?: Record<string, unknown>) => string): string {
-  const date = new Date(isoString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return t('executionLog.time.justNow')
-  if (diffMins < 60) return t('executionLog.time.minutesAgo', { count: diffMins })
-  if (diffHours < 24) return t('executionLog.time.hoursAgo', { count: diffHours })
-  if (diffDays < 7) return t('executionLog.time.daysAgo', { count: diffDays })
-
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
 function formatDuration(start: string, end: string): string {
   const startDate = new Date(start)
   const endDate = new Date(end)
   const diffMs = endDate.getTime() - startDate.getTime()
 
+  if (diffMs < 0) return '—'
   if (diffMs < 1000) return `${diffMs}ms`
   if (diffMs < 60000) return `${(diffMs / 1000).toFixed(1)}s`
 
-  const minutes = Math.floor(diffMs / 60000)
-  const seconds = Math.round((diffMs % 60000) / 1000)
-  return `${minutes}m ${seconds}s`
+  const totalSeconds = Math.round(diffMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`
 }

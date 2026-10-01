@@ -15,6 +15,7 @@ import {
   deleteTask,
   toggleTask,
   getExecutionLogs,
+  searchExecutionLogs,
   getDashboardLogData,
   getExecutionLogWithTask,
   deleteExecutionLogs,
@@ -57,7 +58,8 @@ import type {
   CreateTaskInput,
   UpdateTaskInput,
   Settings,
-  ExecutionLog
+  ExecutionLog,
+  LogSearchInput
 } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -167,6 +169,10 @@ function registerIpcHandlers(): void {
   // Log handlers
   ipcMain.handle('log:list', (_, taskId?: string, limit?: number) => {
     return getExecutionLogs(taskId, limit)
+  })
+
+  ipcMain.handle('log:search', (_, input: LogSearchInput) => {
+    return searchExecutionLogs(input)
   })
 
   ipcMain.handle('log:get', (_, id: string) => {
