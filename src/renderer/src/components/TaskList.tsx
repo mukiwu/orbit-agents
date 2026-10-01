@@ -99,9 +99,9 @@ export default function TaskList({
     <div className="flex h-full gap-8">
       {/* Left Sidebar - Task List */}
       <div className="w-80 flex-shrink-0 flex flex-col gap-1">
-        <div className="mb-4 px-2 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{t('taskList.title')}</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('taskList.title')}</h2>
             <p className="text-xs text-gray-400 mt-1">{t('taskList.subtitle')}</p>
           </div>
         </div>

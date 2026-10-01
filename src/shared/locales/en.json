@@ -162,7 +162,7 @@
     "newTask": "New Task",
     "nav": {
       "overview": "Overview",
-      "tasks": "Tasks",
+      "tasks": "Task Schedule",
       "executionLogs": "Execution Logs",
       "settings": "Settings"
     }
@@ -174,7 +174,7 @@
     "loadError": "Could not load overview",
     "last24h": "Last 24 hours",
     "last7d": "Last 7 days",
-    "viewTasks": "View tasks",
+    "viewTasks": "View task schedule",
     "viewLogs": "View logs",
     "createFirst": "Create your first task",
     "health": {
@@ -226,7 +226,7 @@
     }
   },
   "taskList": {
-    "title": "Tasks",
+    "title": "Task Schedule",
     "subtitle": "Manage automated workflows",
     "loading": "Loading...",
     "error": "Error:",

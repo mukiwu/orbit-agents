@@ -108,11 +108,11 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
     </div>
   }
 
-  return <div className="h-full overflow-y-auto bg-[#F7F8FA]">
-    <div className="mx-auto max-w-[1480px] space-y-5 p-5 pb-10 lg:p-8">
+  return <div className="h-full overflow-y-auto bg-white">
+    <div className="space-y-5 p-6 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t('dashboard.title')}</h1>
+          <h1 className="text-lg font-semibold text-slate-900">{t('dashboard.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">

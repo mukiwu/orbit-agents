@@ -89,7 +89,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-[#F8F7F6]">
       {/* Sidebar */}
-      <div className="w-56 bg-[#F8F7F6] flex flex-col border-r border-gray-200/60">
+      <div className="w-56 bg-[#F8F7F6] flex flex-col">
         {/* Header drag region */}
         <div className="h-12 drag-region" />
 
@@ -187,7 +187,7 @@ export default function App() {
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
           {currentView === 'overview' && (
-            <div className="h-full overflow-hidden rounded-tl-2xl border-l border-t border-gray-200/60 shadow-sm">
+            <div className="h-full overflow-hidden rounded-tl-2xl border-t border-gray-200/60 bg-white shadow-sm">
               <Dashboard
                 onNewTask={handleNewTask}
                 onOpenTasks={() => handleViewChange('tasks')}
@@ -197,7 +197,7 @@ export default function App() {
             </div>
           )}
           {currentView === 'tasks' && (
-            <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6">
+            <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-gray-200/60 p-6">
               <TaskList 
                 key={taskListKey} 
                 onEditTask={handleEditTask} 
@@ -210,12 +210,12 @@ export default function App() {
             </div>
           )}
           {currentView === 'logs' && (
-            <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6">
+            <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-gray-200/60 p-6">
               <ExecutionLog initialLogId={selectedLogId} />
             </div>
           )}
           {currentView === 'settings' && (
-            <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6">
+            <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-gray-200/60 p-6">
               <Settings />
             </div>
           )}

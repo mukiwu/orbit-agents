@@ -161,20 +161,20 @@
   "app": {
     "newTask": "新增任務",
     "nav": {
-      "overview": "概要",
-      "tasks": "任務",
+      "overview": "總覽",
+      "tasks": "任務排程",
       "executionLogs": "執行記錄",
       "settings": "設定"
     }
   },
   "dashboard": {
-    "title": "概要",
+    "title": "總覽",
     "subtitle": "掌握任務排程與最近的執行狀況",
-    "refresh": "重新整理概要",
-    "loadError": "無法載入概要",
+    "refresh": "重新整理總覽",
+    "loadError": "無法載入總覽",
     "last24h": "近 24 小時",
     "last7d": "近 7 天",
-    "viewTasks": "查看任務",
+    "viewTasks": "查看任務排程",
     "viewLogs": "查看記錄",
     "createFirst": "建立第一個任務",
     "health": {
@@ -226,7 +226,7 @@
     }
   },
   "taskList": {
-    "title": "任務",
+    "title": "任務排程",
     "subtitle": "管理自動化工作流程",
     "loading": "載入中...",
     "error": "發生錯誤：",
