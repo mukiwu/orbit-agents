@@ -523,10 +523,10 @@
   "executionLog": {
     "listTitle": "執行記錄",
     "searchPlaceholder": "搜尋任務名稱",
-    "shown": "{{shown}} / {{total}} 筆",
+    "shown": "已載入 {{shown}} 筆，共 {{total}} 筆",
     "today": "今天",
     "yesterday": "昨天",
-    "filter": { "label": "依執行狀態篩選", "all": "全部" },
+    "filter": { "label": "依執行狀態篩選", "all": "所有狀態" },
     "selectVisible": "選取已載入",
     "selectLog": "選取 {{name}} 的執行記錄",
     "noMatching": "沒有符合條件的記錄",

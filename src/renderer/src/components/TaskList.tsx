@@ -140,7 +140,8 @@ export default function TaskList({
                        <div className="flex items-center gap-1.5 mt-1">
                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
                             task.cli_tool === 'claude' ? 'bg-orange-100 text-orange-700' :
-                            'bg-indigo-100 text-indigo-700'
+                            task.cli_tool === 'codex' ? 'bg-indigo-100 text-indigo-700' :
+                            'bg-teal-100 text-teal-800'
                          }`}>
                            {task.cli_tool}
                          </span>

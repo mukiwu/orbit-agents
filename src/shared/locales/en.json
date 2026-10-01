@@ -523,10 +523,10 @@
   "executionLog": {
     "listTitle": "Execution Logs",
     "searchPlaceholder": "Search task names",
-    "shown": "{{shown}} / {{total}} logs",
+    "shown": "Showing {{shown}} of {{total}} logs",
     "today": "Today",
     "yesterday": "Yesterday",
-    "filter": { "label": "Filter by run status", "all": "All" },
+    "filter": { "label": "Filter by run status", "all": "All statuses" },
     "selectVisible": "Select loaded",
     "selectLog": "Select run of {{name}}",
     "noMatching": "No matching logs",
