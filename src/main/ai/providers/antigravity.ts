@@ -15,7 +15,8 @@ export function buildAntigravityArgs(ctx: ExecutionContext): string[] {
   // Using --print=<value> form avoids the next flag being swallowed as the --print value.
   const args: string[] = [`--print=${fullPrompt}`]
   if (ctx.skipPermissions) args.push('--dangerously-skip-permissions')
-  if (ctx.model) args.push('--model', ctx.model)
+  const modelId = ctx.model?.split('\t', 1)[0].trim()
+  if (modelId) args.push('--model', modelId)
   for (const dir of ctx.addDirs) args.push('--add-dir', dir)
   return args
 }
@@ -32,7 +33,7 @@ async function testAntigravity(): Promise<ProviderResult> {
     let stderr = ''
 
     const proc = spawn(cliPath, ['--version'], {
-      shell: true,
+      shell: process.platform === 'win32',
       env: { ...process.env },
       windowsHide: true
     })
@@ -71,10 +72,24 @@ async function testAntigravity(): Promise<ProviderResult> {
 }
 
 const FALLBACK_MODELS = [
-  'Gemini 3.5 Flash (Medium)',
-  'Gemini 3.1 Pro (High)',
-  'Claude Sonnet 4.6 (Thinking)'
+  { value: 'gemini-3.8-flash-medium', label: 'Gemini 3.8 Flash (Medium)' },
+  { value: 'gemini-3.1-pro-high', label: 'Gemini 3.1 Pro (High)' },
+  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Thinking)' }
 ]
+
+export function parseAntigravityModelList(raw: string): ModelOption[] {
+  return raw
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map((line) => {
+      const [value, ...labelParts] = line.split('\t')
+      const modelId = value.trim()
+      const label = labelParts.join('\t').trim() || modelId
+      return { value: modelId, label }
+    })
+    .filter(model => model.value.length > 0)
+}
 
 async function listAntigravityModels(): Promise<ModelOption[]> {
   const cliPath = resolveAntigravityCommand()
@@ -83,7 +98,7 @@ async function listAntigravityModels(): Promise<ModelOption[]> {
     let stdout = ''
 
     const proc = spawn(cliPath, ['models'], {
-      shell: true,
+      shell: process.platform === 'win32',
       env: { ...process.env },
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
@@ -95,25 +110,21 @@ async function listAntigravityModels(): Promise<ModelOption[]> {
 
     proc.on('close', (code) => {
       if (code !== 0 || !stdout.trim()) {
-        resolve(FALLBACK_MODELS.map(m => ({ value: m, label: m })))
+        resolve(FALLBACK_MODELS.map(m => ({ ...m, desc: 'Offline fallback', stale: true })))
         return
       }
 
-      const models: ModelOption[] = stdout
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => ({ value: line, label: line }))
+      const models = parseAntigravityModelList(stdout)
 
       if (models.length === 0) {
-        resolve(FALLBACK_MODELS.map(m => ({ value: m, label: m })))
+        resolve(FALLBACK_MODELS.map(m => ({ ...m, desc: 'Offline fallback', stale: true })))
       } else {
         resolve(models)
       }
     })
 
     proc.on('error', () => {
-      resolve(FALLBACK_MODELS.map(m => ({ value: m, label: m })))
+      resolve(FALLBACK_MODELS.map(m => ({ ...m, desc: 'Offline fallback', stale: true })))
     })
   })
 }

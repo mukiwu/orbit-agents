@@ -18,7 +18,8 @@ export function buildClaudeArgs(ctx: ExecutionContext): string[] {
   const args: string[] = ['--print', '--output-format', 'stream-json', '--verbose']
   if (ctx.skipPermissions) args.push('--dangerously-skip-permissions')
   if (ctx.systemInstruction) args.push('--append-system-prompt', ctx.systemInstruction)
-  if (ctx.model) args.push('--model', ctx.model)
+  // "default" follows the CLI's current account and organization setting.
+  if (ctx.model && ctx.model !== 'default') args.push('--model', ctx.model)
   if (ctx.mcpTools.length > 0) args.push('--allowedTools', ctx.mcpTools.join(','))
   for (const dir of ctx.addDirs) args.push('--add-dir', dir)
   // On non-Windows, deliver prompt as a -p flag (positional arg mode).
@@ -100,7 +101,7 @@ async function testClaude(): Promise<ProviderResult> {
     const cleanEnv = { ...process.env }
     delete cleanEnv.CLAUDECODE
     const proc = spawn(cliPath, ['--version'], {
-      shell: true,
+      shell: process.platform === 'win32',
       env: cleanEnv,
       windowsHide: true
     })
@@ -148,7 +149,7 @@ async function listClaudeMcps(): Promise<McpServer[]> {
     const cleanEnv = { ...process.env }
     delete cleanEnv.CLAUDECODE
     const proc = spawn(cliPath, ['mcp', 'list'], {
-      shell: true,
+      shell: process.platform === 'win32',
       env: cleanEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
@@ -192,6 +193,110 @@ async function listClaudeMcps(): Promise<McpServer[]> {
   })
 }
 
+interface ClaudeCliModel {
+  value?: string
+  resolvedModel?: string
+  displayName?: string
+  description?: string
+}
+
+const FALLBACK_CLAUDE_MODELS: ModelOption[] = [
+  { value: 'default', label: 'Default', desc: 'Offline fallback', isDefault: true, stale: true },
+  { value: 'sonnet', label: 'Sonnet', desc: 'Offline fallback', stale: true },
+  { value: 'opus', label: 'Opus', desc: 'Offline fallback', stale: true },
+  { value: 'haiku', label: 'Haiku', desc: 'Offline fallback', stale: true }
+]
+
+export function parseClaudeModelList(models: ClaudeCliModel[]): ModelOption[] {
+  return models.flatMap((model) => {
+    const value = model.value?.trim()
+    if (!value) return []
+    const isDefault = value === 'default'
+    // The default row's displayName omits the resolved model version. Claude's
+    // description starts with that version (for example "Sonnet 5.5 · ...").
+    const resolvedName = model.description?.match(/^(?:Claude )?(?:Opus|Sonnet|Haiku|Fable)\s+\d+(?:\.\d+)?/i)?.[0]
+      || model.resolvedModel
+    const label = isDefault
+      ? `Default${resolvedName ? ` · ${resolvedName}` : ''}`
+      : model.displayName?.trim() || model.resolvedModel || value
+    return [{ value, label, isDefault }]
+  })
+}
+
+async function listClaudeModels(): Promise<ModelOption[]> {
+  const cliPath = resolveClaudeCommand()
+  const cleanEnv: NodeJS.ProcessEnv = { ...process.env, CLAUDE_CODE_ENTRYPOINT: 'sdk-ts' }
+  delete cleanEnv.CLAUDECODE
+
+  // Claude Agent SDK exposes this catalog as supportedModels(). Query the same
+  // CLI initialize response so the app uses the installed Claude version and
+  // does not bundle the SDK's large optional Claude binary.
+  return new Promise((resolve) => {
+    let settled = false
+    let buffer = ''
+    const requestId = 'orbit-model-list'
+    const proc = spawn(cliPath, [
+      '--output-format', 'stream-json', '--verbose',
+      '--input-format', 'stream-json', '--setting-sources=user'
+    ], {
+      shell: process.platform === 'win32',
+      env: cleanEnv,
+      stdio: ['pipe', 'pipe', 'ignore'],
+      windowsHide: true
+    })
+
+    const finish = (models: ModelOption[]) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      proc.kill()
+      resolve(models.length > 0 ? models : FALLBACK_CLAUDE_MODELS)
+    }
+
+    const timeout = setTimeout(() => finish(FALLBACK_CLAUDE_MODELS), 20_000)
+
+    proc.stdout.on('data', (data: Buffer) => {
+      buffer += data.toString()
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (!line.trim()) continue
+        let message: {
+          type?: string
+          response?: {
+            request_id?: string
+            subtype?: string
+            response?: { models?: ClaudeCliModel[] }
+          }
+        }
+        try {
+          message = JSON.parse(line)
+        } catch {
+          continue
+        }
+
+        if (message.type !== 'control_response' || message.response?.request_id !== requestId) continue
+        if (message.response.subtype !== 'success') {
+          finish(FALLBACK_CLAUDE_MODELS)
+          return
+        }
+        finish(parseClaudeModelList(message.response.response?.models || []))
+        return
+      }
+    })
+
+    proc.on('error', () => finish(FALLBACK_CLAUDE_MODELS))
+    proc.stdin.on('error', () => finish(FALLBACK_CLAUDE_MODELS))
+    proc.on('close', () => finish(FALLBACK_CLAUDE_MODELS))
+    proc.stdin.write(`${JSON.stringify({
+      type: 'control_request',
+      request_id: requestId,
+      request: { subtype: 'initialize' }
+    })}\n`)
+  })
+}
+
 export const claudeProvider: AiProvider = {
   id: 'claude',
   displayName: 'Claude',
@@ -207,10 +312,6 @@ export const claudeProvider: AiProvider = {
   needsPty: false,
   parseOutput: parseClaudeOutput,
   test: () => testClaude(),
-  listModels: async (): Promise<ModelOption[]> => [
-    { value: 'haiku', label: 'Haiku', desc: 'Fast' },
-    { value: 'sonnet', label: 'Sonnet', desc: 'Balanced' },
-    { value: 'opus', label: 'Opus', desc: 'Powerful' }
-  ],
+  listModels: () => listClaudeModels(),
   listMcps: () => listClaudeMcps()
 }

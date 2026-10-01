@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildAntigravityArgs, parseAntigravityOutput } from './antigravity'
+import { buildAntigravityArgs, parseAntigravityOutput, parseAntigravityModelList } from './antigravity'
 import type { ExecutionContext } from '../types'
 
 function ctx(over: Partial<ExecutionContext> = {}): ExecutionContext {
@@ -34,5 +34,13 @@ describe('buildAntigravityArgs', () => {
 describe('parseAntigravityOutput', () => {
   it('passes plain text through trimmed', () => {
     expect(parseAntigravityOutput('  hello  ')).toBe('hello')
+  })
+})
+
+describe('parseAntigravityModelList', () => {
+  it('separates the CLI model ID from its display name', () => {
+    expect(parseAntigravityModelList('gemini-3.8-flash-medium\tGemini 3.8 Flash (Medium)')).toEqual([
+      { value: 'gemini-3.8-flash-medium', label: 'Gemini 3.8 Flash (Medium)' }
+    ])
   })
 })

@@ -115,7 +115,26 @@
     "codex": {
       "title": "Codex CLI",
       "description": "Configure the connection to OpenAI's Codex command line tool.",
-      "placeholder": "Use default (codex in PATH)"
+      "placeholder": "Use default (codex in PATH)",
+      "subscription": {
+        "title": "Use a ChatGPT plan",
+        "description": "Sign in with ChatGPT to use Codex access available through your plan.",
+        "checking": "Checking Codex sign-in...",
+        "refresh": "Refresh sign-in status",
+        "signIn": "Sign in with ChatGPT",
+        "signingIn": "Waiting for browser sign-in...",
+        "signOut": "Sign out",
+        "signingOut": "Signing out...",
+        "sharedCredentials": "Sign-in opens the Codex CLI browser flow. Stored credentials are shared with the CLI, so signing out here also signs out the CLI account. Environment-managed sign-in methods must be changed in that environment.",
+        "status": {
+          "chatgpt": "Signed in with ChatGPT",
+          "api-key": "Signed in with an API key",
+          "other": "Signed in with an environment-managed method",
+          "signed-out": "Not signed in",
+          "unknown": "Unable to determine sign-in method",
+          "unavailable": "Unable to check sign-in status"
+        }
+      }
     },
     "antigravity": {
       "title": "Antigravity CLI",
@@ -213,7 +232,16 @@
       "label": "AI Provider"
     },
     "model": {
-      "label": "AI Model"
+      "label": "AI Model",
+      "refresh": "Sync models",
+      "refreshing": "Syncing…",
+      "loading": "Loading available models…",
+      "empty": "No models available",
+      "synced": "Synced from the current CLI account; availability depends on the CLI version and account.",
+      "default": "Default",
+      "unavailable": "Not in the provider's current list",
+      "fallbackNotice": "The latest list is unavailable; showing fallback models. Try syncing again later.",
+      "syncError": "Could not sync models. Check that the CLI is installed and connected."
     },
     "mcpTools": {
       "label": "MCP Tools",
@@ -238,6 +266,10 @@
       "description": "Auto-record reusable insights after each run",
       "placeholder": "~/knowledge/task-name.md",
       "browse": "Browse"
+    },
+    "permissions": {
+      "label": "Skip CLI approvals and sandbox",
+      "description": "When enabled, the CLI runs without approval prompts or sandbox restrictions. Use only for tasks you trust."
     },
     "enable": {
       "label": "Enable task immediately"

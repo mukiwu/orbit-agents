@@ -16,7 +16,9 @@ Orbit Agents 是一個基於 Electron 開發的 AI 驅動桌面端排程管理�
 - **AI 深度整合**
   - 內建 Anthropic Claude Code CLI 整合
   - 內建 OpenAI Codex CLI 整合
+  - 可直接使用 ChatGPT 帳號登入 Codex CLI，沿用符合資格的 ChatGPT 方案權限
   - 內建 Google Antigravity CLI 整合
+  - 模型選單會向各家 CLI／供應商同步，並可手動更新；連線失敗時會標示備用清單
   - 支援 MCP (Model Context Protocol) 伺服器
   - 讓 AI 成為您的自動化助手
 
@@ -38,8 +40,8 @@ Orbit Agents 是一個基於 Electron 開發的 AI 驅動桌面端排程管理�
 
 ### 下載檔案
 您可以在 [Releases](https://github.com/mukiwu/orbit-agents/releases) 頁面下載最新版本：
-- **macOS**: `Orbit-Agents-1.0.8-arm64.dmg` (Apple Silicon) 或 `zip` 檔案
-- **Windows**: `Orbit-Agents-Setup-1.0.8.exe` 安裝檔或 `zip` 檔案
+- **macOS**: `Orbit-Agents-1.1.1-arm64.dmg` (Apple Silicon) 或 `zip` 檔案
+- **Windows**: `Orbit-Agents-Setup-1.1.1.exe` 安裝檔或 `zip` 檔案
 - **Linux**: `.AppImage` 或 `.deb`
 
 ### macOS 安裝注意事項

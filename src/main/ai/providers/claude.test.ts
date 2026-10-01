@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildClaudeArgs, parseClaudeOutput } from './claude'
+import { buildClaudeArgs, parseClaudeOutput, parseClaudeModelList } from './claude'
 import type { ExecutionContext } from '../types'
 
 function ctx(over: Partial<ExecutionContext> = {}): ExecutionContext {
@@ -42,6 +42,10 @@ describe('buildClaudeArgs', () => {
     expect(args.filter(a => a === '--add-dir')).toHaveLength(2)
   })
 
+  it('lets the CLI resolve its current default model', () => {
+    expect(buildClaudeArgs(ctx({ model: 'default' }))).not.toContain('--model')
+  })
+
   it('includes -p followed by prompt on non-Windows (arg delivery)', () => {
     // This test runs on macOS/Linux where promptDelivery === 'arg'
     if (process.platform === 'win32') return
@@ -59,5 +63,17 @@ describe('parseClaudeOutput', () => {
       JSON.stringify({ type: 'result', result: 'hello' })
     ].join('\n')
     expect(parseClaudeOutput(raw)).toBe('hello')
+  })
+})
+
+describe('parseClaudeModelList', () => {
+  it('keeps the CLI model ID and displays the resolved current version', () => {
+    expect(parseClaudeModelList([
+      { value: 'default', resolvedModel: 'claude-sonnet-5-5', displayName: 'Default (recommended)', description: 'Sonnet 5.5 · Efficient for routine tasks' },
+      { value: 'claude-fable-5-1', resolvedModel: 'claude-fable-5-1', displayName: 'Fable 5.1', description: 'For your toughest challenges' }
+    ])).toEqual([
+      { value: 'default', label: 'Default · Sonnet 5.5', isDefault: true },
+      { value: 'claude-fable-5-1', label: 'Fable 5.1', isDefault: false }
+    ])
   })
 })

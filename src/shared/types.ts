@@ -1,9 +1,5 @@
-// Task Types
-export type ClaudeModel = 'haiku' | 'sonnet' | 'opus'
-export type CodexModel = 'gpt-5.5' | 'gpt-5.4'
-// 嚴格 union 用於 claude/codex 的選項與預設值（編譯期安全,呼應使用者偏好）
-// Antigravity 模型由 agy models 動態提供,在執行期驗證,以 string 儲存
-export type ModelType = ClaudeModel | CodexModel
+// Provider models can change independently from the app's release cycle.
+export type ModelType = string
 
 export interface Task {
   id: string
@@ -125,10 +121,19 @@ export interface ProviderTestResult {
   error?: string
 }
 
+export type CodexAuthMethod = 'chatgpt' | 'api-key' | 'other' | 'signed-out' | 'unknown'
+
+export interface CodexAuthStatus {
+  authenticated: boolean
+  method: CodexAuthMethod
+}
+
 export interface ModelOption {
   value: string
   label: string
   desc?: string
+  isDefault?: boolean
+  stale?: boolean
 }
 
 // IPC API Types
@@ -159,6 +164,11 @@ export interface IpcApi {
   'ai:test': (provider: ProviderId) => Promise<ProviderTestResult>
   'ai:list-mcps': (provider: ProviderId) => Promise<McpServer[]>
   'ai:list-models': (provider: ProviderId) => Promise<ModelOption[]>
+
+  // Codex CLI account operations; credentials remain managed by Codex CLI.
+  'codex:auth-status': () => Promise<CodexAuthStatus>
+  'codex:login': () => Promise<void>
+  'codex:logout': () => Promise<void>
 
   // Skill operations
   'skill:scan': (projectPath?: string) => Promise<SkillScanResult>

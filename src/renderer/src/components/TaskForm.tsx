@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
-import type { Task, CreateTaskInput, McpServer, ModelType, Skill, ModelOption } from '../../../shared/types'
+import type { Task, CreateTaskInput, McpServer, ProviderId, Skill, ModelOption } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
+import ModelSelect from './ModelSelect'
 
 interface TaskFormProps {
   task: Task | null
@@ -20,12 +21,22 @@ import {
   type FrequencyType
 } from '../utils/cron'
 
+function normalizeSavedModel(provider: ProviderId | undefined, model: string): string {
+  // Older Antigravity builds persisted the full "model-id<TAB>label" row as
+  // the selected value. Keep those tasks editable and runnable after ID parsing.
+  return provider === 'antigravity' ? model.split('\t', 1)[0].trim() : model
+}
+
 export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
   const { t } = useTranslation()
   const { createTask, updateTask } = useTasks()
   const { listMcps: listAiMcps, listModels } = useAiProvider()
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills, initProject } = useSkills()
   const [dynamicModels, setDynamicModels] = useState<ModelOption[]>([])
+  const [modelsProvider, setModelsProvider] = useState<ProviderId | null>(null)
+  const [loadingModels, setLoadingModels] = useState(true)
+  const [modelListNotice, setModelListNotice] = useState<{ text: string; tone: 'success' | 'warning' | 'error' } | null>(null)
+  const modelRequestSequence = useRef(0)
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
 
   const [loading, setLoading] = useState(false)
@@ -57,7 +68,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             cron_expression: task.cron_expression || '0 9 * * *',
             prompt: task.prompt || '',
             cli_tool: (task.cli_tool || 'claude') as 'claude' | 'codex' | 'antigravity',
-            model: (task.model || 'sonnet') as ModelType,
+            model: normalizeSavedModel(task.cli_tool, task.model || ''),
             mcp_tools: task.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
             attachments: task.attachments ? JSON.parse(task.attachments) : [] as string[],
             output_type: (task.output_type || 'log') as 'log' | 'both',
@@ -85,7 +96,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
             cron_expression: '0 9 * * *',
             prompt: '',
             cli_tool: 'claude',
-            model: 'sonnet',
+            model: '',
             mcp_tools: [],
             attachments: [],
             output_type: 'log',
@@ -113,7 +124,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     cron_expression: task?.cron_expression || '0 9 * * *',
     prompt: task?.prompt || '',
     cli_tool: (task?.cli_tool || 'claude') as 'claude' | 'codex' | 'antigravity',
-    model: (task?.model || 'sonnet') as ModelType,
+    model: task ? normalizeSavedModel(task.cli_tool, task.model || '') : '',
     mcp_tools: task?.mcp_tools ? JSON.parse(task.mcp_tools) : [] as string[],
     attachments: task?.attachments ? JSON.parse(task.attachments) : [] as string[],
     output_type: (task?.output_type || 'log') as 'log' | 'both',
@@ -184,31 +195,58 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
     fetchMcps()
   }, [formData.cli_tool, listAiMcps])
 
-  useEffect(() => {
-    const fetchModels = async () => {
-      const tool = formData.cli_tool
-      try {
-        const models = await listModels(tool)
-        setDynamicModels(models)
-        if (models.length > 0) {
-          setFormData((prev) => {
-            const isValid = models.some((m) => m.value === prev.model)
-            if (!prev.model || !isValid) {
-              return { ...prev, model: models[0].value as ModelType }
-            }
-            return prev
-          })
-        }
-      } catch (err) {
-        setDynamicModels([])
-      }
-    }
+  const refreshModels = useCallback(async (provider: ProviderId) => {
+    const requestSequence = ++modelRequestSequence.current
+    setLoadingModels(true)
+    setModelListNotice(null)
 
-    fetchModels()
-  }, [formData.cli_tool, listModels])
+    try {
+      const models = await listModels(provider)
+      if (requestSequence !== modelRequestSequence.current) return
+
+      setDynamicModels(models)
+      setModelsProvider(provider)
+      const showingFallback = models.some((model) => model.stale)
+      setModelListNotice({
+        text: t(showingFallback ? 'taskForm.model.fallbackNotice' : 'taskForm.model.synced'),
+        tone: showingFallback ? 'warning' : 'success'
+      })
+
+      if (models.length > 0) {
+        setFormData((prev) => {
+          if (prev.cli_tool !== provider || models.some((model) => model.value === prev.model)) return prev
+          // Keep a saved value visible when a provider removes or renames it.
+          if (task?.cli_tool === provider && prev.model) return prev
+          const defaultModel = models.find((model) => model.isDefault) || models[0]
+          return { ...prev, model: defaultModel.value }
+        })
+      }
+    } catch {
+      if (requestSequence === modelRequestSequence.current) {
+        setModelListNotice({ text: t('taskForm.model.syncError'), tone: 'error' })
+      }
+    } finally {
+      if (requestSequence === modelRequestSequence.current) setLoadingModels(false)
+    }
+  }, [listModels, t, task])
+
+  useEffect(() => {
+    void refreshModels(formData.cli_tool)
+    return () => { modelRequestSequence.current += 1 }
+  }, [formData.cli_tool, refreshModels])
+
+  const modelOptions = useMemo(() => {
+    const providerModels = modelsProvider === formData.cli_tool ? dynamicModels : []
+    if (!formData.model || providerModels.some((model) => model.value === formData.model)) return providerModels
+    return [
+      { value: formData.model, label: formData.model, desc: t('taskForm.model.unavailable') },
+      ...providerModels
+    ]
+  }, [dynamicModels, formData.cli_tool, formData.model, modelsProvider, t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loadingModels) return
     setLoading(true)
     setError(null)
 
@@ -637,19 +675,24 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                 <div className="flex gap-2 flex-wrap">
                   {(
                     [
-                      { value: 'claude' as const, label: 'Claude', defaultModel: 'sonnet' as ModelType },
-                      { value: 'codex' as const, label: 'Codex', defaultModel: 'gpt-5.5' as ModelType },
-                      { value: 'antigravity' as const, label: 'Antigravity', defaultModel: '' as ModelType }
+                      { value: 'claude' as const, label: 'Claude' },
+                      { value: 'codex' as const, label: 'Codex' },
+                      { value: 'antigravity' as const, label: 'Antigravity' }
                     ]
                   ).map((tool) => (
                     <button
                       key={tool.value}
                       type="button"
                       onClick={() => {
+                        if (formData.cli_tool === tool.value) return
+                        setLoadingModels(true)
+                        setDynamicModels([])
+                        setModelsProvider(null)
+                        setModelListNotice(null)
                         setFormData((prev) => ({
                           ...prev,
                           cli_tool: tool.value,
-                          model: tool.defaultModel,
+                          model: '',
                           mcp_tools: []
                         }))
                       }}
@@ -666,20 +709,41 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  {t('taskForm.model.label')}
-                </label>
-                <select
-                  value={formData.model}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, model: e.target.value as ModelType }))}
-                  className="w-full h-14 px-3 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-                >
-                  {dynamicModels.map((model) => (
-                    <option key={model.value} value={model.value}>
-                      {model.label}{model.desc ? ` (${model.desc})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-2">
+                  <span id="task-model-label" className="block text-sm font-medium text-gray-600">
+                    {t('taskForm.model.label')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void refreshModels(formData.cli_tool)}
+                    disabled={loadingModels}
+                    aria-label={t(loadingModels ? 'taskForm.model.refreshing' : 'taskForm.model.refresh')}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:text-gray-400"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingModels ? 'animate-spin' : ''}`} />
+                    {t(loadingModels ? 'taskForm.model.refreshing' : 'taskForm.model.refresh')}
+                  </button>
+                </div>
+                {loadingModels ? (
+                  <div role="status" aria-live="polite" className="w-full h-14 px-3 flex items-center gap-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg">
+                    <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                    {t('taskForm.model.loading')}
+                  </div>
+                ) : (
+                  <ModelSelect
+                    value={formData.model}
+                    options={modelOptions}
+                    onChange={(model) => setFormData((prev) => ({ ...prev, model }))}
+                    labelId="task-model-label"
+                    emptyLabel={t('taskForm.model.empty')}
+                    defaultLabel={t('taskForm.model.default')}
+                  />
+                )}
+                {modelListNotice && (
+                  <p role="status" className={`mt-1.5 text-xs ${modelListNotice.tone === 'success' ? 'text-emerald-700' : modelListNotice.tone === 'warning' ? 'text-amber-700' : 'text-red-600'}`}>
+                    {modelListNotice.text}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -868,6 +932,31 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
               )}
             </div>
 
+            {/* Permission mode */}
+            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-pressed={formData.skip_permissions}
+                  aria-label={t('taskForm.permissions.label')}
+                  onClick={() => setFormData((prev) => ({ ...prev, skip_permissions: !prev.skip_permissions }))}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${
+                    formData.skip_permissions ? 'bg-amber-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      formData.skip_permissions ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <label className="text-sm font-medium text-gray-700">
+                  {t('taskForm.permissions.label')}
+                </label>
+              </div>
+              <p className="text-xs text-amber-800">{t('taskForm.permissions.description')}</p>
+            </div>
+
             {/* Enabled */}
             <div className="flex items-center gap-2 pt-2">
               <button
@@ -903,7 +992,7 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
           <button
             type="submit"
             form="task-form"
-            disabled={loading}
+            disabled={loading || loadingModels}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
           >
             {loading && (

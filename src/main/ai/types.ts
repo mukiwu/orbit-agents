@@ -14,9 +14,11 @@ export interface ExecutionContext {
 }
 
 export interface ModelOption {
-  value: string   // claude/codex 由 ClaudeModel/CodexModel 字面值帶入;antigravity 為 agy models 動態字串
+  value: string   // Provider model ID or alias passed to the CLI
   label: string
   desc?: string
+  isDefault?: boolean
+  stale?: boolean
 }
 
 export interface ProviderResult {

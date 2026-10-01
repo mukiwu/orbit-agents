@@ -11,7 +11,8 @@ import type {
   SkillScanResult,
   ProviderId,
   ProviderTestResult,
-  ModelOption
+  ModelOption,
+  CodexAuthStatus
 } from '../../../shared/types'
 
 const api = window.electronApi
@@ -231,6 +232,63 @@ export function useAiProvider() {
     []
   )
   return { test, listMcps, listModels }
+}
+
+export function useCodexAuth() {
+  const [status, setStatus] = useState<CodexAuthStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [action, setAction] = useState<'login' | 'logout' | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const refresh = useCallback(async (): Promise<CodexAuthStatus> => {
+    setLoading(true)
+    try {
+      const nextStatus = await api.invoke('codex:auth-status')
+      setStatus(nextStatus)
+      setError(null)
+      return nextStatus
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to read Codex login status'
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refresh().catch(() => undefined)
+  }, [refresh])
+
+  const signIn = useCallback(async (): Promise<void> => {
+    setAction('login')
+    setError(null)
+    try {
+      await api.invoke('codex:login')
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Codex sign-in failed')
+      throw err
+    } finally {
+      setAction(null)
+    }
+  }, [refresh])
+
+  const signOut = useCallback(async (): Promise<void> => {
+    setAction('logout')
+    setError(null)
+    try {
+      await api.invoke('codex:logout')
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Codex sign-out failed')
+      throw err
+    } finally {
+      setAction(null)
+    }
+  }, [refresh])
+
+  return { status, loading, action, error, refresh, signIn, signOut }
 }
 
 // ============ Skills Hooks ============

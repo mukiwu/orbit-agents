@@ -12,7 +12,7 @@ Schedule Claude, Codex, or Antigravity to run automatically on your desktop. No 
 
 ## Get Started in 3 Steps
 
-1. **Pick your AI** → Claude (Sonnet / Opus / Haiku), Codex (GPT-5.5 / GPT-5.4), or Antigravity (Gemini / Claude / GPT-OSS)
+1. **Pick your AI** → Claude, Codex, or Antigravity with models synced from the current CLI account
 2. **Write your prompt** → Tell the AI what to do in plain language
 3. **Set a schedule** → Daily, weekly, monthly, or custom cron expression
 
@@ -39,6 +39,7 @@ That's it. Orbit handles the rest.
 - **Deep AI Integration**
   - Built-in Anthropic Claude Code CLI integration
   - Built-in OpenAI Codex CLI integration
+  - Sign in with ChatGPT to use Codex access included with an eligible ChatGPT plan
   - Built-in Google Antigravity CLI integration
   - Supports MCP (Model Context Protocol) servers
   - Turn AI into your automation assistant
@@ -61,8 +62,8 @@ That's it. Orbit handles the rest.
 
 ### Download
 You can download the latest version from the [Releases](https://github.com/mukiwu/orbit-agents/releases) page:
-- **macOS**: `Orbit-Agents-1.0.15-arm64.dmg` (Apple Silicon) or `zip` file
-- **Windows**: `Orbit-Agents-Setup-1.0.15.exe` installer or `zip` file
+- **macOS**: `Orbit-Agents-1.1.1-arm64.dmg` (Apple Silicon) or `zip` file
+- **Windows**: `Orbit-Agents-Setup-1.1.1.exe` installer or `zip` file
 - **Linux**: `.AppImage` or `.deb`
 
 ### macOS Installation Note

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCodexArgs, parseCodexOutput, codexProvider } from './codex'
+import { buildCodexArgs, parseCodexOutput, parseCodexModelList } from './codex'
 import type { ExecutionContext } from '../types'
 
 function ctx(over: Partial<ExecutionContext> = {}): ExecutionContext {
@@ -29,6 +29,19 @@ describe('buildCodexArgs', () => {
     expect(args.filter(a => a === '-i')).toHaveLength(2)
   })
 
+  it('downgrades an unsupported max effort for GPT-5.5 while preserving valid user settings', () => {
+    const args = buildCodexArgs(ctx(), 'max')
+    expect(args.slice(args.indexOf('-c'), args.indexOf('-c') + 2)).toEqual(['-c', 'model_reasoning_effort=xhigh'])
+
+    const configuredHighArgs = buildCodexArgs(ctx(), 'high')
+    expect(configuredHighArgs).not.toContain('-c')
+  })
+
+  it('does not override the configured effort for newer models', () => {
+    const args = buildCodexArgs(ctx({ model: 'gpt-6.1-sol' }), 'max')
+    expect(args).not.toContain('-c')
+  })
+
   it('prefixes the unattended instruction into the prompt (no system-prompt flag)', () => {
     const args = buildCodexArgs(ctx({ prompt: 'P', systemInstruction: 'SI' }))
     const prompt = args[args.length - 1]
@@ -38,12 +51,16 @@ describe('buildCodexArgs', () => {
   })
 })
 
-describe('codexProvider.listModels', () => {
-  it('offers the supported gpt-5.5 and gpt-5.4 models and not the deprecated gpt-5.3-codex', async () => {
-    const values = (await codexProvider.listModels()).map(m => m.value)
-    expect(values).toContain('gpt-5.5')
-    expect(values).toContain('gpt-5.4')
-    expect(values).not.toContain('gpt-5.3-codex')
+describe('parseCodexModelList', () => {
+  it('uses provider model IDs and names and marks the current default', () => {
+    expect(parseCodexModelList([
+      { id: 'gpt-6.2-sol', displayName: 'GPT-6.2 Sol', isDefault: true },
+      { model: 'gpt-6.2-luna', displayName: 'GPT-6.2 Luna' },
+      { displayName: 'Missing ID' }
+    ])).toEqual([
+      { value: 'gpt-6.2-sol', label: 'GPT-6.2 Sol', isDefault: true },
+      { value: 'gpt-6.2-luna', label: 'GPT-6.2 Luna', isDefault: undefined }
+    ])
   })
 })
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSettings, useAiProvider } from '../hooks/useApi'
+import { useSettings, useAiProvider, useCodexAuth } from '../hooks/useApi'
 import { applyLanguagePreference } from '../i18n'
 import type { LanguagePreference } from '../../../shared/i18n/resolveLocale'
 import type { ProviderTestResult, UpdateStatus } from '../../../shared/types'
-import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw } from 'lucide-react'
+import { Settings2, Terminal, Mail, Cpu, Box, Check, Loader2, AlertCircle, Download, RefreshCw, LogIn, LogOut } from 'lucide-react'
 
 type SettingsTab = 'general' | 'claude' | 'codex' | 'antigravity' | 'email'
 
@@ -14,6 +14,15 @@ export default function Settings({}: SettingsProps) {
   const { t } = useTranslation()
   const { settings, loading, updateSettings, testEmail } = useSettings()
   const { test: testAiProvider } = useAiProvider()
+  const {
+    status: codexAuthStatus,
+    loading: codexAuthLoading,
+    action: codexAuthAction,
+    error: codexAuthError,
+    refresh: refreshCodexAuth,
+    signIn: signInToCodex,
+    signOut: signOutOfCodex
+  } = useCodexAuth()
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [language, setLanguage] = useState<LanguagePreference>('system')
@@ -209,6 +218,30 @@ export default function Settings({}: SettingsProps) {
       })
     } finally {
       setTestingCodex(false)
+    }
+  }
+
+  const handleCodexSignIn = async () => {
+    try {
+      await signInToCodex()
+    } catch {
+      // The hook exposes the error beside the account status.
+    }
+  }
+
+  const handleCodexSignOut = async () => {
+    try {
+      await signOutOfCodex()
+    } catch {
+      // The hook exposes the error beside the account status.
+    }
+  }
+
+  const handleRefreshCodexAuth = async () => {
+    try {
+      await refreshCodexAuth()
+    } catch {
+      // The hook exposes the error beside the account status.
     }
   }
 
@@ -611,6 +644,73 @@ export default function Settings({}: SettingsProps) {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('settings.codex.title')}</h3>
               <p className="text-sm text-gray-500">{t('settings.codex.description')}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-5">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-1">{t('settings.codex.subscription.title')}</h4>
+                <p className="text-sm text-gray-500">{t('settings.codex.subscription.description')}</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className={`flex items-center gap-2 text-sm font-medium ${codexAuthStatus?.authenticated ? 'text-emerald-700' : 'text-gray-600'}`}>
+                  {codexAuthLoading && !codexAuthStatus ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : codexAuthStatus?.authenticated ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4" />
+                  )}
+                  {codexAuthStatus
+                    ? t(`settings.codex.subscription.status.${codexAuthStatus.method}`)
+                    : t(codexAuthLoading ? 'settings.codex.subscription.checking' : 'settings.codex.subscription.status.unavailable')}
+                </div>
+
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleRefreshCodexAuth}
+                    disabled={codexAuthLoading || codexAuthAction !== null}
+                    aria-label={t('settings.codex.subscription.refresh')}
+                    className="p-2 text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${codexAuthLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button
+                    onClick={handleCodexSignIn}
+                    disabled={codexAuthLoading || codexAuthAction !== null || codexAuthStatus?.method === 'other'}
+                    className="px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                  >
+                    {codexAuthAction === 'login' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <LogIn className="w-3.5 h-3.5" />
+                    )}
+                    {t(codexAuthAction === 'login' ? 'settings.codex.subscription.signingIn' : 'settings.codex.subscription.signIn')}
+                  </button>
+                  {codexAuthStatus?.authenticated && codexAuthStatus.method !== 'other' && (
+                    <button
+                      onClick={handleCodexSignOut}
+                      disabled={codexAuthLoading || codexAuthAction !== null}
+                      className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                    >
+                      {codexAuthAction === 'logout' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <LogOut className="w-3.5 h-3.5" />
+                      )}
+                      {t(codexAuthAction === 'logout' ? 'settings.codex.subscription.signingOut' : 'settings.codex.subscription.signOut')}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-400">{t('settings.codex.subscription.sharedCredentials')}</p>
+
+              {codexAuthError && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs break-all">
+                  {codexAuthError}
+                </div>
+              )}
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6">

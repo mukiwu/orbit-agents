@@ -115,7 +115,26 @@
     "codex": {
       "title": "Codex CLI",
       "description": "設定與 OpenAI Codex 命令列工具的連線",
-      "placeholder": "使用預設（PATH 中的 codex）"
+      "placeholder": "使用預設（PATH 中的 codex）",
+      "subscription": {
+        "title": "使用 ChatGPT 訂閱",
+        "description": "以 ChatGPT 帳號登入，使用您方案中提供的 Codex 權限。",
+        "checking": "正在檢查 Codex 登入狀態…",
+        "refresh": "重新檢查登入狀態",
+        "signIn": "使用 ChatGPT 登入",
+        "signingIn": "等待瀏覽器完成登入…",
+        "signOut": "登出",
+        "signingOut": "正在登出…",
+        "sharedCredentials": "登入時會開啟 Codex CLI 的瀏覽器流程。儲存的憑證會與 CLI 共用，因此在此登出也會使 CLI 帳號登出。由環境管理的登入方式必須在該環境中變更。",
+        "status": {
+          "chatgpt": "已使用 ChatGPT 登入",
+          "api-key": "已使用 API 金鑰登入",
+          "other": "已使用環境管理的方式登入",
+          "signed-out": "尚未登入",
+          "unknown": "無法辨識登入方式",
+          "unavailable": "無法檢查登入狀態"
+        }
+      }
     },
     "antigravity": {
       "title": "Antigravity CLI",
@@ -213,7 +232,16 @@
       "label": "AI 供應商"
     },
     "model": {
-      "label": "AI 模型"
+      "label": "AI 模型",
+      "refresh": "同步模型",
+      "refreshing": "同步中…",
+      "loading": "正在取得可用模型…",
+      "empty": "沒有可用模型",
+      "synced": "已從目前的 CLI 帳號同步；可用模型取決於 CLI 版本與帳號。",
+      "default": "預設",
+      "unavailable": "目前未出現在供應商清單中",
+      "fallbackNotice": "無法取得最新清單，正在顯示備用模型；可稍後再同步。",
+      "syncError": "無法同步模型清單，請確認 CLI 已安裝並可連線。"
     },
     "mcpTools": {
       "label": "MCP 工具",
@@ -238,6 +266,10 @@
       "description": "每次執行後自動記錄可重複使用的洞察",
       "placeholder": "~/knowledge/task-name.md",
       "browse": "瀏覽"
+    },
+    "permissions": {
+      "label": "略過 CLI 審批與沙箱",
+      "description": "啟用後，CLI 會以略過審批與沙箱的模式執行。僅對你信任的任務使用。"
     },
     "enable": {
       "label": "立即啟用任務"

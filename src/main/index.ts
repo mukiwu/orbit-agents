@@ -2,11 +2,9 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import fixPath from 'fix-path'
 import { initAutoUpdater, registerAutoUpdaterIpcHandlers } from './auto-updater'
 import { cleanupUpdateArtifacts } from './asar-updater'
 
-fixPath()
 import {
   initDatabase,
   closeDatabase,
@@ -31,6 +29,7 @@ import {
   onExecutionUpdate
 } from './scheduler'
 import { getProvider } from './ai'
+import { getCodexAuthStatus, loginWithChatGPT, logoutCodex } from './ai/codex-auth'
 import { cancelProcess } from './process-manager'
 import { isPreviewableFileUrl } from './safe-open'
 
@@ -69,7 +68,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    title: 'Orbit Agents',
+    title: is.dev ? 'Orbit Agents (Dev)' : 'Orbit Agents',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 15, y: 15 },
     webPreferences: {
@@ -204,6 +203,10 @@ function registerIpcHandlers(): void {
   ipcMain.handle('ai:list-mcps', (_e, provider: ProviderId) => getProvider(provider).listMcps())
   ipcMain.handle('ai:list-models', (_e, provider: ProviderId) => getProvider(provider).listModels())
 
+  ipcMain.handle('codex:auth-status', () => getCodexAuthStatus())
+  ipcMain.handle('codex:login', () => loginWithChatGPT())
+  ipcMain.handle('codex:logout', () => logoutCodex())
+
   // Skill handlers
   ipcMain.handle('skill:scan', (_, projectPath?: string) => {
     return scanSkills(projectPath)
@@ -245,7 +248,18 @@ function registerIpcHandlers(): void {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // fix-path v5 is ESM-only; load it dynamically from this CommonJS main bundle.
+  // Run it before the scheduler starts launching external CLI processes.
+  if (process.platform !== 'win32') {
+    try {
+      const { default: fixPath } = await import('fix-path')
+      fixPath()
+    } catch (error) {
+      console.warn('Could not load the shell PATH:', error)
+    }
+  }
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.orbit')
 

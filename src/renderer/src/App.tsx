@@ -22,6 +22,10 @@ export default function App() {
   const { settings, loading } = useSettings()
   const { t } = useTranslation()
 
+  useEffect(() => {
+    if (isElectron && import.meta.env.DEV) document.title = 'Orbit Agents DEV'
+  }, [isElectron])
+
   // Apply persisted language preference on startup (Electron only).
   // Keyed on settings.language so it also re-fires if the value changes while
   // the app is open, though the Settings component handles live switches directly.
@@ -140,7 +144,7 @@ export default function App() {
 
         {/* Version info */}
         <div className="p-4 text-sm text-gray-400">
-          v1.1.1
+          v1.1.1 {import.meta.env.DEV && <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">DEV</span>}
         </div>
       </div>
 
