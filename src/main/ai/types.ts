@@ -25,6 +25,7 @@ export interface ProviderResult {
   success: boolean
   output: string
   error?: string
+  exitCode?: number | null
 }
 
 export type ProviderTestResult = ProviderResult

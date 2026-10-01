@@ -23,6 +23,10 @@ export interface Task {
   updated_at: string
 }
 
+export interface ScheduledTask extends Task {
+  next_run: string | null
+}
+
 export interface CreateTaskInput {
   name: string
   description?: string
@@ -54,6 +58,7 @@ export interface ExecutionLog {
   status: 'running' | 'success' | 'failed' | 'cancelled'
   output: string | null
   error: string | null
+  exit_code: number | null
 }
 
 export interface ExecutionLogWithTask extends ExecutionLog {
@@ -98,6 +103,13 @@ export interface DashboardData {
   recent_runs: DashboardRun[]
   recent_failures: DashboardRun[]
   top_tasks: Array<{ task_id: string; task_name: string | null; total: number; failed: number }>
+  duration14d: {
+    count: number
+    p50_ms: number | null
+    p95_ms: number | null
+    slowest: Array<{ id: string; task_id: string; task_name: string | null; duration_ms: number }>
+    anomalies: Array<{ id: string; task_id: string; task_name: string | null; duration_ms: number; baseline_ms: number }>
+  }
 }
 
 // Settings Types
@@ -178,12 +190,12 @@ export interface ModelOption {
 export interface IpcApi {
   'dashboard:get': () => Promise<DashboardData>
   // Task operations
-  'task:list': () => Promise<Task[]>
-  'task:get': (id: string) => Promise<Task | null>
-  'task:create': (input: CreateTaskInput) => Promise<Task>
-  'task:update': (input: UpdateTaskInput) => Promise<Task>
+  'task:list': () => Promise<ScheduledTask[]>
+  'task:get': (id: string) => Promise<ScheduledTask | null>
+  'task:create': (input: CreateTaskInput) => Promise<ScheduledTask>
+  'task:update': (input: UpdateTaskInput) => Promise<ScheduledTask>
   'task:delete': (id: string) => Promise<void>
-  'task:toggle': (id: string) => Promise<Task>
+  'task:toggle': (id: string) => Promise<ScheduledTask>
   'task:run-now': (id: string) => Promise<ExecutionLog>
 
   // Log operations

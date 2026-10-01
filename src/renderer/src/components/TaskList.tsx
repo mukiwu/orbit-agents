@@ -2,14 +2,14 @@ import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { parseCronToSimple, getScheduleDescription } from '../utils/cron'
 import { useTasks } from '../hooks/useApi'
-import type { Task } from '../../../shared/types'
+import type { Task, ScheduledTask } from '../../../shared/types'
 import TaskForm from './TaskForm'
 import { Play, Pause, Trash2, Clock, Terminal, ChevronRight, Plus } from 'lucide-react'
 
 interface TaskListProps {
-  onEditTask: (task: Task) => void
+  onEditTask: (task: ScheduledTask) => void
   onNewTask: () => void
-  editingTask: Task | null
+  editingTask: ScheduledTask | null
   showTaskForm: boolean
   onCloseForm: () => void
   onTaskSaved: () => void
@@ -23,13 +23,33 @@ export default function TaskList({
   onCloseForm, 
   onTaskSaved 
 }: TaskListProps) {
-  const { t } = useTranslation()
-  const { tasks, loading, error, toggleTask, deleteTask, runTaskNow } = useTasks()
+  const { t, i18n } = useTranslation()
+  const { tasks, loading, error, toggleTask, deleteTask, runTaskNow, fetchTasks } = useTasks()
   const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set())
   const [deletingTask, setDeletingTask] = useState<string | null>(null)
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now())
+      void fetchTasks(true)
+    }, 60_000)
+    return () => window.clearInterval(timer)
+  }, [fetchTasks])
+
+  const nextRunLabel = (task: ScheduledTask): string => {
+    if (task.enabled !== 1) return t('taskList.paused')
+    if (!task.next_run) return t('taskList.unscheduled')
+    const minutes = Math.max(0, Math.ceil((new Date(task.next_run).getTime() - now) / 60_000))
+    const formatter = new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language, { numeric: 'auto' })
+    if (minutes < 60) return formatter.format(minutes, 'minute')
+    if (minutes < 1440) return formatter.format(Math.ceil(minutes / 60), 'hour')
+    return formatter.format(Math.ceil(minutes / 1440), 'day')
+  }
   
   // Local selection state to sync with App props
   const selectedTaskId = editingTask?.id
+  const currentTask = tasks.find((task) => task.id === selectedTaskId)
 
   const handleToggle = async (e: React.MouseEvent, task: Task) => {
     e.stopPropagation()
@@ -163,6 +183,10 @@ export default function TaskList({
                            })()}
                          </span>
                        </div>
+                       <p className="mt-1 truncate pr-12 text-[11px] text-gray-500"
+                         title={task.next_run ? new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(task.next_run)) : undefined}>
+                         {t('taskList.nextRun')}: {nextRunLabel(task)}
+                       </p>
                      </div>
                      
                      <div className="flex flex-col gap-1">
@@ -216,7 +240,9 @@ export default function TaskList({
       <div className="flex-1 bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden flex flex-col relative">
         {showTaskForm ? (
            <TaskForm 
-             task={editingTask} 
+             task={editingTask}
+             nextRun={currentTask ? currentTask.next_run : editingTask?.next_run}
+             scheduleEnabled={(currentTask ?? editingTask)?.enabled === 1}
              onClose={onCloseForm} 
              onSaved={onTaskSaved} 
              variant="panel"

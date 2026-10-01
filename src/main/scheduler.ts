@@ -318,7 +318,8 @@ async function executeTask(task: Task): Promise<ExecutionLog> {
     const updatedLog = updateExecutionLog(log.id, {
       status: cancelled ? 'cancelled' : result!.success ? 'success' : 'failed',
       output: cleanOutput,
-      error: cancelled ? undefined : result!.error
+      error: cancelled ? undefined : result!.error,
+      exitCode: cancelled ? null : result!.exitCode
     })
 
     notifyExecutionUpdate(updatedLog)

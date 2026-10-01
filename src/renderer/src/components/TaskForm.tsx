@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
-import type { Task, CreateTaskInput, McpServer, ProviderId, ModelOption } from '../../../shared/types'
+import type { ScheduledTask, CreateTaskInput, McpServer, ProviderId, ModelOption } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
 import ModelSelect from './ModelSelect'
 import QuickPicker from './QuickPicker'
 
 interface TaskFormProps {
-  task: Task | null
+  task: ScheduledTask | null
+  nextRun?: string | null
+  scheduleEnabled?: boolean
   onClose: () => void
   onSaved?: () => void
   variant?: 'modal' | 'panel'
@@ -48,8 +50,10 @@ function removePromptSnippet(prompt: string, snippet: string): string {
   return before && after ? `${before}\n\n${after}` : before + after
 }
 
-export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
-  const { t } = useTranslation()
+export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
+  const { t, i18n } = useTranslation()
+  const savedNextRun = nextRun === undefined ? task?.next_run : nextRun
+  const savedScheduleEnabled = scheduleEnabled ?? task?.enabled === 1
   const { createTask, updateTask } = useTasks()
   const { listMcps: listAiMcps, listModels } = useAiProvider()
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills, initProject } = useSkills()
@@ -689,6 +693,18 @@ export default function TaskForm({ task, onClose, onSaved, variant = 'modal' }: 
                     </div>
                   </div>
                 </div>
+              )}
+              {task && (
+                <p className="mt-2 text-xs text-gray-500">
+                  {t('taskForm.schedule.savedNextRun')}: {' '}
+                  <span className="font-medium text-gray-700">
+                    {!savedScheduleEnabled ? t('taskList.paused') : savedNextRun
+                      ? new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, {
+                        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                      }).format(new Date(savedNextRun))
+                      : t('taskList.unscheduled')}
+                  </span>
+                </p>
               )}
             </div>
 

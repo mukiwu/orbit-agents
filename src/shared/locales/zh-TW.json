@@ -173,6 +173,7 @@
     "refresh": "重新整理總覽",
     "loadError": "無法載入總覽",
     "last24h": "近 24 小時",
+    "last14d": "近 14 天",
     "last7d": "近 7 天",
     "viewTasks": "查看任務排程",
     "viewLogs": "查看記錄",
@@ -209,6 +210,21 @@
       "before12h": "12 小時前",
       "now": "現在"
     },
+    "duration": {
+      "title": "執行耗時",
+      "empty": "近 14 天沒有已完成的執行記錄",
+      "unavailable": "耗時統計尚未就緒，請重新啟動應用程式",
+      "p50": "中位數 P50",
+      "medianNote": "一半的執行在此時間內完成",
+      "p95": "P95",
+      "p95Note": "95% 的執行在此時間內完成",
+      "samples": "記錄數",
+      "completedOnly": "已完成的執行",
+      "slowest": "耗時最長的執行",
+      "anomalies": "耗時異常的任務",
+      "anomalyRule": "最近一次比至少 3 次過往執行的中位數慢 2 倍，且多出 1 分鐘以上",
+      "baseline": "過去執行中位數 {{duration}}"
+    },
     "attention": {
       "title": "需要關注",
       "empty": "近期沒有失敗或待確認的任務",
@@ -235,6 +251,9 @@
     "createOne": "建立一個",
     "needsReview": "需要確認：Gemini 已移除，請重新設定供應商",
     "runNow": "立即執行",
+    "nextRun": "下次執行",
+    "paused": "已暫停",
+    "unscheduled": "尚未排定",
     "noTaskSelected": "未選取任務",
     "noTaskSelectedDesc": "從列表選取任務以查看詳情，或建立新任務",
     "createNewTask": "建立新任務"
@@ -268,6 +287,7 @@
       "hours": "小時",
       "week": "週",
       "weeks": "週",
+      "savedNextRun": "目前排程的下次執行",
       "cronFormat": "Cron 格式：分 時 日 月 星期",
       "examplesLabel": "範例：",
       "exampleDailyDesc": "（每天早上 9 點）",
@@ -522,6 +542,7 @@
   },
   "executionLog": {
     "listTitle": "執行記錄",
+    "exitCode": "終止碼",
     "searchPlaceholder": "搜尋任務名稱",
     "shown": "已載入 {{shown}} 筆，共 {{total}} 筆",
     "today": "今天",

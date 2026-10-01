@@ -141,11 +141,12 @@ export async function runProvider(
       const output = provider.parseOutput(stdout)
 
       if (code === 0) {
-        resolve({ success: true, output })
+        resolve({ success: true, output, exitCode: code })
       } else {
         resolve({
           success: false,
           output,
+          exitCode: code,
           error: stderr.trim() || `Process exited with code ${code}`
         })
       }

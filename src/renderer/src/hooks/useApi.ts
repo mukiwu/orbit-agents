@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import type {
-  Task,
+  ScheduledTask,
   CreateTaskInput,
   UpdateTaskInput,
   ExecutionLog,
@@ -20,13 +20,13 @@ const api = window.electronApi
 // ============ Task Hooks ============
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [tasks, setTasks] = useState<ScheduledTask[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (quiet = false) => {
     try {
-      setLoading(true)
+      if (!quiet) setLoading(true)
       const data = await api.invoke('task:list')
       setTasks(data)
       setError(null)
@@ -41,13 +41,13 @@ export function useTasks() {
     fetchTasks()
   }, [fetchTasks])
 
-  const createTask = useCallback(async (input: CreateTaskInput): Promise<Task> => {
+  const createTask = useCallback(async (input: CreateTaskInput): Promise<ScheduledTask> => {
     const task = await api.invoke('task:create', input)
     setTasks((prev) => [task, ...prev])
     return task
   }, [])
 
-  const updateTask = useCallback(async (input: UpdateTaskInput): Promise<Task> => {
+  const updateTask = useCallback(async (input: UpdateTaskInput): Promise<ScheduledTask> => {
     const task = await api.invoke('task:update', input)
     setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)))
     return task
@@ -58,7 +58,7 @@ export function useTasks() {
     setTasks((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  const toggleTask = useCallback(async (id: string): Promise<Task> => {
+  const toggleTask = useCallback(async (id: string): Promise<ScheduledTask> => {
     const task = await api.invoke('task:toggle', id)
     setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)))
     return task

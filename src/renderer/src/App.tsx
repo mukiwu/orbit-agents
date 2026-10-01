@@ -8,7 +8,7 @@ import Settings from './components/Settings'
 import WelcomePage from './components/WelcomePage'
 import { useSettings } from './hooks/useApi'
 import { applyLanguagePreference } from './i18n'
-import type { Task } from '../../shared/types'
+import type { ScheduledTask } from '../../shared/types'
 
 type View = 'overview' | 'tasks' | 'logs' | 'settings'
 
@@ -36,7 +36,7 @@ export default function App() {
   }, [isElectron, loading, settings.language])
 
   const [currentView, setCurrentView] = useState<View>('overview')
-  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null)
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [taskListKey, setTaskListKey] = useState(0)
@@ -49,7 +49,7 @@ export default function App() {
     setCurrentView(view)
   }
 
-  const handleEditTask = (task: Task) => {
+  const handleEditTask = (task: ScheduledTask) => {
     setEditingTask(task)
     setShowTaskForm(true)
     setCurrentView('tasks')

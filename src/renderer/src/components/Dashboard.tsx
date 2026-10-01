@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { DashboardData, DashboardRun } from '../../../shared/types'
 import { getScheduleDescription, parseCronToSimple } from '../utils/cron'
+import { formatDuration, formatDurationMs } from '../utils/duration'
 
 interface DashboardProps {
   onNewTask: () => void
@@ -23,6 +24,9 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const locale = i18n.resolvedLanguage || i18n.language
+  const duration14d = data?.duration14d && typeof data.duration14d.count === 'number' ? data.duration14d : null
+  const durationAnomalies = duration14d?.anomalies ?? []
+  const durationSlowest = duration14d?.slowest ?? []
 
   const refresh = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true)
@@ -109,7 +113,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
   }
 
   return <div className="h-full overflow-y-auto bg-white">
-    <div className="space-y-5 p-6 pb-10">
+    <div className="max-w-5xl space-y-5 p-6 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">{t('dashboard.title')}</h1>
@@ -132,8 +136,8 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
         {t('dashboard.loadError')}: {error}
       </div>}
 
-      {data && <>
-        <section className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[minmax(220px,1.1fr)_minmax(0,2fr)] lg:p-6">
+      {data && <div className="grid gap-5 lg:grid-cols-2">
+        <section className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:grid-cols-[minmax(220px,1.1fr)_minmax(0,2fr)] lg:p-6">
           <div className="flex min-w-0 items-start gap-3 lg:border-r lg:border-slate-200 lg:pr-6">
             <span className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${hasAttention ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
               {hasAttention ? <CircleAlert className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
@@ -165,7 +169,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
               {t('dashboard.viewTasks')} <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-          {upcoming.length > 0 ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {upcoming.length > 0 ? <div className="grid gap-2 sm:grid-cols-2">
             {upcoming.map((task) => <button key={task.id} type="button" onClick={() => onOpenTask(task.id)}
               className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/50">
               <div className="flex items-center justify-between gap-2">
@@ -179,6 +183,33 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6">
+          <div className="mb-4 flex items-center gap-2 text-slate-900">
+            <Clock3 className="h-5 w-5 text-blue-600" />
+            <h2 className="font-semibold">{t('dashboard.duration.title')}</h2>
+            <span className="ml-auto text-xs text-slate-400">{t('dashboard.last14d')}</span>
+          </div>
+          {!duration14d ? <EmptyMessage text={t('dashboard.duration.unavailable')} /> : duration14d.count === 0 ? <EmptyMessage text={t('dashboard.duration.empty')} /> : <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Metric label={t('dashboard.duration.p50')} value={formatDurationMs(duration14d.p50_ms ?? NaN)} note={t('dashboard.duration.medianNote')} />
+              <Metric label={t('dashboard.duration.p95')} value={formatDurationMs(duration14d.p95_ms ?? NaN)} note={t('dashboard.duration.p95Note')} />
+              <Metric label={t('dashboard.duration.samples')} value={duration14d.count.toString()} note={t('dashboard.duration.completedOnly')} />
+            </div>
+            <div className="mt-5 space-y-1">
+              <h3 className="mb-2 text-xs font-semibold text-slate-500">{durationAnomalies.length > 0 ? t('dashboard.duration.anomalies') : t('dashboard.duration.slowest')}</h3>
+              {durationAnomalies.length > 0 && <p className="mb-2 text-xs text-slate-400">{t('dashboard.duration.anomalyRule')}</p>}
+              {(durationAnomalies.length > 0 ? durationAnomalies : durationSlowest).map((run) => <button key={run.id} type="button" onClick={() => onOpenLogs(run.id)}
+                className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+                <span className="min-w-0">
+                  <span className="block truncate text-slate-700">{run.task_name || t('executionLog.unknownTask')}</span>
+                  {'baseline_ms' in run && typeof run.baseline_ms === 'number' && <span className="block text-xs text-slate-400">{t('dashboard.duration.baseline', { duration: formatDurationMs(run.baseline_ms) })}</span>}
+                </span>
+                <span className="shrink-0 tabular-nums font-medium text-slate-900">{formatDurationMs(run.duration_ms)}</span>
+              </button>)}
+            </div>
+          </>}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-slate-900"><Activity className="h-5 w-5 text-blue-600" /><h2 className="font-semibold">{t('dashboard.activity.title')}</h2></div>
@@ -219,7 +250,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
           </div>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5 lg:col-span-2 lg:grid-cols-2">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6">
             <div className="mb-4 flex items-center gap-2"><CircleAlert className="h-5 w-5 text-amber-600" /><h2 className="font-semibold text-slate-900">{t('dashboard.attention.title')}</h2></div>
             {reviewTasks.length === 0 && data.recent_failures.length === 0 ? <EmptyMessage text={t('dashboard.attention.empty')} /> :
@@ -245,14 +276,14 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
           </section>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:p-6">
           <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Clock3 className="h-5 w-5 text-blue-600" /><h2 className="font-semibold text-slate-900">{t('dashboard.recent.title')}</h2></div><button type="button" onClick={() => onOpenLogs()} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700">{t('dashboard.viewLogs')}<ArrowRight className="h-4 w-4" /></button></div>
           {data.recent_runs.length === 0 ? <EmptyMessage text={t('dashboard.recent.empty')} /> :
             <div className="divide-y divide-slate-100">
               {data.recent_runs.map((run) => <RunRow key={run.id} run={run} locale={locale} onClick={() => onOpenLogs(run.id)} />)}
             </div>}
         </section>
-      </>}
+      </div>}
     </div>
   </div>
 }
@@ -261,7 +292,7 @@ function Metric({ label, value, note, tone = 'default' }: { label: string; value
   return <div className="min-w-0">
     <p className="text-xs font-medium text-slate-500">{label}</p>
     <p className={`mt-2 text-2xl font-semibold tabular-nums ${tone === 'red' ? 'text-red-600' : tone === 'green' ? 'text-emerald-600' : 'text-slate-900'}`}>{value}</p>
-    <p className="mt-1 truncate text-xs text-slate-400" title={note}>{note}</p>
+    <p className="mt-1 text-xs leading-4 text-slate-400">{note}</p>
   </div>
 }
 
@@ -277,10 +308,12 @@ function RunRow({ run, locale, onClick }: { run: DashboardRun; locale: string; o
   const { t } = useTranslation()
   const statusLabel = t(`dashboard.activity.${run.status}`)
   const statusColor = run.status === 'success' ? 'bg-emerald-500' : run.status === 'failed' ? 'bg-red-500' : run.status === 'running' ? 'bg-blue-500' : 'bg-amber-400'
+  const duration = run.finished_at ? formatDuration(run.started_at, run.finished_at) : null
   return <button type="button" onClick={onClick} className="flex w-full items-center gap-3 py-3 text-left hover:bg-slate-50">
     <span className={`h-2 w-2 shrink-0 rounded-full ${statusColor}`} />
     <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{run.task_name || t('executionLog.unknownTask')}</span>
     <span className="shrink-0 text-xs text-slate-500">{statusLabel}</span>
+    {duration && <span className="hidden shrink-0 text-xs tabular-nums text-slate-500 sm:inline">{duration}</span>}
     <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">{new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(run.started_at))}</span>
     <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" />
   </button>

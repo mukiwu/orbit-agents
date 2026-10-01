@@ -6,6 +6,7 @@ import remarkBreaks from 'remark-breaks'
 import { useTranslation } from 'react-i18next'
 import { useExecutionLog } from '../hooks/useApi'
 import { linkifyIframes, safeMarkdownUrl } from '../utils/markdown'
+import { formatDuration } from '../utils/duration'
 import type { ExecutionLog, ExecutionLogWithTask } from '../../../shared/types'
 
 const pageSize = 50
@@ -548,7 +549,7 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="px-6 py-4 space-y-4 min-w-0">
           {/* Timing Info */}
-          <div className="flex items-center gap-6 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
             <div className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -561,6 +562,11 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 <span>{formatDuration(log.started_at, log.finished_at)}</span>
+              </div>
+            )}
+            {log.finished_at && (
+              <div>
+                {t('executionLog.exitCode')}: <span className={`font-mono ${log.exit_code !== null && log.exit_code !== 0 ? 'text-red-600' : 'text-gray-700'}`}>{log.exit_code ?? '—'}</span>
               </div>
             )}
           </div>
@@ -797,20 +803,4 @@ function formatDateTime(isoString: string, locale: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-function formatDuration(start: string, end: string): string {
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-  const diffMs = endDate.getTime() - startDate.getTime()
-
-  if (diffMs < 0) return '—'
-  if (diffMs < 1000) return `${diffMs}ms`
-  if (diffMs < 60000) return `${(diffMs / 1000).toFixed(1)}s`
-
-  const totalSeconds = Math.round(diffMs / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
-  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`
 }

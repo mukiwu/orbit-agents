@@ -55,6 +55,7 @@ export function initDatabase(): Database.Database {
       status TEXT,
       output TEXT,
       error TEXT,
+      exit_code INTEGER,
       FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
     );
 
@@ -121,6 +122,12 @@ export function initDatabase(): Database.Database {
     db.exec(`ALTER TABLE tasks ADD COLUMN needs_review INTEGER DEFAULT 0`)
   } catch {
     // Column already exists, ignore
+  }
+
+  // Existing logs predate process exit code tracking.
+  const logColumns = db.pragma('table_info(execution_logs)') as Array<{ name: string }>
+  if (!logColumns.some((column) => column.name === 'exit_code')) {
+    db.exec(`ALTER TABLE execution_logs ADD COLUMN exit_code INTEGER`)
   }
 
   // Migration: Gemini removed -> convert to disabled Claude tasks needing review (idempotent).
@@ -305,12 +312,13 @@ export function createExecutionLog(taskId: string): ExecutionLog {
     finished_at: null,
     status: 'running',
     output: null,
-    error: null
+    error: null,
+    exit_code: null
   }
 
   db.prepare(`
-    INSERT INTO execution_logs (id, task_id, started_at, finished_at, status, output, error)
-    VALUES (@id, @task_id, @started_at, @finished_at, @status, @output, @error)
+    INSERT INTO execution_logs (id, task_id, started_at, finished_at, status, output, error, exit_code)
+    VALUES (@id, @task_id, @started_at, @finished_at, @status, @output, @error, @exit_code)
   `).run(log)
 
   return log
@@ -318,7 +326,7 @@ export function createExecutionLog(taskId: string): ExecutionLog {
 
 export function updateExecutionLog(
   id: string,
-  update: { status: 'success' | 'failed' | 'cancelled'; output?: string; error?: string }
+  update: { status: 'success' | 'failed' | 'cancelled'; output?: string; error?: string; exitCode?: number | null }
 ): ExecutionLog {
   const db = getDatabase()
   const now = new Date().toISOString()
@@ -328,9 +336,10 @@ export function updateExecutionLog(
       finished_at = ?,
       status = ?,
       output = ?,
-      error = ?
+      error = ?,
+      exit_code = ?
     WHERE id = ?
-  `).run(now, update.status, update.output ?? null, update.error ?? null, id)
+  `).run(now, update.status, update.output ?? null, update.error ?? null, update.exitCode ?? null, id)
 
   return db.prepare('SELECT * FROM execution_logs WHERE id = ?').get(id) as ExecutionLog
 }
@@ -395,7 +404,7 @@ export function searchExecutionLogs(input: LogSearchInput): LogSearchResult {
     LEFT JOIN tasks t ON t.id = el.task_id ${where}
   `).get(...params) as { total: number }).total
   const logs = db.prepare(`
-    SELECT el.id, el.task_id, el.started_at, el.finished_at, el.status,
+    SELECT el.id, el.task_id, el.started_at, el.finished_at, el.status, el.exit_code,
       NULL AS output, NULL AS error, t.name AS task_name
     FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
     ${where} ORDER BY el.started_at DESC, el.id DESC LIMIT ? OFFSET ?
@@ -404,10 +413,11 @@ export function searchExecutionLogs(input: LogSearchInput): LogSearchResult {
   return { logs, total }
 }
 
-export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions24h' | 'activity24h' | 'recent_runs' | 'recent_failures' | 'top_tasks'> {
+export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions24h' | 'activity24h' | 'recent_runs' | 'recent_failures' | 'top_tasks' | 'duration14d'> {
   const db = getDatabase()
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
   const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const since14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString()
   const executions24h = db.prepare(`
     SELECT COUNT(*) AS total,
       COALESCE(SUM(status = 'success'), 0) AS success,
@@ -445,7 +455,54 @@ export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions2
     WHERE el.started_at >= ?
     GROUP BY el.task_id ORDER BY total DESC, el.task_id LIMIT 4
   `).all(since7d) as DashboardData['top_tasks']
-  return { executions24h, activity24h, recent_runs, recent_failures, top_tasks }
+  const completedRuns = db.prepare(`
+    SELECT el.id, el.task_id, t.name AS task_name, el.started_at, el.finished_at
+    FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
+    WHERE el.started_at >= ? AND el.finished_at IS NOT NULL
+      AND el.status IN ('success', 'failed')
+  `).all(since14d) as Array<{ id: string; task_id: string; task_name: string | null; started_at: string; finished_at: string }>
+  const durations = completedRuns.map((run) => ({
+    id: run.id,
+    task_id: run.task_id,
+    task_name: run.task_name,
+    started_at: run.started_at,
+    duration_ms: new Date(run.finished_at).getTime() - new Date(run.started_at).getTime()
+  })).filter((run) => Number.isFinite(run.duration_ms) && run.duration_ms >= 0)
+  durations.sort((a, b) => a.duration_ms - b.duration_ms)
+  const percentile = (fraction: number): number | null => {
+    if (durations.length === 0) return null
+    const position = fraction * (durations.length - 1)
+    const lower = Math.floor(position)
+    const upper = Math.ceil(position)
+    return Math.round(durations[lower].duration_ms +
+      (durations[upper].duration_ms - durations[lower].duration_ms) * (position - lower))
+  }
+  const byTask = new Map<string, typeof durations>()
+  for (const run of durations) {
+    const runs = byTask.get(run.task_id) ?? []
+    runs.push(run)
+    byTask.set(run.task_id, runs)
+  }
+  const anomalies: DashboardData['duration14d']['anomalies'] = []
+  for (const runs of byTask.values()) {
+    if (runs.length < 4) continue
+    const latest = [...runs].sort((a, b) => b.started_at.localeCompare(a.started_at))[0]
+    const prior = runs.filter((run) => run.id !== latest.id).map((run) => run.duration_ms).sort((a, b) => a - b)
+    const middle = Math.floor(prior.length / 2)
+    const baseline = prior.length % 2 === 0 ? (prior[middle - 1] + prior[middle]) / 2 : prior[middle]
+    if (latest.duration_ms >= baseline * 2 && latest.duration_ms - baseline >= 60_000) {
+      anomalies.push({ ...latest, baseline_ms: Math.round(baseline) })
+    }
+  }
+  anomalies.sort((a, b) => (b.duration_ms - b.baseline_ms) - (a.duration_ms - a.baseline_ms))
+  const duration14d: DashboardData['duration14d'] = {
+    count: durations.length,
+    p50_ms: percentile(0.5),
+    p95_ms: percentile(0.95),
+    slowest: durations.slice(-3).reverse(),
+    anomalies: anomalies.slice(0, 3)
+  }
+  return { executions24h, activity24h, recent_runs, recent_failures, top_tasks, duration14d }
 }
 
 export function getExecutionLogById(id: string): ExecutionLog | null {

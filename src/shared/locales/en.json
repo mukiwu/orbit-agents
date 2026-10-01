@@ -173,6 +173,7 @@
     "refresh": "Refresh overview",
     "loadError": "Could not load overview",
     "last24h": "Last 24 hours",
+    "last14d": "Last 14 days",
     "last7d": "Last 7 days",
     "viewTasks": "View task schedule",
     "viewLogs": "View logs",
@@ -209,6 +210,21 @@
       "before12h": "12 hours ago",
       "now": "Now"
     },
+    "duration": {
+      "title": "Run duration",
+      "empty": "No completed runs in the last 14 days",
+      "unavailable": "Duration data is not ready. Please restart the app.",
+      "p50": "Median P50",
+      "medianNote": "Half of runs finished within this time",
+      "p95": "P95",
+      "p95Note": "95% of runs finished within this time",
+      "samples": "Runs measured",
+      "completedOnly": "Completed runs",
+      "slowest": "Longest runs",
+      "anomalies": "Unusually slow tasks",
+      "anomalyRule": "Latest run took at least twice the median of 3 or more prior runs and over 1 minute longer",
+      "baseline": "Previous median {{duration}}"
+    },
     "attention": {
       "title": "Needs attention",
       "empty": "No recent failures or tasks awaiting review",
@@ -235,6 +251,9 @@
     "createOne": "Create one",
     "needsReview": "Needs review: Gemini removed, reconfigure provider",
     "runNow": "Run Now",
+    "nextRun": "Next run",
+    "paused": "Paused",
+    "unscheduled": "Not scheduled",
     "noTaskSelected": "No Task Selected",
     "noTaskSelectedDesc": "Select a task from the list to view details or create a new one.",
     "createNewTask": "Create New Task"
@@ -268,6 +287,7 @@
       "hours": "hours",
       "week": "week",
       "weeks": "weeks",
+      "savedNextRun": "Next run for saved schedule",
       "cronFormat": "Cron format: minute hour day month weekday",
       "examplesLabel": "Examples:",
       "exampleDailyDesc": "(daily 9am)",
@@ -522,6 +542,7 @@
   },
   "executionLog": {
     "listTitle": "Execution Logs",
+    "exitCode": "Exit code",
     "searchPlaceholder": "Search task names",
     "shown": "Showing {{shown}} of {{total}} logs",
     "today": "Today",

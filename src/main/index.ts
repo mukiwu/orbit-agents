@@ -57,12 +57,18 @@ import { resolveLocale } from '../shared/i18n/resolveLocale'
 import type {
   CreateTaskInput,
   UpdateTaskInput,
+  Task,
+  ScheduledTask,
   Settings,
   ExecutionLog,
   LogSearchInput
 } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
+
+function withNextRun(task: Task): ScheduledTask {
+  return { ...task, next_run: getNextExecutionTime(task)?.toISOString() ?? null }
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -128,23 +134,24 @@ function registerIpcHandlers(): void {
 
   // Task handlers
   ipcMain.handle('task:list', () => {
-    return getAllTasks()
+    return getAllTasks().map(withNextRun)
   })
 
   ipcMain.handle('task:get', (_, id: string) => {
-    return getTaskById(id)
+    const task = getTaskById(id)
+    return task ? withNextRun(task) : null
   })
 
   ipcMain.handle('task:create', (_, input: CreateTaskInput) => {
     const task = createTask(input)
     scheduleTask(task)
-    return task
+    return withNextRun(task)
   })
 
   ipcMain.handle('task:update', (_, input: UpdateTaskInput) => {
     const task = updateTask(input)
     scheduleTask(task)
-    return task
+    return withNextRun(task)
   })
 
   ipcMain.handle('task:delete', (_, id: string) => {
@@ -159,7 +166,7 @@ function registerIpcHandlers(): void {
     } else {
       unscheduleTask(id)
     }
-    return task
+    return withNextRun(task)
   })
 
   ipcMain.handle('task:run-now', async (_, id: string) => {
