@@ -9,6 +9,7 @@ import type {
   UpdateTaskInput,
   ExecutionLog,
   ExecutionLogWithTask,
+  DashboardData,
   Settings,
   SettingKey
 } from '../shared/types'
@@ -364,6 +365,50 @@ export function getExecutionLogs(taskId?: string, limit = 100): ExecutionLogWith
     ORDER BY el.started_at DESC
     LIMIT ?
   `).all(limit) as ExecutionLogWithTask[]
+}
+
+export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions24h' | 'activity24h' | 'recent_runs' | 'recent_failures' | 'top_tasks'> {
+  const db = getDatabase()
+  const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const executions24h = db.prepare(`
+    SELECT COUNT(*) AS total,
+      COALESCE(SUM(status = 'success'), 0) AS success,
+      COALESCE(SUM(status = 'failed'), 0) AS failed,
+      COALESCE(SUM(status = 'running'), 0) AS running,
+      COALESCE(SUM(status = 'cancelled'), 0) AS cancelled
+    FROM execution_logs WHERE started_at >= ?
+  `).get(since24h) as DashboardData['executions24h']
+  const activity24h = db.prepare(`
+    SELECT substr(started_at, 1, 13) AS hour,
+      COALESCE(SUM(status = 'success'), 0) AS success,
+      COALESCE(SUM(status = 'failed'), 0) AS failed,
+      COALESCE(SUM(status = 'running'), 0) AS running,
+      COALESCE(SUM(status = 'cancelled'), 0) AS cancelled
+    FROM execution_logs WHERE started_at >= ?
+    GROUP BY substr(started_at, 1, 13) ORDER BY hour
+  `).all(since24h) as DashboardData['activity24h']
+  const recent_runs = db.prepare(`
+    SELECT el.id, el.task_id, t.name AS task_name, el.started_at, el.finished_at,
+      el.status, substr(el.error, 1, 180) AS error
+    FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
+    ORDER BY el.started_at DESC LIMIT 6
+  `).all() as DashboardData['recent_runs']
+  const recent_failures = db.prepare(`
+    SELECT el.id, el.task_id, t.name AS task_name, el.started_at, el.finished_at,
+      el.status, substr(el.error, 1, 180) AS error
+    FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
+    WHERE el.status = 'failed' AND el.started_at >= ?
+    ORDER BY el.started_at DESC LIMIT 3
+  `).all(since7d) as DashboardData['recent_failures']
+  const top_tasks = db.prepare(`
+    SELECT el.task_id, t.name AS task_name, COUNT(*) AS total,
+      COALESCE(SUM(el.status = 'failed'), 0) AS failed
+    FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
+    WHERE el.started_at >= ?
+    GROUP BY el.task_id ORDER BY total DESC, el.task_id LIMIT 4
+  `).all(since7d) as DashboardData['top_tasks']
+  return { executions24h, activity24h, recent_runs, recent_failures, top_tasks }
 }
 
 export function getExecutionLogById(id: string): ExecutionLog | null {

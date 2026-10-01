@@ -15,7 +15,8 @@ import {
   deleteTask,
   toggleTask,
   getExecutionLogs,
-  getExecutionLogById,
+  getDashboardLogData,
+  getExecutionLogWithTask,
   deleteExecutionLogs,
   getAllSettings,
   updateSettings
@@ -26,7 +27,8 @@ import {
   scheduleTask,
   unscheduleTask,
   runTaskNow,
-  onExecutionUpdate
+  onExecutionUpdate,
+  getNextExecutionTime
 } from './scheduler'
 import { getProvider } from './ai'
 import { getCodexAuthStatus, loginWithChatGPT, logoutCodex } from './ai/codex-auth'
@@ -108,6 +110,20 @@ function createWindow(): void {
 
 // Register IPC handlers
 function registerIpcHandlers(): void {
+  ipcMain.handle('dashboard:get', () => {
+    const tasks = getAllTasks().map((task) => ({
+      id: task.id,
+      name: task.name,
+      cli_tool: task.cli_tool,
+      enabled: task.enabled,
+      needs_review: task.needs_review,
+      cron_expression: task.cron_expression,
+      week_interval: task.week_interval,
+      next_run: getNextExecutionTime(task)?.toISOString() ?? null
+    }))
+    return { tasks, ...getDashboardLogData(new Date()) }
+  })
+
   // Task handlers
   ipcMain.handle('task:list', () => {
     return getAllTasks()
@@ -154,7 +170,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('log:get', (_, id: string) => {
-    return getExecutionLogById(id)
+    return getExecutionLogWithTask(id)
   })
 
   ipcMain.handle('log:delete', (_, ids: string[]) => {

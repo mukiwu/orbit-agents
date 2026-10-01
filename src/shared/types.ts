@@ -60,6 +60,34 @@ export interface ExecutionLogWithTask extends ExecutionLog {
   task_name?: string
 }
 
+export interface DashboardRun {
+  id: string
+  task_id: string
+  task_name: string | null
+  started_at: string
+  finished_at: string | null
+  status: ExecutionLog['status']
+  error: string | null
+}
+
+export interface DashboardData {
+  tasks: Array<{
+    id: string
+    name: string
+    cli_tool: Task['cli_tool']
+    enabled: number
+    needs_review: number
+    cron_expression: string
+    week_interval: number
+    next_run: string | null
+  }>
+  executions24h: { total: number; success: number; failed: number; running: number; cancelled: number }
+  activity24h: Array<{ hour: string; success: number; failed: number; running: number; cancelled: number }>
+  recent_runs: DashboardRun[]
+  recent_failures: DashboardRun[]
+  top_tasks: Array<{ task_id: string; task_name: string | null; total: number; failed: number }>
+}
+
 // Settings Types
 export interface Settings {
   email_smtp_host?: string
@@ -136,6 +164,7 @@ export interface ModelOption {
 
 // IPC API Types
 export interface IpcApi {
+  'dashboard:get': () => Promise<DashboardData>
   // Task operations
   'task:list': () => Promise<Task[]>
   'task:get': (id: string) => Promise<Task | null>
@@ -147,7 +176,7 @@ export interface IpcApi {
 
   // Log operations
   'log:list': (taskId?: string, limit?: number) => Promise<ExecutionLogWithTask[]>
-  'log:get': (id: string) => Promise<ExecutionLog | null>
+  'log:get': (id: string) => Promise<ExecutionLogWithTask | null>
   'log:delete': (ids: string[]) => Promise<void>
   'log:cancel': (id: string) => Promise<boolean>
 

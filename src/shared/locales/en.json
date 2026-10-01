@@ -161,9 +161,68 @@
   "app": {
     "newTask": "New Task",
     "nav": {
+      "overview": "Overview",
       "tasks": "Tasks",
       "executionLogs": "Execution Logs",
       "settings": "Settings"
+    }
+  },
+  "dashboard": {
+    "title": "Overview",
+    "subtitle": "See your scheduled tasks and recent activity at a glance",
+    "refresh": "Refresh overview",
+    "loadError": "Could not load overview",
+    "last24h": "Last 24 hours",
+    "last7d": "Last 7 days",
+    "viewTasks": "View tasks",
+    "viewLogs": "View logs",
+    "createFirst": "Create your first task",
+    "health": {
+      "noTasks": "Create your first automation",
+      "attention": "Some items need attention",
+      "healthy": "Everything is running smoothly",
+      "summary": "{{active}} active · {{paused}} paused · {{running}} running"
+    },
+    "metric": {
+      "runs": "Runs",
+      "successRate": "Success rate",
+      "completedOnly": "Completed runs only",
+      "failures": "Failures",
+      "needsAttention": "Review failed runs",
+      "noFailures": "No failures",
+      "activeTasks": "Active tasks",
+      "totalTasks": "{{count}} tasks total"
+    },
+    "upcoming": {
+      "title": "Upcoming runs",
+      "empty": "No upcoming run can be predicted. Check whether your tasks are enabled."
+    },
+    "activity": {
+      "title": "Run activity",
+      "subtitle": "Last 24 hours, one hour per bar. Select a bar to view logs.",
+      "chartLabel": "Task runs in the last 24 hours",
+      "success": "Success",
+      "failed": "Failed",
+      "running": "Running",
+      "cancelled": "Cancelled",
+      "before24h": "24 hours ago",
+      "before12h": "12 hours ago",
+      "now": "Now"
+    },
+    "attention": {
+      "title": "Needs attention",
+      "empty": "No recent failures or tasks awaiting review",
+      "review": "Task settings need review"
+    },
+    "topTasks": {
+      "title": "Most active tasks",
+      "empty": "No runs in the last 7 days",
+      "runs": "{{count}} runs",
+      "failures": "{{count}} failed"
+    },
+    "recent": {
+      "title": "Recent runs",
+      "empty": "Runs will appear here after a task executes"
     }
   },
   "taskList": {

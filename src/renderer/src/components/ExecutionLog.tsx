@@ -7,10 +7,11 @@ import { useExecutionLogs, useExecutionLog } from '../hooks/useApi'
 import { linkifyIframes, safeMarkdownUrl } from '../utils/markdown'
 import type { ExecutionLogWithTask } from '../../../shared/types'
 
-export default function ExecutionLog() {
+export default function ExecutionLog({ initialLogId = null }: { initialLogId?: string | null }) {
   const { t } = useTranslation()
   const { logs, loading, error, deleteLogs } = useExecutionLogs(undefined, 200)
-  const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(initialLogId)
+  const [selectedLogFallback, setSelectedLogFallback] = useState<ExecutionLogWithTask | null>(null)
   const [checkedLogIds, setCheckedLogIds] = useState<Set<string>>(new Set())
 
   // Auto-select first log when logs load
@@ -20,7 +21,17 @@ export default function ExecutionLog() {
     }
   }, [logs, selectedLogId])
 
-  const selectedLog = logs.find(l => l.id === selectedLogId) || null
+  useEffect(() => {
+    if (!initialLogId || logs.some((log) => log.id === initialLogId) || selectedLogFallback?.id === initialLogId) return
+    let cancelled = false
+    void window.electronApi.invoke('log:get', initialLogId).then((log) => {
+      if (!cancelled) setSelectedLogFallback(log)
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [initialLogId, logs, selectedLogFallback])
+
+  const selectedLog = logs.find(l => l.id === selectedLogId)
+    || (selectedLogFallback?.id === selectedLogId ? selectedLogFallback : null)
 
   const handleCheck = (id: string, checked: boolean) => {
     const newChecked = new Set(checkedLogIds)

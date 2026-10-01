@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next'
 import TaskList from './components/TaskList'
 import TaskForm from './components/TaskForm'
 import ExecutionLog from './components/ExecutionLog'
+import Dashboard from './components/Dashboard'
 import Settings from './components/Settings'
 import WelcomePage from './components/WelcomePage'
 import { useSettings } from './hooks/useApi'
 import { applyLanguagePreference } from './i18n'
 import type { Task } from '../../shared/types'
 
-type View = 'tasks' | 'logs' | 'settings'
+type View = 'overview' | 'tasks' | 'logs' | 'settings'
 
 export default function App() {
   // Check synchronously to avoid flash of wrong content and potential crashes in hooks
@@ -34,8 +35,9 @@ export default function App() {
     applyLanguagePreference(settings.language ?? 'system')
   }, [isElectron, loading, settings.language])
 
-  const [currentView, setCurrentView] = useState<View>('tasks')
+  const [currentView, setCurrentView] = useState<View>('overview')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [taskListKey, setTaskListKey] = useState(0)
 
@@ -50,6 +52,22 @@ export default function App() {
   const handleEditTask = (task: Task) => {
     setEditingTask(task)
     setShowTaskForm(true)
+    setCurrentView('tasks')
+  }
+
+  const handleOpenTask = async (id: string) => {
+    try {
+      const task = await window.electronApi.invoke('task:get', id)
+      if (task) handleEditTask(task)
+      else setCurrentView('tasks')
+    } catch {
+      setCurrentView('tasks')
+    }
+  }
+
+  const handleOpenLogs = (id?: string) => {
+    setSelectedLogId(id ?? null)
+    setCurrentView('logs')
   }
 
   const handleNewTask = () => {
@@ -110,6 +128,19 @@ export default function App() {
         {/* Navigation */}
         <nav className="flex-1 px-3 space-y-0.5">
           <NavItem
+            label={t('app.nav.overview')}
+            icon={
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" strokeWidth="1.75" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" strokeWidth="1.75" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" strokeWidth="1.75" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" strokeWidth="1.75" />
+              </svg>
+            }
+            active={currentView === 'overview'}
+            onClick={() => handleViewChange('overview')}
+          />
+          <NavItem
             label={t('app.nav.tasks')}
             icon={
               <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +158,7 @@ export default function App() {
               </svg>
             }
             active={currentView === 'logs'}
-            onClick={() => handleViewChange('logs')}
+            onClick={() => handleOpenLogs()}
           />
           <NavItem
             label={t('app.nav.settings')}
@@ -155,6 +186,16 @@ export default function App() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
+          {currentView === 'overview' && (
+            <div className="h-full overflow-hidden rounded-tl-2xl border-l border-t border-gray-200/60 shadow-sm">
+              <Dashboard
+                onNewTask={handleNewTask}
+                onOpenTasks={() => handleViewChange('tasks')}
+                onOpenTask={(id) => void handleOpenTask(id)}
+                onOpenLogs={handleOpenLogs}
+              />
+            </div>
+          )}
           {currentView === 'tasks' && (
             <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6">
               <TaskList 
@@ -170,7 +211,7 @@ export default function App() {
           )}
           {currentView === 'logs' && (
             <div className="h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6">
-              <ExecutionLog />
+              <ExecutionLog initialLogId={selectedLogId} />
             </div>
           )}
           {currentView === 'settings' && (
@@ -195,13 +236,14 @@ function NavItem({ label, icon, active, onClick }: NavItemProps) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-sm ${
+      aria-current={active ? 'page' : undefined}
+      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm ${
         active
-          ? 'bg-white shadow-sm text-gray-900 font-medium border border-gray-200/60'
+          ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-100'
           : 'text-gray-600 hover:bg-white/60'
       }`}
     >
-      <span className={active ? 'text-gray-700' : 'text-gray-500'}>{icon}</span>
+      <span className={active ? 'text-blue-600' : 'text-gray-500'}>{icon}</span>
       {label}
     </button>
   )

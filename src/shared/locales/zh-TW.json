@@ -161,9 +161,68 @@
   "app": {
     "newTask": "新增任務",
     "nav": {
+      "overview": "概要",
       "tasks": "任務",
       "executionLogs": "執行記錄",
       "settings": "設定"
+    }
+  },
+  "dashboard": {
+    "title": "概要",
+    "subtitle": "掌握任務排程與最近的執行狀況",
+    "refresh": "重新整理概要",
+    "loadError": "無法載入概要",
+    "last24h": "近 24 小時",
+    "last7d": "近 7 天",
+    "viewTasks": "查看任務",
+    "viewLogs": "查看記錄",
+    "createFirst": "建立第一個任務",
+    "health": {
+      "noTasks": "開始建立自動化任務",
+      "attention": "有項目需要留意",
+      "healthy": "目前運作正常",
+      "summary": "{{active}} 個任務啟用 · {{paused}} 個暫停 · {{running}} 個執行中"
+    },
+    "metric": {
+      "runs": "執行次數",
+      "successRate": "成功率",
+      "completedOnly": "已完成的執行",
+      "failures": "失敗次數",
+      "needsAttention": "請查看失敗記錄",
+      "noFailures": "沒有失敗",
+      "activeTasks": "啟用任務",
+      "totalTasks": "共 {{count}} 個任務"
+    },
+    "upcoming": {
+      "title": "接下來的排程",
+      "empty": "目前沒有可預測的下一次執行；請檢查任務是否已啟用。"
+    },
+    "activity": {
+      "title": "執行概況",
+      "subtitle": "近 24 小時，每格代表一小時。點擊可查看執行記錄。",
+      "chartLabel": "近 24 小時任務執行狀況圖",
+      "success": "成功",
+      "failed": "失敗",
+      "running": "執行中",
+      "cancelled": "已中止",
+      "before24h": "24 小時前",
+      "before12h": "12 小時前",
+      "now": "現在"
+    },
+    "attention": {
+      "title": "需要關注",
+      "empty": "近期沒有失敗或待確認的任務",
+      "review": "任務設定需要確認"
+    },
+    "topTasks": {
+      "title": "最常執行的任務",
+      "empty": "近 7 天沒有執行記錄",
+      "runs": "{{count}} 次",
+      "failures": "{{count}} 次失敗"
+    },
+    "recent": {
+      "title": "最近執行",
+      "empty": "執行任務後，記錄會顯示在這裡"
     }
   },
   "taskList": {

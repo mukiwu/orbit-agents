@@ -427,15 +427,44 @@ export async function runTaskNow(taskId: string): Promise<ExecutionLog> {
   return executeTask(task)
 }
 
-export function getNextExecutionTime(cronExpression: string): Date | null {
-  if (!cron.validate(cronExpression)) {
+export function getNextExecutionTime(task: Task): Date | null {
+  const job = activeJobs.get(task.id)
+  if (!job) return null
+
+  try {
+    if (!task.week_interval || task.week_interval <= 1) return job.getNextRun()
+
+    // The scheduler skips weeks relative to task creation. Inspect upcoming cron
+    // matches so the dashboard does not display a run that would be skipped.
+    const createdAt = new Date(task.created_at).getTime()
+    if (!Number.isFinite(createdAt)) return null
+    const weekMs = 7 * 24 * 60 * 60 * 1000
+    const candidates = job.getNextRuns(500)
+    const nextEligible = candidates.find((date) => {
+      const weeksDiff = Math.floor((date.getTime() - createdAt) / weekMs)
+      return weeksDiff >= 0 && weeksDiff % task.week_interval === 0
+    })
+    if (nextEligible) return nextEligible
+
+    // A minute-level cron can have more than 500 matches in a skipped week.
+    // Jump to the next eligible week and inspect its first day instead of
+    // returning a skipped run as the next execution.
+    const lastCandidate = candidates[candidates.length - 1]
+    if (!lastCandidate) return null
+    const lastWeek = Math.floor((lastCandidate.getTime() - createdAt) / weekMs)
+    const remainder = ((lastWeek % task.week_interval) + task.week_interval) % task.week_interval
+    const nextWeek = lastWeek + (task.week_interval - remainder)
+    const eligibleStart = createdAt + nextWeek * weekMs
+    const start = Math.ceil(Math.max(Date.now(), eligibleStart) / 60_000) * 60_000
+    const end = Math.min(eligibleStart + weekMs, start + 24 * 60 * 60 * 1000)
+    for (let time = start; time < end; time += 60_000) {
+      const date = new Date(time)
+      if (job.match(date)) return date
+    }
+    return null
+  } catch {
     return null
   }
-
-  // node-cron doesn't provide next execution time directly
-  // We'll use a simple calculation based on common patterns
-  // For more accurate results, consider using cron-parser package
-  return null
 }
 
 export function isTaskScheduled(taskId: string): boolean {

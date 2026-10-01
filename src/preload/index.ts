@@ -18,6 +18,7 @@ export const api: ElectronApi = {
     ...args: Parameters<IpcApi[K]>
   ): ReturnType<IpcApi[K]> => {
     const validChannels: IpcChannel[] = [
+      'dashboard:get',
       'task:list',
       'task:get',
       'task:create',
