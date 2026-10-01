@@ -308,7 +308,7 @@ var scheduler_production_min = {};
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-(function(exports$1) {
+(function(exports) {
   function f2(a, b) {
     var c = a.length;
     a.push(b);
@@ -341,12 +341,12 @@ var scheduler_production_min = {};
   }
   if ("object" === typeof performance && "function" === typeof performance.now) {
     var l2 = performance;
-    exports$1.unstable_now = function() {
+    exports.unstable_now = function() {
       return l2.now();
     };
   } else {
     var p2 = Date, q2 = p2.now();
-    exports$1.unstable_now = function() {
+    exports.unstable_now = function() {
       return p2.now() - q2;
     };
   }
@@ -382,7 +382,7 @@ var scheduler_production_min = {};
           v2.callback = null;
           y2 = v2.priorityLevel;
           var e = d(v2.expirationTime <= b);
-          b = exports$1.unstable_now();
+          b = exports.unstable_now();
           "function" === typeof e ? v2.callback = e : v2 === h(r2) && k2(r2);
           G2(b);
         } else k2(r2);
@@ -401,11 +401,11 @@ var scheduler_production_min = {};
   }
   var N2 = false, O2 = null, L2 = -1, P2 = 5, Q2 = -1;
   function M2() {
-    return exports$1.unstable_now() - Q2 < P2 ? false : true;
+    return exports.unstable_now() - Q2 < P2 ? false : true;
   }
   function R2() {
     if (null !== O2) {
-      var a = exports$1.unstable_now();
+      var a = exports.unstable_now();
       Q2 = a;
       var b = true;
       try {
@@ -434,31 +434,31 @@ var scheduler_production_min = {};
   }
   function K2(a, b) {
     L2 = D2(function() {
-      a(exports$1.unstable_now());
+      a(exports.unstable_now());
     }, b);
   }
-  exports$1.unstable_IdlePriority = 5;
-  exports$1.unstable_ImmediatePriority = 1;
-  exports$1.unstable_LowPriority = 4;
-  exports$1.unstable_NormalPriority = 3;
-  exports$1.unstable_Profiling = null;
-  exports$1.unstable_UserBlockingPriority = 2;
-  exports$1.unstable_cancelCallback = function(a) {
+  exports.unstable_IdlePriority = 5;
+  exports.unstable_ImmediatePriority = 1;
+  exports.unstable_LowPriority = 4;
+  exports.unstable_NormalPriority = 3;
+  exports.unstable_Profiling = null;
+  exports.unstable_UserBlockingPriority = 2;
+  exports.unstable_cancelCallback = function(a) {
     a.callback = null;
   };
-  exports$1.unstable_continueExecution = function() {
+  exports.unstable_continueExecution = function() {
     A2 || z2 || (A2 = true, I2(J2));
   };
-  exports$1.unstable_forceFrameRate = function(a) {
+  exports.unstable_forceFrameRate = function(a) {
     0 > a || 125 < a ? console.error("forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported") : P2 = 0 < a ? Math.floor(1e3 / a) : 5;
   };
-  exports$1.unstable_getCurrentPriorityLevel = function() {
+  exports.unstable_getCurrentPriorityLevel = function() {
     return y2;
   };
-  exports$1.unstable_getFirstCallbackNode = function() {
+  exports.unstable_getFirstCallbackNode = function() {
     return h(r2);
   };
-  exports$1.unstable_next = function(a) {
+  exports.unstable_next = function(a) {
     switch (y2) {
       case 1:
       case 2:
@@ -476,11 +476,11 @@ var scheduler_production_min = {};
       y2 = c;
     }
   };
-  exports$1.unstable_pauseExecution = function() {
+  exports.unstable_pauseExecution = function() {
   };
-  exports$1.unstable_requestPaint = function() {
+  exports.unstable_requestPaint = function() {
   };
-  exports$1.unstable_runWithPriority = function(a, b) {
+  exports.unstable_runWithPriority = function(a, b) {
     switch (a) {
       case 1:
       case 2:
@@ -499,8 +499,8 @@ var scheduler_production_min = {};
       y2 = c;
     }
   };
-  exports$1.unstable_scheduleCallback = function(a, b, c) {
-    var d = exports$1.unstable_now();
+  exports.unstable_scheduleCallback = function(a, b, c) {
+    var d = exports.unstable_now();
     "object" === typeof c && null !== c ? (c = c.delay, c = "number" === typeof c && 0 < c ? d + c : d) : c = d;
     switch (a) {
       case 1:
@@ -523,8 +523,8 @@ var scheduler_production_min = {};
     c > d ? (a.sortIndex = c, f2(t2, a), null === h(r2) && a === h(t2) && (B2 ? (E2(L2), L2 = -1) : B2 = true, K2(H2, c - d))) : (a.sortIndex = e, f2(r2, a), A2 || z2 || (A2 = true, I2(J2)));
     return a;
   };
-  exports$1.unstable_shouldYield = M2;
-  exports$1.unstable_wrapCallback = function(a) {
+  exports.unstable_shouldYield = M2;
+  exports.unstable_wrapCallback = function(a) {
     var b = y2;
     return function() {
       var c = y2;
@@ -9842,40 +9842,95 @@ function useAiProvider() {
   );
   return { test, listMcps, listModels };
 }
+function useCodexAuth() {
+  const [status, setStatus] = reactExports.useState(null);
+  const [loading, setLoading] = reactExports.useState(true);
+  const [action, setAction] = reactExports.useState(null);
+  const [error, setError] = reactExports.useState(null);
+  const refresh = reactExports.useCallback(async () => {
+    setLoading(true);
+    try {
+      const nextStatus = await api.invoke("codex:auth-status");
+      setStatus(nextStatus);
+      setError(null);
+      return nextStatus;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to read Codex login status";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  reactExports.useEffect(() => {
+    void refresh().catch(() => void 0);
+  }, [refresh]);
+  const signIn = reactExports.useCallback(async () => {
+    setAction("login");
+    setError(null);
+    try {
+      await api.invoke("codex:login");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Codex sign-in failed");
+      throw err;
+    } finally {
+      setAction(null);
+    }
+  }, [refresh]);
+  const signOut = reactExports.useCallback(async () => {
+    setAction("logout");
+    setError(null);
+    try {
+      await api.invoke("codex:logout");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Codex sign-out failed");
+      throw err;
+    } finally {
+      setAction(null);
+    }
+  }, [refresh]);
+  return { status, loading, action, error, refresh, signIn, signOut };
+}
 function useSkills() {
   const [skills, setSkills] = reactExports.useState([]);
   const [loading, setLoading] = reactExports.useState(false);
   const [projectPath, setProjectPath] = reactExports.useState(null);
-  const scanSkills = reactExports.useCallback(async (path2) => {
+  const scanSequence = reactExports.useRef(0);
+  const scanSkills = reactExports.useCallback(async (path2, provider = "claude") => {
+    const sequence = ++scanSequence.current;
     setLoading(true);
     try {
-      const result = await api.invoke("skill:scan", path2);
-      setSkills(result.skills);
-      if (result.projectPath) setProjectPath(result.projectPath);
+      const result = await api.invoke("skill:scan", path2, provider);
+      if (sequence === scanSequence.current) {
+        setSkills(result.skills);
+        if (result.projectPath) setProjectPath(result.projectPath);
+      }
       return result;
     } catch (err) {
       console.error("Failed to scan skills:", err);
       return { skills: [], errors: [String(err)] };
     } finally {
-      setLoading(false);
+      if (sequence === scanSequence.current) setLoading(false);
     }
   }, []);
-  const selectProject = reactExports.useCallback(async () => {
+  const selectProject = reactExports.useCallback(async (provider) => {
     const dirPath = await api.invoke("dialog:open-directory");
     if (dirPath) {
       setProjectPath(dirPath);
-      await scanSkills(dirPath);
+      await scanSkills(dirPath, provider);
       return dirPath;
     }
     return null;
   }, [scanSkills]);
-  const clearProject = reactExports.useCallback(async () => {
+  const clearProject = reactExports.useCallback(async (provider) => {
     setProjectPath(null);
-    await scanSkills();
+    await scanSkills(void 0, provider);
   }, [scanSkills]);
-  const initProject = reactExports.useCallback(async (path2) => {
+  const initProject = reactExports.useCallback(async (path2, provider) => {
     setProjectPath(path2);
-    await scanSkills(path2);
+    await scanSkills(path2, provider);
   }, [scanSkills]);
   return { skills, loading, projectPath, setProjectPath, scanSkills, selectProject, clearProject, initProject };
 }
@@ -10009,7 +10064,7 @@ const createLucideIcon = (iconName, iconNode) => {
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$j = [
+const __iconNode$n = [
   [
     "path",
     {
@@ -10020,14 +10075,14 @@ const __iconNode$j = [
   ["path", { d: "m3.3 7 8.7 5 8.7-5", key: "g66t2b" }],
   ["path", { d: "M12 22V12", key: "d0xqtd" }]
 ];
-const Box = createLucideIcon("box", __iconNode$j);
+const Box = createLucideIcon("box", __iconNode$n);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$i = [
+const __iconNode$m = [
   ["path", { d: "M8 2v4", key: "1cmpym" }],
   ["path", { d: "M16 2v4", key: "4m81vk" }],
   ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
@@ -10039,7 +10094,48 @@ const __iconNode$i = [
   ["path", { d: "M12 18h.01", key: "mhygvu" }],
   ["path", { d: "M16 18h.01", key: "kzsmim" }]
 ];
-const CalendarDays = createLucideIcon("calendar-days", __iconNode$i);
+const CalendarDays = createLucideIcon("calendar-days", __iconNode$m);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$l = [
+  ["path", { d: "M8 2v4", key: "1cmpym" }],
+  ["path", { d: "M16 2v4", key: "4m81vk" }],
+  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
+  ["path", { d: "M3 10h18", key: "8toen8" }]
+];
+const Calendar = createLucideIcon("calendar", __iconNode$l);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$k = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$k);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$j = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$j);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$i = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
+  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
+];
+const CircleAlert = createLucideIcon("circle-alert", __iconNode$i);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10047,50 +10143,17 @@ const CalendarDays = createLucideIcon("calendar-days", __iconNode$i);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$h = [
-  ["path", { d: "M8 2v4", key: "1cmpym" }],
-  ["path", { d: "M16 2v4", key: "4m81vk" }],
-  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
-  ["path", { d: "M3 10h18", key: "8toen8" }]
-];
-const Calendar = createLucideIcon("calendar", __iconNode$h);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$g = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$g);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$f = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
-  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
-];
-const CircleAlert = createLucideIcon("circle-alert", __iconNode$f);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$e = [
   ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }],
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
 ];
-const Clock = createLucideIcon("clock", __iconNode$e);
+const Clock = createLucideIcon("clock", __iconNode$h);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$d = [
+const __iconNode$g = [
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M17 20v2", key: "1rnc9c" }],
@@ -10106,26 +10169,26 @@ const __iconNode$d = [
   ["rect", { x: "4", y: "4", width: "16", height: "16", rx: "2", key: "1vbyd7" }],
   ["rect", { x: "8", y: "8", width: "8", height: "8", rx: "1", key: "z9xiuo" }]
 ];
-const Cpu = createLucideIcon("cpu", __iconNode$d);
+const Cpu = createLucideIcon("cpu", __iconNode$g);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$c = [
+const __iconNode$f = [
   ["path", { d: "M12 15V3", key: "m9g1x1" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
   ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
 ];
-const Download = createLucideIcon("download", __iconNode$c);
+const Download = createLucideIcon("download", __iconNode$f);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$b = [
+const __iconNode$e = [
   [
     "path",
     {
@@ -10134,15 +10197,50 @@ const __iconNode$b = [
     }
   ]
 ];
-const FolderOpen = createLucideIcon("folder-open", __iconNode$b);
+const FolderOpen = createLucideIcon("folder-open", __iconNode$e);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$a = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
-const LoaderCircle = createLucideIcon("loader-circle", __iconNode$a);
+const __iconNode$d = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
+const LoaderCircle = createLucideIcon("loader-circle", __iconNode$d);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$c = [
+  ["path", { d: "m10 17 5-5-5-5", key: "1bsop3" }],
+  ["path", { d: "M15 12H3", key: "6jk70r" }],
+  ["path", { d: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4", key: "u53s6r" }]
+];
+const LogIn = createLucideIcon("log-in", __iconNode$c);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$b = [
+  ["path", { d: "m16 17 5-5-5-5", key: "1bji2h" }],
+  ["path", { d: "M21 12H9", key: "dn1m92" }],
+  ["path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", key: "1uf3rs" }]
+];
+const LogOut = createLucideIcon("log-out", __iconNode$b);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$a = [
+  ["path", { d: "m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7", key: "132q7q" }],
+  ["rect", { x: "2", y: "4", width: "20", height: "16", rx: "2", key: "izxlao" }]
+];
+const Mail = createLucideIcon("mail", __iconNode$a);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10150,17 +10248,6 @@ const LoaderCircle = createLucideIcon("loader-circle", __iconNode$a);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$9 = [
-  ["path", { d: "m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7", key: "132q7q" }],
-  ["rect", { x: "2", y: "4", width: "20", height: "16", rx: "2", key: "izxlao" }]
-];
-const Mail = createLucideIcon("mail", __iconNode$9);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$8 = [
   [
     "path",
     {
@@ -10169,7 +10256,18 @@ const __iconNode$8 = [
     }
   ]
 ];
-const Play = createLucideIcon("play", __iconNode$8);
+const Play = createLucideIcon("play", __iconNode$9);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$8 = [
+  ["path", { d: "M5 12h14", key: "1ays0h" }],
+  ["path", { d: "M12 5v14", key: "s699le" }]
+];
+const Plus = createLucideIcon("plus", __iconNode$8);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10177,10 +10275,12 @@ const Play = createLucideIcon("play", __iconNode$8);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$7 = [
-  ["path", { d: "M5 12h14", key: "1ays0h" }],
-  ["path", { d: "M12 5v14", key: "s699le" }]
+  ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }],
+  ["path", { d: "M21 3v5h-5", key: "1q7to0" }],
+  ["path", { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", key: "3uifl3" }],
+  ["path", { d: "M8 16H3v5", key: "1cv678" }]
 ];
-const Plus = createLucideIcon("plus", __iconNode$7);
+const RefreshCw = createLucideIcon("refresh-cw", __iconNode$7);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10188,12 +10288,10 @@ const Plus = createLucideIcon("plus", __iconNode$7);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$6 = [
-  ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }],
-  ["path", { d: "M21 3v5h-5", key: "1q7to0" }],
-  ["path", { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", key: "3uifl3" }],
-  ["path", { d: "M8 16H3v5", key: "1cv678" }]
+  ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
+  ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-const RefreshCw = createLucideIcon("refresh-cw", __iconNode$6);
+const Search = createLucideIcon("search", __iconNode$6);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10280,13 +10378,359 @@ const __iconNode = [
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
 const X = createLucideIcon("x", __iconNode);
+function ModelSelect({
+  value,
+  options,
+  onChange,
+  labelId,
+  emptyLabel,
+  defaultLabel
+}) {
+  const [open, setOpen] = reactExports.useState(false);
+  const [activeIndex, setActiveIndex] = reactExports.useState(0);
+  const [position2, setPosition] = reactExports.useState(null);
+  const triggerRef = reactExports.useRef(null);
+  const menuRef = reactExports.useRef(null);
+  const typeaheadRef = reactExports.useRef("");
+  const typeaheadTimerRef = reactExports.useRef(null);
+  const id2 = reactExports.useId();
+  const listboxId = `${id2}-listbox`;
+  const valueId = `${id2}-value`;
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const selected = options[selectedIndex];
+  const updatePosition = reactExports.useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const gap = 6;
+    const below = window.innerHeight - rect.bottom - gap - 8;
+    const above = rect.top - gap - 8;
+    const desiredHeight = Math.min(320, options.length * 64 + 8);
+    const placeAbove = below < desiredHeight && above > below;
+    const available = placeAbove ? above : below;
+    setPosition({
+      left: rect.left,
+      width: rect.width,
+      top: placeAbove ? void 0 : rect.bottom + gap,
+      bottom: placeAbove ? window.innerHeight - rect.top + gap : void 0,
+      maxHeight: Math.max(64, Math.min(320, available))
+    });
+  }, [options.length]);
+  reactExports.useLayoutEffect(() => {
+    if (!open) return;
+    updatePosition();
+    document.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      document.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open, updatePosition]);
+  reactExports.useEffect(() => {
+    if (!open) return;
+    const handleOutsidePointer = (event) => {
+      const target = event.target;
+      if (!triggerRef.current?.contains(target) && !menuRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handleOutsidePointer);
+    return () => document.removeEventListener("pointerdown", handleOutsidePointer);
+  }, [open]);
+  reactExports.useEffect(() => {
+    if (!open) return;
+    const menu = menuRef.current;
+    const active = menu?.querySelector(`[data-option-index="${activeIndex}"]`);
+    if (!menu || !active) return;
+    if (active.offsetTop < menu.scrollTop) menu.scrollTop = active.offsetTop;
+    else if (active.offsetTop + active.offsetHeight > menu.scrollTop + menu.clientHeight) {
+      menu.scrollTop = active.offsetTop + active.offsetHeight - menu.clientHeight;
+    }
+  }, [activeIndex, open, position2]);
+  reactExports.useEffect(() => {
+    if (options.length === 0) setOpen(false);
+  }, [options.length]);
+  reactExports.useEffect(() => () => {
+    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+  }, []);
+  const showMenu = (index2 = selectedIndex >= 0 ? selectedIndex : 0) => {
+    if (options.length === 0) return;
+    setActiveIndex(index2);
+    setOpen(true);
+  };
+  const choose = (index2) => {
+    const option = options[index2];
+    if (!option) return;
+    onChange(option.value);
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+  const handleKeyDown = (event) => {
+    if (options.length === 0) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) showMenu();
+      else setActiveIndex((current) => Math.max(0, Math.min(options.length - 1, current + (event.key === "ArrowDown" ? 1 : -1))));
+    } else if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      if (!open) showMenu(event.key === "Home" ? 0 : options.length - 1);
+      else setActiveIndex(event.key === "Home" ? 0 : options.length - 1);
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (open) choose(activeIndex);
+      else showMenu();
+    } else if (event.key === "Escape" && open) {
+      event.preventDefault();
+      setOpen(false);
+    } else if (event.key === "Tab" && open) {
+      setOpen(false);
+    } else if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      typeaheadRef.current += event.key.toLocaleLowerCase();
+      if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+      typeaheadTimerRef.current = setTimeout(() => {
+        typeaheadRef.current = "";
+      }, 600);
+      const match = options.findIndex((option) => option.label.toLocaleLowerCase().startsWith(typeaheadRef.current));
+      if (match >= 0) {
+        event.preventDefault();
+        if (!open) showMenu(match);
+        else setActiveIndex(match);
+      }
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        ref: triggerRef,
+        type: "button",
+        role: "combobox",
+        "aria-labelledby": `${labelId} ${valueId}`,
+        "aria-haspopup": "listbox",
+        "aria-expanded": open,
+        "aria-controls": open ? listboxId : void 0,
+        "aria-activedescendant": open ? `${id2}-option-${activeIndex}` : void 0,
+        disabled: options.length === 0,
+        onClick: () => open ? setOpen(false) : showMenu(),
+        onKeyDown: handleKeyDown,
+        className: "flex w-full min-h-14 items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 text-left text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { id: valueId, className: "min-w-0 flex-1 truncate font-medium", children: selected?.label || emptyLabel }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { "aria-hidden": "true", className: `h-4 w-4 shrink-0 text-gray-500 transition-transform duration-150 motion-reduce:transition-none ${open ? "rotate-180" : ""}` })
+        ]
+      }
+    ),
+    open && position2 && reactDomExports.createPortal(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          ref: menuRef,
+          id: listboxId,
+          role: "listbox",
+          "aria-labelledby": labelId,
+          className: "fixed z-[100] overflow-y-auto overscroll-contain rounded-xl border border-gray-200 bg-white p-1 shadow-xl shadow-gray-900/10",
+          style: position2,
+          children: options.map((option, index2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              id: `${id2}-option-${index2}`,
+              "data-option-index": index2,
+              role: "option",
+              "aria-selected": option.value === value,
+              onMouseEnter: () => setActiveIndex(index2),
+              onClick: () => choose(index2),
+              className: `flex min-h-12 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ${index2 === activeIndex ? "bg-blue-50" : "hover:bg-gray-50"} ${option.value === value ? "text-blue-700" : "text-gray-800"}`,
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "min-w-0 flex-1", children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-2 font-medium", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: option.label }),
+                    option.isDefault && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500", children: defaultLabel })
+                  ] }),
+                  option.desc && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-0.5 block truncate text-xs font-normal text-gray-500", children: option.desc })
+                ] }),
+                option.value === value && /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { "aria-hidden": "true", className: "h-4 w-4 shrink-0 text-blue-600" })
+              ]
+            },
+            option.value
+          ))
+        }
+      ),
+      document.body
+    )
+  ] });
+}
+function QuickPicker({
+  items,
+  triggerLabel,
+  searchLabel,
+  searchPlaceholder,
+  emptyLabel,
+  resultsLabel,
+  onPick
+}) {
+  const [open, setOpen] = reactExports.useState(false);
+  const [query, setQuery] = reactExports.useState("");
+  const id2 = reactExports.useId();
+  const rootRef = reactExports.useRef(null);
+  const triggerRef = reactExports.useRef(null);
+  const searchRef = reactExports.useRef(null);
+  const itemRefs = reactExports.useRef([]);
+  const filtered = reactExports.useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) return items;
+    return items.filter(
+      (item) => `${item.name} ${item.description ?? ""} ${item.badge ?? ""}`.toLocaleLowerCase().includes(normalized)
+    );
+  }, [items, query]);
+  reactExports.useEffect(() => {
+    if (!open) return;
+    searchRef.current?.focus();
+    const handleOutsidePointer = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", handleOutsidePointer);
+    return () => document.removeEventListener("pointerdown", handleOutsidePointer);
+  }, [open]);
+  const pick = (item) => {
+    onPick(item.id);
+    setOpen(false);
+    setQuery("");
+    triggerRef.current?.focus();
+  };
+  const close = () => {
+    setOpen(false);
+    setQuery("");
+    triggerRef.current?.focus();
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: rootRef, className: "relative", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        ref: triggerRef,
+        type: "button",
+        "aria-expanded": open,
+        "aria-controls": open ? id2 : void 0,
+        onClick: () => {
+          setQuery("");
+          setOpen((current) => !current);
+        },
+        className: "flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 text-left text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: triggerLabel }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { "aria-hidden": "true", className: `h-4 w-4 shrink-0 text-gray-500 transition-transform duration-150 motion-reduce:transition-none ${open ? "rotate-180" : ""}` })
+        ]
+      }
+    ),
+    open && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: id2, className: "mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-b border-gray-100 p-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Search, { "aria-hidden": "true", className: "pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "input",
+            {
+              ref: searchRef,
+              type: "search",
+              value: query,
+              onChange: (event) => setQuery(event.target.value),
+              onKeyDown: (event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  close();
+                } else if (event.key === "ArrowDown" && filtered.length > 0) {
+                  event.preventDefault();
+                  itemRefs.current[0]?.focus();
+                } else if (event.key === "Enter" && query.trim() && filtered.length > 0) {
+                  event.preventDefault();
+                  pick(filtered[0]);
+                }
+              },
+              "aria-label": searchLabel,
+              placeholder: searchPlaceholder,
+              className: "h-10 w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:border-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: "px-1 pt-1.5 text-xs text-gray-500", children: resultsLabel(filtered.length) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "max-h-64 overflow-y-auto overscroll-contain p-1", children: filtered.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "px-3 py-6 text-center text-sm text-gray-500", children: emptyLabel }) : filtered.map((item, index2) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          ref: (element2) => {
+            itemRefs.current[index2] = element2;
+          },
+          type: "button",
+          onClick: () => pick(item),
+          onKeyDown: (event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              close();
+            } else if (event.key === "ArrowDown") {
+              event.preventDefault();
+              itemRefs.current[Math.min(filtered.length - 1, index2 + 1)]?.focus();
+            } else if (event.key === "ArrowUp") {
+              event.preventDefault();
+              if (index2 === 0) searchRef.current?.focus();
+              else itemRefs.current[index2 - 1]?.focus();
+            } else if (event.key === "Home") {
+              event.preventDefault();
+              itemRefs.current[0]?.focus();
+            } else if (event.key === "End") {
+              event.preventDefault();
+              itemRefs.current[filtered.length - 1]?.focus();
+            }
+          },
+          className: "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-gray-800 transition-colors hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "min-w-0 flex-1", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-2 font-medium", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: item.name }),
+                item.badge && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600", children: item.badge })
+              ] }),
+              item.description && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-0.5 block truncate text-xs text-gray-500", children: item.description })
+            ] }),
+            item.selected && /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { "aria-hidden": "true", className: "h-4 w-4 shrink-0 text-blue-600" })
+          ]
+        },
+        item.id
+      )) })
+    ] })
+  ] });
+}
+function normalizeSavedModel(provider, model) {
+  return provider === "antigravity" ? model.split("	", 1)[0].trim() : model;
+}
+function skillInvocation(name2, provider) {
+  return `${provider === "codex" ? "$" : "/"}${name2}`;
+}
+function removePromptToken(prompt, token) {
+  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return prompt.replace(
+    new RegExp(`(^|\\s)${escaped}([ \\t]?)(?=\\s|$)`, "g"),
+    (match, before, _after, offset) => before === " " && offset + match.length === prompt.length ? "" : before
+  );
+}
+function removePromptSnippet(prompt, snippet) {
+  const index2 = prompt.indexOf(snippet);
+  if (index2 < 0) return prompt;
+  const before = prompt.slice(0, index2).replace(/\n{1,2}$/, "");
+  const after = prompt.slice(index2 + snippet.length).replace(/^\n{1,2}/, "");
+  return before && after ? `${before}
+
+${after}` : before + after;
+}
 function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
   const { t: t2 } = useTranslation();
   const { createTask, updateTask } = useTasks();
   const { listMcps: listAiMcps, listModels } = useAiProvider();
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills } = useSkills();
   const [dynamicModels, setDynamicModels] = reactExports.useState([]);
-  const [selectedSkill, setSelectedSkill] = reactExports.useState(null);
+  const [modelsProvider, setModelsProvider] = reactExports.useState(null);
+  const [loadingModels, setLoadingModels] = reactExports.useState(true);
+  const [modelListNotice, setModelListNotice] = reactExports.useState(null);
+  const modelRequestSequence = reactExports.useRef(0);
+  const promptRef = reactExports.useRef(null);
+  const promptSelectionRef = reactExports.useRef(null);
+  const insertedMcpReferencesRef = reactExports.useRef(/* @__PURE__ */ new Set());
+  const insertedSkillTokensRef = reactExports.useRef(/* @__PURE__ */ new Set());
   const [loading, setLoading] = reactExports.useState(false);
   const [error, setError] = reactExports.useState(null);
   const [mcpServers, setMcpServers] = reactExports.useState([]);
@@ -10295,6 +10739,9 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     return parseCronToSimple(task?.cron_expression || "0 9 * * *");
   }, [task?.cron_expression]);
   reactExports.useEffect(() => {
+    promptSelectionRef.current = null;
+    insertedMcpReferencesRef.current.clear();
+    insertedSkillTokensRef.current.clear();
     const parsed = parseCronToSimple(task?.cron_expression || "0 9 * * *");
     setScheduleMode(parsed.mode);
     setFrequency(parsed.frequency);
@@ -10311,7 +10758,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         cron_expression: task.cron_expression || "0 9 * * *",
         prompt: task.prompt || "",
         cli_tool: task.cli_tool || "claude",
-        model: task.model || "sonnet",
+        model: normalizeSavedModel(task.cli_tool, task.model || ""),
         mcp_tools: task.mcp_tools ? JSON.parse(task.mcp_tools) : [],
         attachments: task.attachments ? JSON.parse(task.attachments) : [],
         output_type: task.output_type || "log",
@@ -10323,21 +10770,21 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
       });
       if (task.project_path) {
         setProjectPath(task.project_path);
-        scanSkills(task.project_path);
+        scanSkills(task.project_path, task.cli_tool);
       } else {
         setProjectPath(null);
-        scanSkills();
+        scanSkills(void 0, task.cli_tool);
       }
     } else {
       setProjectPath(null);
-      scanSkills();
+      scanSkills(void 0, "claude");
       setFormData({
         name: "",
         description: "",
         cron_expression: "0 9 * * *",
         prompt: "",
         cli_tool: "claude",
-        model: "sonnet",
+        model: "",
         mcp_tools: [],
         attachments: [],
         output_type: "log",
@@ -10363,7 +10810,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     cron_expression: task?.cron_expression || "0 9 * * *",
     prompt: task?.prompt || "",
     cli_tool: task?.cli_tool || "claude",
-    model: task?.model || "sonnet",
+    model: task ? normalizeSavedModel(task.cli_tool, task.model || "") : "",
     mcp_tools: task?.mcp_tools ? JSON.parse(task.mcp_tools) : [],
     attachments: task?.attachments ? JSON.parse(task.attachments) : [],
     output_type: task?.output_type || "log",
@@ -10391,19 +10838,83 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
       return [...prev, day].sort((a, b) => a - b);
     });
   };
-  reactExports.useEffect(() => {
-    scanSkills();
-  }, [scanSkills]);
-  const handleSelectSkill = (skill) => {
-    setSelectedSkill(skill);
-    setFormData((prev) => ({
-      ...prev,
-      prompt: skill.content
+  const rememberPromptSelection = () => {
+    const textarea = promptRef.current;
+    if (textarea) promptSelectionRef.current = { start: textarea.selectionStart, end: textarea.selectionEnd };
+  };
+  const insertPromptText = (snippet) => {
+    const text2 = snippet.trim();
+    if (!text2) return;
+    const prompt = formData.prompt;
+    const selection = promptSelectionRef.current;
+    const start = selection ? Math.min(selection.start, prompt.length) : prompt.length;
+    const end = selection ? Math.min(selection.end, prompt.length) : prompt.length;
+    const before = prompt.slice(0, start);
+    const after = prompt.slice(end);
+    const leading = before && !before.endsWith("\n") ? "\n\n" : "";
+    const trailing = after && !after.startsWith("\n") ? "\n\n" : "";
+    const nextPrompt = `${before}${leading}${text2}${trailing}${after}`;
+    const caret = before.length + leading.length + text2.length;
+    setFormData((prev) => ({ ...prev, prompt: nextPrompt }));
+    promptSelectionRef.current = { start: caret, end: caret };
+    requestAnimationFrame(() => {
+      promptRef.current?.focus();
+      promptRef.current?.setSelectionRange(caret, caret);
+    });
+  };
+  const insertPromptToken = (token) => {
+    if (formData.cli_tool !== "codex") {
+      const prompt2 = [...insertedSkillTokensRef.current].reduce(removePromptToken, formData.prompt);
+      insertedSkillTokensRef.current.clear();
+      const nextPrompt2 = `${token} ${prompt2}`;
+      const caret2 = token.length + 1;
+      setFormData((prev) => ({ ...prev, prompt: nextPrompt2 }));
+      promptSelectionRef.current = { start: caret2, end: caret2 };
+      requestAnimationFrame(() => {
+        promptRef.current?.focus();
+        promptRef.current?.setSelectionRange(caret2, caret2);
+      });
+      return;
+    }
+    const prompt = formData.prompt;
+    const selection = promptSelectionRef.current;
+    const start = selection ? Math.min(selection.start, prompt.length) : prompt.length;
+    const end = selection ? Math.min(selection.end, prompt.length) : prompt.length;
+    const before = prompt.slice(0, start);
+    const after = prompt.slice(end);
+    const leading = before && !/\s$/.test(before) ? " " : "";
+    const trailing = !after || !/^\s/.test(after) ? " " : "";
+    const nextPrompt = `${before}${leading}${token}${trailing}${after}`;
+    const caret = before.length + leading.length + token.length + trailing.length;
+    setFormData((prev) => ({ ...prev, prompt: nextPrompt }));
+    promptSelectionRef.current = { start: caret, end: caret };
+    requestAnimationFrame(() => {
+      promptRef.current?.focus();
+      promptRef.current?.setSelectionRange(caret, caret);
+    });
+  };
+  const skillPickerItems = reactExports.useMemo(() => [...skills].sort((a, b) => a.scope === b.scope ? a.name.localeCompare(b.name) : a.scope === "project" ? -1 : 1).map((skill) => ({
+    id: skill.filePath,
+    name: skillInvocation(skill.name, formData.cli_tool),
+    description: skill.description,
+    badge: t2(skill.scope === "project" ? "taskForm.skills.scopeProject" : "taskForm.skills.scopeUser")
+  })), [skills, formData.cli_tool, t2]);
+  const mcpPickerItems = reactExports.useMemo(() => {
+    const availableNames = new Set(mcpServers.map((server) => server.name));
+    const missing = formData.mcp_tools.filter((pattern) => pattern.startsWith("mcp__") && pattern.endsWith("__*")).map((pattern) => pattern.slice(5, -3)).filter((name2) => !availableNames.has(name2)).map((name2) => ({
+      id: name2,
+      name: name2,
+      badge: t2("taskForm.mcpTools.unavailable"),
+      selected: true
     }));
-  };
-  const handleClearSkill = () => {
-    setSelectedSkill(null);
-  };
+    const available = [...mcpServers].sort((a, b) => a.name.localeCompare(b.name)).map((server) => ({
+      id: server.name,
+      name: server.name,
+      description: server.tools.filter((tool) => tool !== "*").join(", ") || void 0,
+      selected: formData.mcp_tools.includes(`mcp__${server.name}__*`)
+    }));
+    return [...missing, ...available];
+  }, [mcpServers, formData.mcp_tools, t2]);
   reactExports.useEffect(() => {
     const fetchMcps = async () => {
       setLoadingMcps(true);
@@ -10421,29 +10932,53 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     };
     fetchMcps();
   }, [formData.cli_tool, listAiMcps]);
-  reactExports.useEffect(() => {
-    const fetchModels = async () => {
-      const tool = formData.cli_tool;
-      try {
-        const models = await listModels(tool);
-        setDynamicModels(models);
-        if (models.length > 0) {
-          setFormData((prev) => {
-            const isValid = models.some((m2) => m2.value === prev.model);
-            if (!prev.model || !isValid) {
-              return { ...prev, model: models[0].value };
-            }
-            return prev;
-          });
-        }
-      } catch (err) {
-        setDynamicModels([]);
+  const refreshModels = reactExports.useCallback(async (provider) => {
+    const requestSequence = ++modelRequestSequence.current;
+    setLoadingModels(true);
+    setModelListNotice(null);
+    try {
+      const models = await listModels(provider);
+      if (requestSequence !== modelRequestSequence.current) return;
+      setDynamicModels(models);
+      setModelsProvider(provider);
+      const showingFallback = models.some((model) => model.stale);
+      setModelListNotice({
+        text: t2(showingFallback ? "taskForm.model.fallbackNotice" : "taskForm.model.synced"),
+        tone: showingFallback ? "warning" : "success"
+      });
+      if (models.length > 0) {
+        setFormData((prev) => {
+          if (prev.cli_tool !== provider || models.some((model) => model.value === prev.model)) return prev;
+          if (task?.cli_tool === provider && prev.model) return prev;
+          const defaultModel = models.find((model) => model.isDefault) || models[0];
+          return { ...prev, model: defaultModel.value };
+        });
       }
+    } catch {
+      if (requestSequence === modelRequestSequence.current) {
+        setModelListNotice({ text: t2("taskForm.model.syncError"), tone: "error" });
+      }
+    } finally {
+      if (requestSequence === modelRequestSequence.current) setLoadingModels(false);
+    }
+  }, [listModels, t2, task]);
+  reactExports.useEffect(() => {
+    void refreshModels(formData.cli_tool);
+    return () => {
+      modelRequestSequence.current += 1;
     };
-    fetchModels();
-  }, [formData.cli_tool, listModels]);
+  }, [formData.cli_tool, refreshModels]);
+  const modelOptions = reactExports.useMemo(() => {
+    const providerModels = modelsProvider === formData.cli_tool ? dynamicModels : [];
+    if (!formData.model || providerModels.some((model) => model.value === formData.model)) return providerModels;
+    return [
+      { value: formData.model, label: formData.model, desc: t2("taskForm.model.unavailable") },
+      ...providerModels
+    ];
+  }, [dynamicModels, formData.cli_tool, formData.model, modelsProvider, t2]);
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loadingModels) return;
     setLoading(true);
     setError(null);
     try {
@@ -10480,11 +11015,24 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
       setLoading(false);
     }
   };
-  const toggleMcpTool = (toolPattern) => {
-    setFormData((prev) => ({
-      ...prev,
-      mcp_tools: prev.mcp_tools.includes(toolPattern) ? prev.mcp_tools.filter((t22) => t22 !== toolPattern) : [...prev.mcp_tools, toolPattern]
-    }));
+  const toggleMcpTool = (serverName) => {
+    const toolPattern = `mcp__${serverName}__*`;
+    const reference = t2("taskForm.mcpTools.promptReference", { name: serverName });
+    if (formData.mcp_tools.includes(toolPattern)) {
+      const removeReference = insertedMcpReferencesRef.current.delete(toolPattern);
+      setFormData((prev) => ({
+        ...prev,
+        mcp_tools: prev.mcp_tools.filter((tool) => tool !== toolPattern),
+        prompt: removeReference ? removePromptSnippet(prev.prompt, reference) : prev.prompt
+      }));
+      promptSelectionRef.current = null;
+    } else {
+      setFormData((prev) => ({ ...prev, mcp_tools: [...prev.mcp_tools, toolPattern] }));
+      if (!formData.prompt.includes(reference)) {
+        insertedMcpReferencesRef.current.add(toolPattern);
+        insertPromptText(reference);
+      }
+    }
   };
   const content2 = /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `${variant === "modal" ? "bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden" : "h-full flex flex-col"}`, onClick: (e) => e.stopPropagation(), children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `px-6 py-4 border-b border-gray-100 flex items-center justify-between ${variant === "panel" ? "" : ""}`, children: [
@@ -10745,7 +11293,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block text-sm font-medium text-gray-600", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "block text-sm font-medium text-gray-600", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "w-3.5 h-3.5 inline mr-1" }),
             t2("taskForm.skills.label"),
             " ",
@@ -10755,7 +11303,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
             "button",
             {
               type: "button",
-              onClick: selectProject,
+              onClick: () => void selectProject(formData.cli_tool),
               className: "flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors",
               children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(FolderOpen, { className: "w-3.5 h-3.5" }),
@@ -10771,7 +11319,8 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
             "button",
             {
               type: "button",
-              onClick: clearProject,
+              onClick: () => void clearProject(formData.cli_tool),
+              "aria-label": t2("taskForm.skills.clearProject"),
               className: "text-blue-400 hover:text-blue-600 transition-colors",
               children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { className: "w-3.5 h-3.5" })
             }
@@ -10780,24 +11329,25 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         loadingSkills ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-gray-500 py-2", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent" }),
           t2("taskForm.skills.scanning")
-        ] }) : skills.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-1.5", children: skills.map((skill) => {
-          const isSelected = selectedSkill?.filePath === skill.filePath;
-          return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "button",
-            {
-              type: "button",
-              onClick: () => isSelected ? handleClearSkill() : handleSelectSkill(skill),
-              title: `${skill.description}${skill.scope === "project" ? t2("taskForm.skills.scopeProject") : t2("taskForm.skills.scopeUser")}`,
-              className: `px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${isSelected ? "bg-purple-100 border-purple-300 text-purple-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`,
-              children: [
-                isSelected && /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3 h-3 inline mr-1", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }),
-                skill.name,
-                skill.scope === "project" && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-xs opacity-60", children: "P" })
-              ]
-            },
-            skill.filePath
-          );
-        }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-400", children: projectPath ? t2("taskForm.skills.noneInProject") : t2("taskForm.skills.selectProjectHint") })
+        ] }) : skills.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+          QuickPicker,
+          {
+            items: skillPickerItems,
+            triggerLabel: t2("taskForm.skills.openPicker", { count: skills.length }),
+            searchLabel: t2("taskForm.skills.searchLabel"),
+            searchPlaceholder: t2("taskForm.skills.searchPlaceholder"),
+            emptyLabel: t2("taskForm.skills.noResults"),
+            resultsLabel: (count) => t2("taskForm.skills.results", { count }),
+            onPick: (id2) => {
+              const skill = skills.find((candidate) => candidate.filePath === id2);
+              if (skill) {
+                const token = skillInvocation(skill.name, formData.cli_tool);
+                insertPromptToken(token);
+                insertedSkillTokensRef.current.add(token);
+              }
+            }
+          }
+        ) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-400", children: projectPath ? t2("taskForm.skills.noneInProject") : t2("taskForm.skills.selectProjectHint") })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block text-sm font-medium text-gray-600 mb-1.5", children: [
@@ -10808,9 +11358,17 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "textarea",
           {
+            ref: promptRef,
             required: true,
             value: formData.prompt,
-            onChange: (e) => setFormData((prev) => ({ ...prev, prompt: e.target.value })),
+            onChange: (e) => {
+              setFormData((prev) => ({ ...prev, prompt: e.target.value }));
+              rememberPromptSelection();
+            },
+            onSelect: rememberPromptSelection,
+            onClick: rememberPromptSelection,
+            onKeyUp: rememberPromptSelection,
+            onBlur: rememberPromptSelection,
             rows: 8,
             className: "w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-y",
             placeholder: t2("taskForm.prompt.placeholder")
@@ -10821,18 +11379,32 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-sm font-medium text-gray-600 mb-2", children: t2("taskForm.provider.label") }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2 flex-wrap", children: [
-            { value: "claude", label: "Claude", defaultModel: "sonnet" },
-            { value: "codex", label: "Codex", defaultModel: "gpt-5.5" },
-            { value: "antigravity", label: "Antigravity", defaultModel: "" }
+            { value: "claude", label: "Claude" },
+            { value: "codex", label: "Codex" },
+            { value: "antigravity", label: "Antigravity" }
           ].map((tool) => /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
             {
               type: "button",
               onClick: () => {
+                if (formData.cli_tool === tool.value) return;
+                const insertedReferences = [...insertedMcpReferencesRef.current].map(
+                  (pattern) => t2("taskForm.mcpTools.promptReference", { name: pattern.slice(5, -3) })
+                );
+                const insertedSkillTokens = [...insertedSkillTokensRef.current];
+                insertedMcpReferencesRef.current.clear();
+                insertedSkillTokensRef.current.clear();
+                promptSelectionRef.current = null;
+                void scanSkills(projectPath ?? void 0, tool.value);
+                setLoadingModels(true);
+                setDynamicModels([]);
+                setModelsProvider(null);
+                setModelListNotice(null);
                 setFormData((prev) => ({
                   ...prev,
                   cli_tool: tool.value,
-                  model: tool.defaultModel,
+                  model: "",
+                  prompt: insertedSkillTokens.reduce(removePromptToken, insertedReferences.reduce(removePromptSnippet, prev.prompt)),
                   mcp_tools: []
                 }));
               },
@@ -10843,23 +11415,42 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
           )) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-sm font-medium text-gray-600 mb-2", children: t2("taskForm.model.label") }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "select",
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { id: "task-model-label", className: "block text-sm font-medium text-gray-600", children: t2("taskForm.model.label") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "button",
+              {
+                type: "button",
+                onClick: () => void refreshModels(formData.cli_tool),
+                disabled: loadingModels,
+                "aria-label": t2(loadingModels ? "taskForm.model.refreshing" : "taskForm.model.refresh"),
+                className: "inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:text-gray-400",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: `w-3.5 h-3.5 ${loadingModels ? "animate-spin" : ""}` }),
+                  t2(loadingModels ? "taskForm.model.refreshing" : "taskForm.model.refresh")
+                ]
+              }
+            )
+          ] }),
+          loadingModels ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { role: "status", "aria-live": "polite", className: "w-full h-14 px-3 flex items-center gap-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: "w-4 h-4 animate-spin text-blue-600" }),
+            t2("taskForm.model.loading")
+          ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+            ModelSelect,
             {
               value: formData.model,
-              onChange: (e) => setFormData((prev) => ({ ...prev, model: e.target.value })),
-              className: "w-full h-14 px-3 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors",
-              children: dynamicModels.map((model) => /* @__PURE__ */ jsxRuntimeExports.jsxs("option", { value: model.value, children: [
-                model.label,
-                model.desc ? ` (${model.desc})` : ""
-              ] }, model.value))
+              options: modelOptions,
+              onChange: (model) => setFormData((prev) => ({ ...prev, model })),
+              labelId: "task-model-label",
+              emptyLabel: t2("taskForm.model.empty"),
+              defaultLabel: t2("taskForm.model.default")
             }
-          )
+          ),
+          modelListNotice && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: `mt-1.5 text-xs ${modelListNotice.tone === "success" ? "text-emerald-700" : modelListNotice.tone === "warning" ? "text-amber-700" : "text-red-600"}`, children: modelListNotice.text })
         ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block text-sm font-medium text-gray-600 mb-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "block text-sm font-medium text-gray-600 mb-2", children: [
           t2("taskForm.mcpTools.label"),
           " ",
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-gray-400 font-normal", children: t2("taskForm.optional") })
@@ -10867,23 +11458,18 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         loadingMcps ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-sm text-gray-500 py-2", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent" }),
           t2("taskForm.mcpTools.loading")
-        ] }) : mcpServers.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-2", children: mcpServers.map((server) => {
-          const toolPattern = `mcp__${server.name}__*`;
-          const isSelected = formData.mcp_tools.includes(toolPattern);
-          return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-            "button",
-            {
-              type: "button",
-              onClick: () => toggleMcpTool(toolPattern),
-              className: `px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${isSelected ? "bg-blue-100 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`,
-              children: [
-                isSelected && /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3 h-3 inline mr-1", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" }) }),
-                server.name
-              ]
-            },
-            server.name
-          );
-        }) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-400", children: t2("taskForm.mcpTools.noneConfigured", { tool: formData.cli_tool }) })
+        ] }) : mcpPickerItems.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+          QuickPicker,
+          {
+            items: mcpPickerItems,
+            triggerLabel: t2("taskForm.mcpTools.openPicker", { count: mcpPickerItems.length, selected: formData.mcp_tools.length }),
+            searchLabel: t2("taskForm.mcpTools.searchLabel"),
+            searchPlaceholder: t2("taskForm.mcpTools.searchPlaceholder"),
+            emptyLabel: t2("taskForm.mcpTools.noResults"),
+            resultsLabel: (count) => t2("taskForm.mcpTools.results", { count }),
+            onPick: toggleMcpTool
+          }
+        ) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-400", children: t2("taskForm.mcpTools.noneConfigured", { tool: formData.cli_tool }) })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block text-sm font-medium text-gray-600 mb-2", children: [
@@ -11018,6 +11604,28 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
           ] })
         ] })
       ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-amber-200 bg-amber-50/70 p-3 space-y-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              "aria-pressed": formData.skip_permissions,
+              "aria-label": t2("taskForm.permissions.label"),
+              onClick: () => setFormData((prev) => ({ ...prev, skip_permissions: !prev.skip_permissions })),
+              className: `relative w-9 h-5 rounded-full transition-colors ${formData.skip_permissions ? "bg-amber-600" : "bg-gray-300"}`,
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "span",
+                {
+                  className: `absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.skip_permissions ? "translate-x-4" : "translate-x-0"}`
+                }
+              )
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-700", children: t2("taskForm.permissions.label") })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-amber-800", children: t2("taskForm.permissions.description") })
+      ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 pt-2", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "button",
@@ -11052,7 +11660,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         {
           type: "submit",
           form: "task-form",
-          disabled: loading,
+          disabled: loading || loadingModels,
           className: "px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5",
           children: [
             loading && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" }),
@@ -24399,7 +25007,26 @@ const settings$1 = {
   codex: {
     title: "Codex CLI",
     description: "Configure the connection to OpenAI's Codex command line tool.",
-    placeholder: "Use default (codex in PATH)"
+    placeholder: "Use default (codex in PATH)",
+    subscription: {
+      title: "Use a ChatGPT plan",
+      description: "Sign in with ChatGPT to use Codex access available through your plan.",
+      checking: "Checking Codex sign-in...",
+      refresh: "Refresh sign-in status",
+      signIn: "Sign in with ChatGPT",
+      signingIn: "Waiting for browser sign-in...",
+      signOut: "Sign out",
+      signingOut: "Signing out...",
+      sharedCredentials: "Sign-in opens the Codex CLI browser flow. Stored credentials are shared with the CLI, so signing out here also signs out the CLI account. Environment-managed sign-in methods must be changed in that environment.",
+      status: {
+        chatgpt: "Signed in with ChatGPT",
+        "api-key": "Signed in with an API key",
+        other: "Signed in with an environment-managed method",
+        "signed-out": "Not signed in",
+        unknown: "Unable to determine sign-in method",
+        unavailable: "Unable to check sign-in status"
+      }
+    }
   },
   antigravity: {
     title: "Antigravity CLI",
@@ -24483,26 +25110,48 @@ const taskForm$1 = {
     label: "Skills",
     changeProject: "Change Project",
     selectProject: "Select Project",
+    clearProject: "Remove project",
     scanning: "Scanning skills...",
     noneInProject: "No skills found in this project",
     selectProjectHint: "Select a project to load project skills",
     scopeProject: " (project)",
-    scopeUser: " (user)"
+    scopeUser: " (user)",
+    openPicker: "Search and insert a skill ({{count}})",
+    searchLabel: "Search skills",
+    searchPlaceholder: "Search names or descriptions",
+    noResults: "No matching skills",
+    results: "{{count}} skills"
   },
   prompt: {
     label: "AI Prompt",
-    placeholder: "Enter the prompt for Claude to execute..."
+    placeholder: "Enter the prompt for the AI to execute..."
   },
   provider: {
     label: "AI Provider"
   },
   model: {
-    label: "AI Model"
+    label: "AI Model",
+    refresh: "Sync models",
+    refreshing: "Syncing…",
+    loading: "Loading available models…",
+    empty: "No models available",
+    synced: "Synced from the current CLI account; availability depends on the CLI version and account.",
+    "default": "Default",
+    unavailable: "Not in the provider's current list",
+    fallbackNotice: "The latest list is unavailable; showing fallback models. Try syncing again later.",
+    syncError: "Could not sync models. Check that the CLI is installed and connected."
   },
   mcpTools: {
     label: "MCP Tools",
     loading: "Loading MCP servers...",
-    noneConfigured: "No MCP servers configured in {{tool}} CLI"
+    noneConfigured: "No MCP servers configured in {{tool}} CLI",
+    openPicker: "Select and insert MCP tools ({{selected}} of {{count}} selected)",
+    searchLabel: "Search MCP tools",
+    searchPlaceholder: "Search servers or tools",
+    noResults: "No matching MCP tools",
+    results: "{{count}} MCP tools",
+    unavailable: "Unavailable",
+    promptReference: "Use the {{name}} MCP server when needed."
   },
   attachments: {
     label: "Attachments",
@@ -24523,8 +25172,12 @@ const taskForm$1 = {
     placeholder: "~/knowledge/task-name.md",
     browse: "Browse"
   },
+  permissions: {
+    label: "Skip CLI approvals and sandbox",
+    description: "When enabled, the CLI runs without approval prompts or sandbox restrictions. Use only for tasks you trust."
+  },
   enable: {
-    label: "Enable task immediately"
+    label: "Enable schedule"
   },
   saveChanges: "Save Changes",
   createTask: "Create Task",
@@ -24922,7 +25575,26 @@ const settings = {
   codex: {
     title: "Codex CLI",
     description: "設定與 OpenAI Codex 命令列工具的連線",
-    placeholder: "使用預設（PATH 中的 codex）"
+    placeholder: "使用預設（PATH 中的 codex）",
+    subscription: {
+      title: "使用 ChatGPT 訂閱",
+      description: "以 ChatGPT 帳號登入，使用您方案中提供的 Codex 權限。",
+      checking: "正在檢查 Codex 登入狀態…",
+      refresh: "重新檢查登入狀態",
+      signIn: "使用 ChatGPT 登入",
+      signingIn: "等待瀏覽器完成登入…",
+      signOut: "登出",
+      signingOut: "正在登出…",
+      sharedCredentials: "登入時會開啟 Codex CLI 的瀏覽器流程。儲存的憑證會與 CLI 共用，因此在此登出也會使 CLI 帳號登出。由環境管理的登入方式必須在該環境中變更。",
+      status: {
+        chatgpt: "已使用 ChatGPT 登入",
+        "api-key": "已使用 API 金鑰登入",
+        other: "已使用環境管理的方式登入",
+        "signed-out": "尚未登入",
+        unknown: "無法辨識登入方式",
+        unavailable: "無法檢查登入狀態"
+      }
+    }
   },
   antigravity: {
     title: "Antigravity CLI",
@@ -25006,26 +25678,48 @@ const taskForm = {
     label: "技能",
     changeProject: "更換專案",
     selectProject: "選擇專案",
+    clearProject: "移除專案",
     scanning: "正在掃描技能...",
     noneInProject: "此專案中沒有技能",
     selectProjectHint: "選擇專案以載入專案技能",
     scopeProject: "（專案）",
-    scopeUser: "（使用者）"
+    scopeUser: "（使用者）",
+    openPicker: "搜尋並插入技能（{{count}}）",
+    searchLabel: "搜尋技能",
+    searchPlaceholder: "搜尋技能名稱或說明",
+    noResults: "找不到符合的技能",
+    results: "{{count}} 個技能"
   },
   prompt: {
     label: "AI 提示詞",
-    placeholder: "輸入要讓 Claude 執行的提示詞..."
+    placeholder: "輸入要讓 AI 執行的提示詞..."
   },
   provider: {
     label: "AI 供應商"
   },
   model: {
-    label: "AI 模型"
+    label: "AI 模型",
+    refresh: "同步模型",
+    refreshing: "同步中…",
+    loading: "正在取得可用模型…",
+    empty: "沒有可用模型",
+    synced: "已從目前的 CLI 帳號同步；可用模型取決於 CLI 版本與帳號。",
+    "default": "預設",
+    unavailable: "目前未出現在供應商清單中",
+    fallbackNotice: "無法取得最新清單，正在顯示備用模型；可稍後再同步。",
+    syncError: "無法同步模型清單，請確認 CLI 已安裝並可連線。"
   },
   mcpTools: {
     label: "MCP 工具",
     loading: "正在載入 MCP 伺服器...",
-    noneConfigured: "{{tool}} CLI 中沒有設定 MCP 伺服器"
+    noneConfigured: "{{tool}} CLI 中沒有設定 MCP 伺服器",
+    openPicker: "選取並插入 MCP 工具（已選 {{selected}}／{{count}}）",
+    searchLabel: "搜尋 MCP 工具",
+    searchPlaceholder: "搜尋伺服器或工具名稱",
+    noResults: "找不到符合的 MCP 工具",
+    results: "{{count}} 個 MCP 工具",
+    unavailable: "目前不可用",
+    promptReference: "需要時請使用 {{name}} MCP 工具。"
   },
   attachments: {
     label: "附件",
@@ -25046,8 +25740,12 @@ const taskForm = {
     placeholder: "~/knowledge/task-name.md",
     browse: "瀏覽"
   },
+  permissions: {
+    label: "略過 CLI 審批與沙箱",
+    description: "啟用後，CLI 會以略過審批與沙箱的模式執行。僅對你信任的任務使用。"
+  },
   enable: {
-    label: "立即啟用任務"
+    label: "啟用排程"
   },
   saveChanges: "儲存變更",
   createTask: "建立任務",
@@ -25351,6 +26049,15 @@ function Settings({}) {
   const { t: t2 } = useTranslation();
   const { settings: settings2, loading, updateSettings, testEmail } = useSettings();
   const { test: testAiProvider } = useAiProvider();
+  const {
+    status: codexAuthStatus,
+    loading: codexAuthLoading,
+    action: codexAuthAction,
+    error: codexAuthError,
+    refresh: refreshCodexAuth,
+    signIn: signInToCodex,
+    signOut: signOutOfCodex
+  } = useCodexAuth();
   const [activeTab, setActiveTab] = reactExports.useState("general");
   const [language, setLanguage] = reactExports.useState("system");
   const [formData, setFormData] = reactExports.useState({
@@ -25500,6 +26207,24 @@ function Settings({}) {
       });
     } finally {
       setTestingCodex(false);
+    }
+  };
+  const handleCodexSignIn = async () => {
+    try {
+      await signInToCodex();
+    } catch {
+    }
+  };
+  const handleCodexSignOut = async () => {
+    try {
+      await signOutOfCodex();
+    } catch {
+    }
+  };
+  const handleRefreshCodexAuth = async () => {
+    try {
+      await refreshCodexAuth();
+    } catch {
     }
   };
   const handleTestAntigravity = async () => {
@@ -25832,6 +26557,56 @@ function Settings({}) {
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-lg font-semibold text-gray-900 mb-1", children: t2("settings.codex.title") }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-500", children: t2("settings.codex.description") })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-5", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-semibold text-gray-900 mb-1", children: t2("settings.codex.subscription.title") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-500", children: t2("settings.codex.subscription.description") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center gap-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `flex items-center gap-2 text-sm font-medium ${codexAuthStatus?.authenticated ? "text-emerald-700" : "text-gray-600"}`, children: [
+              codexAuthLoading && !codexAuthStatus ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : codexAuthStatus?.authenticated ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "w-4 h-4" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "w-4 h-4" }),
+              codexAuthStatus ? t2(`settings.codex.subscription.status.${codexAuthStatus.method}`) : t2(codexAuthLoading ? "settings.codex.subscription.checking" : "settings.codex.subscription.status.unavailable")
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "ml-auto flex flex-wrap items-center gap-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  onClick: handleRefreshCodexAuth,
+                  disabled: codexAuthLoading || codexAuthAction !== null,
+                  "aria-label": t2("settings.codex.subscription.refresh"),
+                  className: "p-2 text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors",
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: `w-3.5 h-3.5 ${codexAuthLoading ? "animate-spin" : ""}` })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "button",
+                {
+                  onClick: handleCodexSignIn,
+                  disabled: codexAuthLoading || codexAuthAction !== null || codexAuthStatus?.method === "other",
+                  className: "px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 flex items-center gap-2 transition-colors",
+                  children: [
+                    codexAuthAction === "login" ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(LogIn, { className: "w-3.5 h-3.5" }),
+                    t2(codexAuthAction === "login" ? "settings.codex.subscription.signingIn" : "settings.codex.subscription.signIn")
+                  ]
+                }
+              ),
+              codexAuthStatus?.authenticated && codexAuthStatus.method !== "other" && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "button",
+                {
+                  onClick: handleCodexSignOut,
+                  disabled: codexAuthLoading || codexAuthAction !== null,
+                  className: "px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2 transition-colors",
+                  children: [
+                    codexAuthAction === "logout" ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(LogOut, { className: "w-3.5 h-3.5" }),
+                    t2(codexAuthAction === "logout" ? "settings.codex.subscription.signingOut" : "settings.codex.subscription.signOut")
+                  ]
+                }
+              )
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-400", children: t2("settings.codex.subscription.sharedCredentials") }),
+          codexAuthError && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-red-50 text-red-600 p-3 rounded-lg text-xs break-all", children: codexAuthError })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm space-y-6", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
@@ -26469,6 +27244,8 @@ function App() {
   const { settings: settings2, loading } = useSettings();
   const { t: t2 } = useTranslation();
   reactExports.useEffect(() => {
+  }, [isElectron]);
+  reactExports.useEffect(() => {
     if (!isElectron || loading) return;
     applyLanguagePreference(settings2.language ?? "system");
   }, [isElectron, loading, settings2.language]);
@@ -26555,7 +27332,10 @@ function App() {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "p-4 text-sm text-gray-400", children: "v1.1.1" })
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "p-4 text-sm text-gray-400", children: [
+        "v1.1.1 ",
+        false
+      ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),
