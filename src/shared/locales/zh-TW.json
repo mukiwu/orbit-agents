@@ -9,13 +9,64 @@
     "failed": "失敗",
     "cancelled": "已中止"
   },
+  "automation": {
+    "templates": "快速套用成果模板",
+    "fileTemplate": "整理收件匣",
+    "fileTemplateDesc": "檔案加入資料夾後，提出檔名並等待審核",
+    "fileTemplateName": "檔案收件匣整理",
+    "fileTemplatePrompt": "閱讀新檔案，摘要內容，並提出清楚、方便搜尋的檔名。",
+    "websiteTemplate": "網站更新摘要",
+    "websiteTemplateDesc": "網站內容變更時，產生更新摘要",
+    "websiteTemplateName": "網站更新監測",
+    "websiteTemplatePrompt": "摘要這次網站內容的重點與值得注意的變化。",
+    "trigger": "觸發方式",
+    "source": { "schedule": "定時", "folder": "檔案收件匣", "website": "網站監測" },
+    "watchFolder": "監看資料夾",
+    "browse": "選擇",
+    "result": { "report": "產生報告", "organize-file": "整理檔案" },
+    "resultLabel": "成果類型",
+    "destination": "整理後的目的資料夾",
+    "requireReview": "執行前審核成果",
+    "reviewHint": "檔案移動與寄信須先核准",
+    "readOnlyMode": "審核模式會以唯讀權限分析，核准後才由 Orbit Agents 移動檔案或寄信。",
+    "reviewProviderError": "檔案、網站與成果審核任務目前支援 Claude 或 Codex，請更換供應商。",
+    "fallbackProvider": "接手時建議使用的供應商",
+    "none": "未設定",
+    "pendingReview": "待審核",
+    "watching": "監看中",
+    "noNewFiles": "收件匣目前沒有新的檔案。",
+    "noWebsiteChange": "網站內容與上次相同，已略過 AI 執行。",
+    "runFailed": "執行失敗，請到執行紀錄查看原因。",
+    "approve": "核准執行",
+    "reject": "拒絕",
+    "replay": "重播",
+    "replayConfirm": "要用當次保存的輸入重新執行嗎？這可能重複執行任務中的動作。",
+    "resumeDelivery": "從交付階段繼續",
+    "resumeConfirm": "要重新提交上次的成果審核嗎？請先確認上次的檔案移動或寄信沒有完成，以免重複。",
+    "handoff": "交給其他供應商",
+    "failure": {
+      "auth": "供應商登入或授權失效；可重新登入，或交給另一個供應商。",
+      "model": "此模型可能已移除或帳號無權使用；可換模型或供應商。",
+      "cli": "找不到或無法啟動 CLI；請檢查安裝與路徑。",
+      "rate": "供應商限流或額度不足；可稍後重試或改用其他供應商。",
+      "network": "網路連線失敗；可稍後重試或改用其他供應商。",
+      "other": "執行失敗。可查看錯誤與輸入快照，再重播或改用其他供應商。"
+    },
+    "providerDefault": "預設模型",
+    "showInput": "查看提示詞與輸入",
+    "snapshot": "當次輸入快照",
+    "proposedFile": "建議檔名",
+    "sourceFile": "來源檔案",
+    "sourceWebsite": "監測網站"
+  },
   "main": {
     "test": {
       "greeting": "嗨 {{name}}"
     },
     "notification": {
       "success": "✅ 執行成功",
-      "failure": "❌ 執行失敗"
+      "failure": "❌ 執行失敗",
+      "review": "待審核：請查看執行紀錄"
     },
     "retry": {
       "networkError": "⏳ 網路錯誤，{{delay}} 秒後自動重試（第 {{attempt}}/{{max}} 次）...\n錯誤: {{error}}",
@@ -205,6 +256,7 @@
       "success": "成功",
       "failed": "失敗",
       "running": "執行中",
+      "pending_review": "待審核",
       "cancelled": "已中止",
       "before24h": "24 小時前",
       "before12h": "12 小時前",

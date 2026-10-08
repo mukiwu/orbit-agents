@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
-import type { ScheduledTask, CreateTaskInput, McpServer, ProviderId, ModelOption } from '../../../shared/types'
+import type { ScheduledTask, CreateTaskInput, McpServer, ProviderId, ModelOption, AutomationConfig } from '../../../shared/types'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
 import ModelSelect from './ModelSelect'
 import QuickPicker from './QuickPicker'
@@ -50,6 +50,11 @@ function removePromptSnippet(prompt: string, snippet: string): string {
   return before && after ? `${before}\n\n${after}` : before + after
 }
 
+const defaultAutomation: AutomationConfig = {
+  source: { type: 'schedule' }, result: { type: 'report' },
+  require_review: false, fallback_provider: null
+}
+
 export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
   const { t, i18n } = useTranslation()
   const savedNextRun = nextRun === undefined ? task?.next_run : nextRun
@@ -71,6 +76,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
   const [error, setError] = useState<string | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServer[]>([])
   const [loadingMcps, setLoadingMcps] = useState(false)
+  const [automation, setAutomation] = useState<AutomationConfig>(task?.automation ? JSON.parse(task.automation) : defaultAutomation)
 
   // Parse existing cron to determine initial schedule mode
   const initialSchedule = useMemo(() => {
@@ -91,6 +97,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
     setSelectedWeekdays(parsed.weekdays)
     setWeekInterval(task?.week_interval || parsed.weekInterval)
     setMonthDay(parsed.monthDay)
+    setAutomation(task?.automation ? JSON.parse(task.automation) as AutomationConfig : defaultAutomation)
 
     if (task) {
         setFormData({
@@ -355,6 +362,10 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (loadingModels) return
+    if ((automation.require_review || automation.source.type !== 'schedule') && formData.cli_tool === 'antigravity') {
+      setError(t('automation.reviewProviderError'))
+      return
+    }
     setLoading(true)
     setError(null)
 
@@ -374,7 +385,8 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
         project_path: projectPath ?? null,
         skip_permissions: formData.skip_permissions,
         week_interval: weekInterval,
-        enabled: formData.enabled
+        enabled: formData.enabled,
+        automation
       }
 
       if (task) {
@@ -478,8 +490,90 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
               />
             </div>
 
+            {/* Outcome templates and trigger */}
+            <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/70 p-4">
+              <div className="text-sm font-semibold text-gray-800">{t('automation.templates')}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => {
+                  setAutomation({ source: { type: 'folder', path: '' }, result: { type: 'organize-file', destination: '' }, require_review: true, fallback_provider: null })
+                  setFormData(prev => ({ ...prev, name: t('automation.fileTemplateName'), prompt: t('automation.fileTemplatePrompt'), skip_permissions: false }))
+                }} className="rounded-lg border border-gray-200 bg-white p-3 text-left text-sm hover:border-blue-300 hover:bg-blue-50">
+                  <strong className="block text-gray-900">{t('automation.fileTemplate')}</strong>
+                  <span className="text-xs text-gray-500">{t('automation.fileTemplateDesc')}</span>
+                </button>
+                <button type="button" onClick={() => {
+                  setAutomation({ source: { type: 'website', url: '' }, result: { type: 'report' }, require_review: false, fallback_provider: null })
+                  setFormData(prev => ({ ...prev, name: t('automation.websiteTemplateName'), prompt: t('automation.websiteTemplatePrompt') }))
+                }} className="rounded-lg border border-gray-200 bg-white p-3 text-left text-sm hover:border-blue-300 hover:bg-blue-50">
+                  <strong className="block text-gray-900">{t('automation.websiteTemplate')}</strong>
+                  <span className="text-xs text-gray-500">{t('automation.websiteTemplateDesc')}</span>
+                </button>
+              </div>
+              <div className="flex gap-2" role="group" aria-label={t('automation.trigger')}>
+                {(['schedule', 'folder', 'website'] as const).map(type => (
+                  <button type="button" key={type} aria-pressed={automation.source.type === type}
+                    onClick={() => setAutomation(prev => ({ ...prev,
+                      source: type === 'schedule' ? { type } : type === 'folder' ? { type, path: '' } : { type, url: '' },
+                      result: type === 'folder' ? prev.result : { type: 'report' }
+                    }))}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium ${automation.source.type === type ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
+                    {t(`automation.source.${type}`)}
+                  </button>
+                ))}
+              </div>
+              {automation.source.type === 'folder' && <div className="space-y-2">
+                <label className="block text-xs font-medium text-gray-600">{t('automation.watchFolder')}</label>
+                <div className="flex gap-2">
+                  <input type="text" required value={automation.source.path} onChange={e => setAutomation(prev => ({ ...prev, source: { type: 'folder', path: e.target.value } }))}
+                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+                  <button type="button" onClick={() => void window.electronApi.invoke('dialog:open-directory').then(path => {
+                    if (path) setAutomation(prev => ({ ...prev, source: { type: 'folder', path } }))
+                  })} className="rounded-lg border border-gray-200 bg-white px-3 text-sm">{t('automation.browse')}</button>
+                </div>
+                <div className="flex gap-2" role="group" aria-label={t('automation.resultLabel')}>
+                  {(['report', 'organize-file'] as const).map(type => <button key={type} type="button"
+                    aria-pressed={automation.result.type === type}
+                    onClick={() => setAutomation(prev => ({ ...prev,
+                      result: type === 'report' ? { type } : { type, destination: '' },
+                      require_review: type === 'organize-file' ? true : prev.require_review
+                    }))}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium ${automation.result.type === type ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
+                    {t(`automation.result.${type}`)}
+                  </button>)}
+                </div>
+                {automation.result.type === 'organize-file' && <div className="flex gap-2">
+                  <input type="text" required placeholder={t('automation.destination')} value={automation.result.destination}
+                    onChange={e => setAutomation(prev => ({ ...prev, result: { type: 'organize-file', destination: e.target.value } }))}
+                    className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+                  <button type="button" onClick={() => void window.electronApi.invoke('dialog:open-directory').then(path => {
+                    if (path) setAutomation(prev => ({ ...prev, result: { type: 'organize-file', destination: path } }))
+                  })} className="rounded-lg border border-gray-200 bg-white px-3 text-sm">{t('automation.browse')}</button>
+                </div>}
+              </div>}
+              {automation.source.type === 'website' && <input type="url" required placeholder="https://example.com"
+                value={automation.source.url} onChange={e => setAutomation(prev => ({ ...prev, source: { type: 'website', url: e.target.value } }))}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />}
+              <div className="flex items-center gap-3 text-xs text-gray-600">
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={automation.require_review} disabled={automation.result.type === 'organize-file'}
+                    onChange={e => setAutomation(prev => ({ ...prev, require_review: e.target.checked }))} />
+                  {t('automation.requireReview')}
+                </label>
+                <span>{t('automation.reviewHint')}</span>
+              </div>
+              <label className="block text-xs text-gray-600">{t('automation.fallbackProvider')}</label>
+              <div className="flex gap-2">
+                {([null, 'claude', 'codex', 'antigravity'] as const).map(provider => <button type="button" key={provider ?? 'none'}
+                  aria-pressed={automation.fallback_provider === provider}
+                  onClick={() => setAutomation(prev => ({ ...prev, fallback_provider: provider }))}
+                  className={`rounded-md px-2 py-1 text-xs ${automation.fallback_provider === provider ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
+                  {provider ?? t('automation.none')}
+                </button>)}
+              </div>
+            </div>
+
             {/* Schedule */}
-            <div>
+            {automation.source.type !== 'folder' && <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-600">
                   {t('taskForm.schedule.label')} <span className="text-red-500">*</span>
@@ -706,7 +800,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
                   </span>
                 </p>
               )}
-            </div>
+            </div>}
 
             {/* Skills */}
             <div>
@@ -1058,8 +1152,9 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  aria-pressed={formData.skip_permissions}
+                  aria-pressed={automation.require_review || automation.source.type !== 'schedule' ? false : formData.skip_permissions}
                   aria-label={t('taskForm.permissions.label')}
+                  disabled={automation.require_review || automation.source.type !== 'schedule'}
                   onClick={() => setFormData((prev) => ({ ...prev, skip_permissions: !prev.skip_permissions }))}
                   className={`relative w-9 h-5 rounded-full transition-colors ${
                     formData.skip_permissions ? 'bg-amber-600' : 'bg-gray-300'
@@ -1075,7 +1170,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
                   {t('taskForm.permissions.label')}
                 </label>
               </div>
-              <p className="text-xs text-amber-800">{t('taskForm.permissions.description')}</p>
+              <p className="text-xs text-amber-800">{automation.require_review || automation.source.type !== 'schedule' ? t('automation.readOnlyMode') : t('taskForm.permissions.description')}</p>
             </div>
 
             {/* Enabled */}

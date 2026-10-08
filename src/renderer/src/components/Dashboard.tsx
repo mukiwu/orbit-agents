@@ -66,7 +66,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
   const pausedCount = (data?.tasks.length ?? 0) - activeTasks.length
   const completed = (data?.executions24h.success ?? 0) + (data?.executions24h.failed ?? 0)
   const successRate = completed > 0 ? Math.round(((data?.executions24h.success ?? 0) / completed) * 100) : null
-  const hasAttention = (data?.recent_failures.length ?? 0) > 0 || reviewTasks.length > 0
+  const hasAttention = (data?.recent_failures.length ?? 0) > 0 || (data?.pending_reviews.length ?? 0) > 0 || reviewTasks.length > 0
   const upcoming = useMemo(() => (data?.tasks ?? [])
     .filter((task) => task.enabled === 1 && task.next_run)
     .sort((a, b) => (a.next_run || '').localeCompare(b.next_run || ''))
@@ -84,7 +84,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
     })
   }, [data])
   const maxActivity = Math.max(1, ...activity.map(({ point }) =>
-    (point?.success ?? 0) + (point?.failed ?? 0) + (point?.running ?? 0) + (point?.cancelled ?? 0)))
+    (point?.success ?? 0) + (point?.failed ?? 0) + (point?.running ?? 0) + (point?.cancelled ?? 0) + (point?.pending_review ?? 0)))
 
   const formatDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -219,18 +219,20 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
               <Legend color="bg-emerald-500" label={t('dashboard.activity.success')} />
               <Legend color="bg-red-500" label={t('dashboard.activity.failed')} />
               <Legend color="bg-blue-500" label={t('dashboard.activity.running')} />
+              <Legend color="bg-violet-500" label={t('automation.pendingReview')} />
             </div>
           </div>
           <div className="mt-6 rounded-xl bg-slate-50 p-4">
             <div className="flex h-32 items-end gap-1" role="group" aria-label={t('dashboard.activity.chartLabel')}>
               {activity.map(({ time, point }) => {
-                const total = (point?.success ?? 0) + (point?.failed ?? 0) + (point?.running ?? 0) + (point?.cancelled ?? 0)
-                const label = `${formatDateTime(time.toISOString())}: ${point?.success ?? 0} ${t('dashboard.activity.success')}, ${point?.failed ?? 0} ${t('dashboard.activity.failed')}`
+                const total = (point?.success ?? 0) + (point?.failed ?? 0) + (point?.running ?? 0) + (point?.cancelled ?? 0) + (point?.pending_review ?? 0)
+                const label = `${formatDateTime(time.toISOString())}: ${point?.success ?? 0} ${t('dashboard.activity.success')}, ${point?.failed ?? 0} ${t('dashboard.activity.failed')}, ${point?.pending_review ?? 0} ${t('automation.pendingReview')}`
                 return <button key={time.toISOString()} type="button" onClick={() => onOpenLogs()} title={label} aria-label={label}
                   className="group flex h-full min-w-0 flex-1 flex-col justify-end focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
                   {total === 0 ? <span className="h-1 w-full rounded-sm bg-slate-200 group-hover:bg-slate-300" /> :
                     <span className="flex w-full flex-col justify-end overflow-hidden rounded-t-sm transition-opacity group-hover:opacity-70" style={{ height: `${Math.max(7, total / maxActivity * 100)}%` }}>
                       {(point?.running ?? 0) > 0 && <span className="w-full bg-blue-500" style={{ flex: point!.running }} />}
+                      {(point?.pending_review ?? 0) > 0 && <span className="w-full bg-violet-500" style={{ flex: point!.pending_review }} />}
                       {(point?.cancelled ?? 0) > 0 && <span className="w-full bg-amber-400" style={{ flex: point!.cancelled }} />}
                       {(point?.failed ?? 0) > 0 && <span className="w-full bg-red-500" style={{ flex: point!.failed }} />}
                       {(point?.success ?? 0) > 0 && <span className="w-full bg-emerald-500" style={{ flex: point!.success }} />}
@@ -246,6 +248,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
             <span><strong className="font-semibold text-slate-900">{data.executions24h.success}</strong> {t('dashboard.activity.success')}</span>
             <span><strong className={`font-semibold ${data.executions24h.failed ? 'text-red-600' : 'text-slate-900'}`}>{data.executions24h.failed}</strong> {t('dashboard.activity.failed')}</span>
             <span><strong className="font-semibold text-slate-900">{data.executions24h.running}</strong> {t('dashboard.activity.running')}</span>
+            <span><strong className="font-semibold text-violet-700">{data.executions24h.pending_review}</strong> {t('automation.pendingReview')}</span>
             <span><strong className="font-semibold text-slate-900">{data.executions24h.cancelled}</strong> {t('dashboard.activity.cancelled')}</span>
           </div>
         </section>
@@ -253,8 +256,11 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
         <div className="grid gap-5 lg:col-span-2 lg:grid-cols-2">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6">
             <div className="mb-4 flex items-center gap-2"><CircleAlert className="h-5 w-5 text-amber-600" /><h2 className="font-semibold text-slate-900">{t('dashboard.attention.title')}</h2></div>
-            {reviewTasks.length === 0 && data.recent_failures.length === 0 ? <EmptyMessage text={t('dashboard.attention.empty')} /> :
+            {reviewTasks.length === 0 && data.recent_failures.length === 0 && data.pending_reviews.length === 0 ? <EmptyMessage text={t('dashboard.attention.empty')} /> :
               <div className="space-y-2">
+                {data.pending_reviews.map((run) => <button key={run.id} type="button" onClick={() => onOpenLogs(run.id)} className="flex w-full items-center justify-between gap-3 rounded-xl bg-violet-50 p-3 text-left hover:bg-violet-100">
+                  <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-900">{run.task_name || t('executionLog.unknownTask')}</p><p className="mt-0.5 text-xs text-violet-700">{t('automation.pendingReview')}</p></div><ArrowRight className="h-4 w-4 shrink-0 text-violet-700" />
+                </button>)}
                 {reviewTasks.slice(0, 2).map((task) => <button key={task.id} type="button" onClick={() => onOpenTask(task.id)} className="flex w-full items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-left hover:bg-amber-100">
                   <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-900">{task.name}</p><p className="mt-0.5 text-xs text-amber-700">{t('dashboard.attention.review')}</p></div><ArrowRight className="h-4 w-4 shrink-0 text-amber-700" />
                 </button>)}

@@ -22,6 +22,13 @@ describe('buildCodexArgs', () => {
     expect(buildCodexArgs(ctx({ skipPermissions: true }))).toContain('--dangerously-bypass-approvals-and-sandbox')
   })
 
+  it('forces an isolated read-only session for reviewed outcomes', () => {
+    const args = buildCodexArgs(ctx({ skipPermissions: true, reviewMode: true }))
+    expect(args.join(' ')).toContain('--sandbox read-only')
+    expect(args).toContain('--ignore-user-config')
+    expect(args).not.toContain('--dangerously-bypass-approvals-and-sandbox')
+  })
+
   it('passes model, working dir and images', () => {
     const args = buildCodexArgs(ctx({ model: 'gpt-5.5', projectPath: '/proj', imagePaths: ['/a.png', '/b.png'] }))
     expect(args[args.indexOf('-m') + 1]).toBe('gpt-5.5')

@@ -48,6 +48,16 @@ That's it. Orbit handles the rest.
   - Detailed task execution history
   - Success/Failure status tracking
   - Complete output log viewing
+  - Saved input and provider snapshots for replay and handoff after failures
+
+- **Outcome Automations**
+  - Watch a folder for new documents and images, or monitor a website on a schedule
+  - Start with file organizer and website update templates
+  - Review proposed file moves and email before Orbit Agents applies them
+  - File and website analysis runs with restricted, read-only Claude or Codex CLI access
+  - Website monitors compare the previous and current page content and skip unchanged pages
+
+File inboxes scan the selected folder every 10 seconds and process newly added top-level files after they stop changing. Reviewable file moves require a destination outside the watched folder. Snapshots and copied input files are stored locally with the execution log and removed when that log is deleted.
 
 - **Notification System**
   - Built-in Email notification (Nodemailer)

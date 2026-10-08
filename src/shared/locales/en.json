@@ -9,13 +9,64 @@
     "failed": "Failed",
     "cancelled": "Cancelled"
   },
+  "automation": {
+    "templates": "Outcome templates",
+    "fileTemplate": "Organize inbox",
+    "fileTemplateDesc": "Suggest a name for each new file and wait for approval",
+    "fileTemplateName": "File inbox organizer",
+    "fileTemplatePrompt": "Read each new file, summarize it, and suggest a clear, searchable filename.",
+    "websiteTemplate": "Website update summary",
+    "websiteTemplateDesc": "Summarize a website when its content changes",
+    "websiteTemplateName": "Website update monitor",
+    "websiteTemplatePrompt": "Summarize the important points and notable changes in this website content.",
+    "trigger": "Trigger",
+    "source": { "schedule": "Schedule", "folder": "File inbox", "website": "Website monitor" },
+    "watchFolder": "Watched folder",
+    "browse": "Choose",
+    "result": { "report": "Create report", "organize-file": "Organize file" },
+    "resultLabel": "Result type",
+    "destination": "Destination folder",
+    "requireReview": "Review results before applying",
+    "reviewHint": "File moves and email require approval",
+    "readOnlyMode": "Review mode analyzes with read-only permissions. Orbit Agents moves files or sends email after approval.",
+    "reviewProviderError": "File, website, and review tasks currently support Claude or Codex. Choose another provider.",
+    "fallbackProvider": "Suggested handoff provider",
+    "none": "None",
+    "pendingReview": "Pending review",
+    "watching": "Watching",
+    "noNewFiles": "There are no new files in this inbox.",
+    "noWebsiteChange": "The website has not changed. AI execution was skipped.",
+    "runFailed": "Run failed. Open the execution log for details.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "replay": "Replay",
+    "replayConfirm": "Run again with the saved input? This may repeat actions in the task.",
+    "resumeDelivery": "Resume delivery stage",
+    "resumeConfirm": "Submit the previous result for approval again? Check whether the prior file move or email already happened to avoid duplicates.",
+    "handoff": "Hand off to another provider",
+    "failure": {
+      "auth": "Provider sign-in or authorization failed. Sign in again or hand off to another provider.",
+      "model": "This model may have been removed or your account may lack access. Choose another model or provider.",
+      "cli": "The CLI could not be started. Check installation and its path.",
+      "rate": "The provider is rate limited or out of quota. Retry later or choose another provider.",
+      "network": "Network connection failed. Retry later or choose another provider.",
+      "other": "The run failed. Inspect the error and input snapshot, then replay or hand off."
+    },
+    "providerDefault": "Default model",
+    "showInput": "Show prompt and input",
+    "snapshot": "Run input snapshot",
+    "proposedFile": "Suggested filename",
+    "sourceFile": "Source file",
+    "sourceWebsite": "Watched website"
+  },
   "main": {
     "test": {
       "greeting": "Hi {{name}}"
     },
     "notification": {
       "success": "✅ Task completed",
-      "failure": "❌ Task failed"
+      "failure": "❌ Task failed",
+      "review": "Pending review: open the execution log"
     },
     "retry": {
       "networkError": "⏳ Network error, retrying in {{delay}}s (attempt {{attempt}}/{{max}})...\nError: {{error}}",
@@ -205,6 +256,7 @@
       "success": "Success",
       "failed": "Failed",
       "running": "Running",
+      "pending_review": "Pending review",
       "cancelled": "Cancelled",
       "before24h": "24 hours ago",
       "before12h": "12 hours ago",

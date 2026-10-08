@@ -27,6 +27,7 @@ export default function TaskList({
   const { tasks, loading, error, toggleTask, deleteTask, runTaskNow, fetchTasks } = useTasks()
   const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set())
   const [deletingTask, setDeletingTask] = useState<string | null>(null)
+  const [runNotice, setRunNotice] = useState<{ taskId: string; text: string } | null>(null)
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
@@ -39,6 +40,11 @@ export default function TaskList({
 
   const nextRunLabel = (task: ScheduledTask): string => {
     if (task.enabled !== 1) return t('taskList.paused')
+    if (task.automation) {
+      try {
+        if (JSON.parse(task.automation).source?.type === 'folder') return t('automation.watching')
+      } catch { /* legacy task */ }
+    }
     if (!task.next_run) return t('taskList.unscheduled')
     const minutes = Math.max(0, Math.ceil((new Date(task.next_run).getTime() - now) / 60_000))
     const formatter = new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language, { numeric: 'auto' })
@@ -62,11 +68,16 @@ export default function TaskList({
 
   const handleRunNow = async (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation()
+    setRunNotice(null)
     setRunningTasks((prev) => new Set(prev).add(taskId))
     try {
-      await runTaskNow(taskId)
+      const log = await runTaskNow(taskId)
+      if (log.status === 'failed') setRunNotice({ taskId, text: t('automation.runFailed') })
     } catch (err) {
       console.error('Failed to run task:', err)
+      const message = err instanceof Error ? err.message : String(err)
+      setRunNotice({ taskId, text: message.includes('No new files') ? t('automation.noNewFiles')
+        : message.includes('has not changed') ? t('automation.noWebsiteChange') : message })
     } finally {
       setRunningTasks((prev) => {
         const next = new Set(prev)
@@ -168,6 +179,13 @@ export default function TaskList({
                        <span className="text-xs text-gray-400 flex items-center gap-0.5 ml-1">
                            <Clock className="w-3 h-3" />
                            {(() => {
+                             if (task.automation) {
+                               try {
+                                 const source = JSON.parse(task.automation).source
+                                 if (source?.type === 'folder') return t('automation.source.folder')
+                                 if (source?.type === 'website') return t('automation.source.website')
+                               } catch { /* legacy task */ }
+                             }
                              const params = parseCronToSimple(task.cron_expression || '')
                              if (params.mode === 'advanced') return task.cron_expression
                              return getScheduleDescription(
@@ -187,6 +205,7 @@ export default function TaskList({
                          title={task.next_run ? new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(task.next_run)) : undefined}>
                          {t('taskList.nextRun')}: {nextRunLabel(task)}
                        </p>
+                       {runNotice?.taskId === task.id && <p role="status" className="mt-1 text-xs text-amber-700">{runNotice.text}</p>}
                      </div>
                      
                      <div className="flex flex-col gap-1">

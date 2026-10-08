@@ -35,6 +35,14 @@ describe('buildClaudeArgs', () => {
     expect(buildClaudeArgs(ctx({ skipPermissions: false }))).not.toContain('--dangerously-skip-permissions')
   })
 
+  it('restricts reviewed outcomes to file reading without MCP access', () => {
+    const args = buildClaudeArgs(ctx({ skipPermissions: true, reviewMode: true }))
+    expect(args).toContain('--restricted')
+    expect(args).toContain('--strict-mcp-config')
+    expect(args).toContain('--safe-mode')
+    expect(args).not.toContain('--dangerously-skip-permissions')
+  })
+
   it('passes model and add-dir', () => {
     const args = buildClaudeArgs(ctx({ model: 'opus', addDirs: ['/a', '/b'] }))
     const m = args.indexOf('--model')

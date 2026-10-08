@@ -16,7 +16,9 @@ export function resolveClaudeCommand(): string {
 
 export function buildClaudeArgs(ctx: ExecutionContext): string[] {
   const args: string[] = ['--print', '--output-format', 'stream-json', '--verbose']
-  if (ctx.skipPermissions) args.push('--dangerously-skip-permissions')
+  if (ctx.reviewMode) {
+    args.push('--restricted', '--strict-mcp-config', '--safe-mode', '--tools', 'Read')
+  } else if (ctx.skipPermissions) args.push('--dangerously-skip-permissions')
   if (ctx.systemInstruction) args.push('--append-system-prompt', ctx.systemInstruction)
   // "default" follows the CLI's current account and organization setting.
   if (ctx.model && ctx.model !== 'default') args.push('--model', ctx.model)

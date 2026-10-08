@@ -1,6 +1,15 @@
 // Provider models can change independently from the app's release cycle.
 export type ModelType = string
 
+export type ProviderId = 'claude' | 'codex' | 'antigravity'
+
+export type AutomationConfig = {
+  source: { type: 'schedule' } | { type: 'folder'; path: string } | { type: 'website'; url: string }
+  result: { type: 'report' } | { type: 'organize-file'; destination: string }
+  require_review: boolean
+  fallback_provider: ProviderId | null
+}
+
 export interface Task {
   id: string
   name: string
@@ -19,6 +28,7 @@ export interface Task {
   week_interval: number // Default 1
   enabled: number // 0 or 1
   needs_review: number // 0 or 1, set when migrated from a removed provider (e.g. Gemini)
+  automation: string | null // JSON AutomationConfig; null uses the original scheduled report behavior
   created_at: string
   updated_at: string
 }
@@ -43,6 +53,7 @@ export interface CreateTaskInput {
   skip_permissions?: boolean
   week_interval?: number
   enabled?: boolean
+  automation?: AutomationConfig | null
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
@@ -55,10 +66,36 @@ export interface ExecutionLog {
   task_id: string
   started_at: string
   finished_at: string | null
-  status: 'running' | 'success' | 'failed' | 'cancelled'
+  status: 'running' | 'success' | 'failed' | 'cancelled' | 'pending_review'
   output: string | null
   error: string | null
   exit_code: number | null
+}
+
+export interface RunSnapshot {
+  log_id: string
+  prompt: string
+  system_instruction: string
+  provider: ProviderId
+  fallback_provider: ProviderId | null
+  model: string | null
+  attachment_paths: string[]
+  add_dirs: string[]
+  project_path: string | null
+  skip_permissions: boolean
+  mcp_tools: string[]
+  source_path: string | null
+  source_size: number | null
+  source_modified_at_ms: number | null
+  source_url: string | null
+  result_type: 'report' | 'organize-file'
+  require_review: boolean
+  destination: string | null
+  email_to: string | null
+  replay_of: string | null
+  proposed_file_name: string | null
+  review_status: 'none' | 'pending' | 'applying' | 'approved' | 'rejected'
+  created_at: string
 }
 
 export interface ExecutionLogWithTask extends ExecutionLog {
@@ -98,10 +135,11 @@ export interface DashboardData {
     week_interval: number
     next_run: string | null
   }>
-  executions24h: { total: number; success: number; failed: number; running: number; cancelled: number }
-  activity24h: Array<{ hour: string; success: number; failed: number; running: number; cancelled: number }>
+  executions24h: { total: number; success: number; failed: number; running: number; cancelled: number; pending_review: number }
+  activity24h: Array<{ hour: string; success: number; failed: number; running: number; cancelled: number; pending_review: number }>
   recent_runs: DashboardRun[]
   recent_failures: DashboardRun[]
+  pending_reviews: DashboardRun[]
   top_tasks: Array<{ task_id: string; task_name: string | null; total: number; failed: number }>
   duration14d: {
     count: number
@@ -163,8 +201,6 @@ export interface SkillScanResult {
 }
 
 // AI Provider Types (mirrored from src/main/ai/types.ts to avoid main-process imports)
-export type ProviderId = 'claude' | 'codex' | 'antigravity'
-
 export interface ProviderTestResult {
   success: boolean
   output: string
@@ -204,6 +240,10 @@ export interface IpcApi {
   'log:get': (id: string) => Promise<ExecutionLogWithTask | null>
   'log:delete': (ids: string[]) => Promise<void>
   'log:cancel': (id: string) => Promise<boolean>
+  'log:snapshot': (id: string) => Promise<RunSnapshot | null>
+  'log:review': (id: string, approve: boolean) => Promise<ExecutionLog>
+  'log:replay': (id: string, provider?: ProviderId) => Promise<ExecutionLog>
+  'log:resume-delivery': (id: string) => Promise<ExecutionLog>
 
   // Open a link from log output externally (browser / default app), safely
   'link:open': (url: string) => Promise<void>

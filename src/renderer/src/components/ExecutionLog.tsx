@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next'
 import { useExecutionLog } from '../hooks/useApi'
 import { linkifyIframes, safeMarkdownUrl } from '../utils/markdown'
 import { formatDuration } from '../utils/duration'
-import type { ExecutionLog, ExecutionLogWithTask } from '../../../shared/types'
+import { classifyProviderFailure } from '../../../shared/provider-failure'
+import type { ExecutionLog, ExecutionLogWithTask, RunSnapshot, ProviderId } from '../../../shared/types'
 
 const pageSize = 50
 type StatusFilter = ExecutionLog['status'] | 'all'
@@ -141,6 +142,7 @@ export default function ExecutionLog({ initialLogId = null }: { initialLogId?: s
     { value: 'running', label: t('common.running') },
     { value: 'failed', label: t('common.failed') },
     { value: 'success', label: t('common.done') },
+    { value: 'pending_review', label: t('automation.pendingReview') },
     { value: 'cancelled', label: t('common.cancelled') }
   ]
 
@@ -245,7 +247,11 @@ export default function ExecutionLog({ initialLogId = null }: { initialLogId?: s
       {/* Right Panel - Log Detail */}
       <div className="flex-1 bg-gray-50/50 rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden min-w-0">
         {selectedLog ? (
-          <LogDetail log={selectedLog} />
+          <LogDetail key={selectedLog.id} log={selectedLog} onNewLog={newLog => {
+            setSelectedLogId(newLog.id)
+            setSelectedLogFallback({ ...newLog, task_name: selectedLog.task_name })
+            void fetchLogs(0, Math.max(pageSize, loadedCount.current), false, true)
+          }} />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
             <div className="w-16 h-16 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center mb-4">
@@ -276,10 +282,11 @@ function LogListItem({ log, locale, isSelected, isChecked, onCheck, onClick }: L
   const statusColors: Record<ExecutionLog['status'], string> = {
     running: 'bg-blue-500',
     success: 'bg-emerald-500',
+    pending_review: 'bg-violet-500',
     failed: 'bg-red-500',
     cancelled: 'bg-amber-500'
   }
-  const statusLabel = log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : log.status === 'cancelled' ? t('common.cancelled') : t('common.failed')
+  const statusLabel = log.status === 'running' ? t('common.running') : log.status === 'success' ? t('common.done') : log.status === 'pending_review' ? t('automation.pendingReview') : log.status === 'cancelled' ? t('common.cancelled') : t('common.failed')
   const date = new Date(log.started_at)
   const today = new Date()
   const yesterday = new Date(today)
@@ -310,7 +317,7 @@ function LogListItem({ log, locale, isSelected, isChecked, onCheck, onClick }: L
           </span>
           <span className="mt-0.5 block text-xs tabular-nums text-gray-400">{dateLabel} · {time}{duration ? ` · ${duration}` : ''}</span>
         </span>
-        <span className={`shrink-0 text-xs font-medium ${log.status === 'failed' ? 'rounded bg-red-50 px-1.5 py-1 text-red-700' : log.status === 'running' ? 'text-blue-700' : log.status === 'cancelled' ? 'text-amber-700' : 'text-emerald-700'}`}>
+        <span className={`shrink-0 text-xs font-medium ${log.status === 'failed' ? 'rounded bg-red-50 px-1.5 py-1 text-red-700' : log.status === 'running' ? 'text-blue-700' : log.status === 'pending_review' ? 'text-violet-700' : log.status === 'cancelled' ? 'text-amber-700' : 'text-emerald-700'}`}>
           {statusLabel}
         </span>
       </button>
@@ -320,14 +327,60 @@ function LogListItem({ log, locale, isSelected, isChecked, onCheck, onClick }: L
 
 interface LogDetailProps {
   log: ExecutionLogWithTask
+  onNewLog: (log: ExecutionLog) => void
 }
 
-function LogDetail({ log: initialLog }: LogDetailProps) {
+function LogDetail({ log: initialLog, onNewLog }: LogDetailProps) {
   const { t, i18n } = useTranslation()
   const { log: liveLog, cancel } = useExecutionLog(initialLog.id)
   const log = liveLog ? { ...initialLog, ...liveLog } : initialLog
   const outputEndRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
+  const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null)
+  const [actionBusy, setActionBusy] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    void window.electronApi.invoke('log:snapshot', initialLog.id).then(value => {
+      if (active) setSnapshot(value)
+    }).catch(() => { if (active) setSnapshot(null) })
+    return () => { active = false }
+  }, [initialLog.id, log.status])
+
+  const review = async (approve: boolean) => {
+    setActionBusy(true)
+    setActionError(null)
+    try {
+      await window.electronApi.invoke('log:review', log.id, approve)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error))
+    } finally { setActionBusy(false) }
+  }
+
+  const replay = async (provider?: ProviderId) => {
+    if (!confirm(t('automation.replayConfirm'))) return
+    setActionBusy(true)
+    setActionError(null)
+    try {
+      const next = await window.electronApi.invoke('log:replay', log.id, provider)
+      onNewLog(next)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error))
+    } finally { setActionBusy(false) }
+  }
+
+  const resumeDelivery = async () => {
+    if (!confirm(t('automation.resumeConfirm'))) return
+    setActionBusy(true)
+    setActionError(null)
+    try {
+      const next = await window.electronApi.invoke('log:resume-delivery', log.id)
+      onNewLog(next)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error))
+    } finally { setActionBusy(false) }
+  }
 
   useEffect(() => {
     if (log.status === 'running' && outputEndRef.current) {
@@ -548,6 +601,39 @@ function LogDetail({ log: initialLog }: LogDetailProps) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="px-6 py-4 space-y-4 min-w-0">
+          {snapshot && <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm space-y-2">
+            <div className="font-semibold text-gray-800">{t('automation.snapshot')}</div>
+            <div className="text-xs text-gray-500">{snapshot.provider} · {snapshot.model || t('automation.providerDefault')} · {new Date(snapshot.created_at).toLocaleString(i18n.resolvedLanguage || i18n.language)}</div>
+            {snapshot.source_path && <div className="break-all text-xs text-gray-600">{t('automation.sourceFile')}: {snapshot.source_path}</div>}
+            {snapshot.source_url && <div className="break-all text-xs text-gray-600">{t('automation.sourceWebsite')}: {snapshot.source_url}</div>}
+            {snapshot.proposed_file_name && <div className="text-gray-800">{t('automation.proposedFile')}: <strong>{snapshot.proposed_file_name}</strong></div>}
+            {snapshot.destination && <div className="break-all text-xs text-gray-600">{t('automation.destination')}: {snapshot.destination}</div>}
+            <details className="text-xs text-gray-600"><summary className="cursor-pointer">{t('automation.showInput')}</summary>
+              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-gray-50 p-2">{snapshot.prompt}</pre>
+            </details>
+            {log.status === 'pending_review' && <div className="flex gap-2 pt-2">
+              <button type="button" disabled={actionBusy} onClick={() => void review(true)} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{t('automation.approve')}</button>
+              <button type="button" disabled={actionBusy} onClick={() => void review(false)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">{t('automation.reject')}</button>
+            </div>}
+            {log.status !== 'running' && log.status !== 'pending_review' && <div className="space-y-2 pt-2">
+              {!(snapshot.result_type === 'organize-file' && log.status === 'success') &&
+                <button type="button" disabled={actionBusy} onClick={() => void replay()} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50">{t('automation.replay')}</button>}
+              {log.status === 'failed' && snapshot.review_status === 'rejected' && snapshot.require_review &&
+                <button type="button" disabled={actionBusy} onClick={() => void resumeDelivery()}
+                  className="ml-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 disabled:opacity-50">{t('automation.resumeDelivery')}</button>}
+              {log.status === 'failed' && <div className="flex flex-wrap items-center gap-2">
+                <span className="w-full text-xs text-amber-700">{t(`automation.failure.${classifyProviderFailure(log.error || '')}`)}</span>
+                <span className="text-xs text-gray-500">{t('automation.handoff')}</span>
+                {(['claude', 'codex', 'antigravity'] as ProviderId[])
+                  .filter(provider => provider !== snapshot.provider &&
+                    (provider !== 'antigravity' || (!snapshot.require_review && !snapshot.source_path && !snapshot.source_url)))
+                  .sort((left, right) => Number(right === snapshot.fallback_provider) - Number(left === snapshot.fallback_provider))
+                  .map(provider => <button type="button" key={provider} disabled={actionBusy} onClick={() => void replay(provider)}
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 disabled:opacity-50">{provider}</button>)}
+              </div>}
+            </div>}
+            {actionError && <div role="alert" className="text-xs text-red-600">{actionError}</div>}
+          </div>}
           {/* Timing Info */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
             <div className="flex items-center gap-1.5">
@@ -765,15 +851,14 @@ function ChatMessage({ content, isStreaming }: { content: string; isStreaming: b
   )
 }
 
-interface StatusBadgeProps {
-  status: 'running' | 'success' | 'failed' | 'cancelled'
-}
+interface StatusBadgeProps { status: ExecutionLog['status'] }
 
 function StatusBadge({ status }: StatusBadgeProps) {
   const { t } = useTranslation()
   const styles = {
     running: 'bg-blue-100 text-blue-700',
     success: 'bg-emerald-100 text-emerald-700',
+    pending_review: 'bg-violet-100 text-violet-700',
     failed: 'bg-red-100 text-red-700',
     cancelled: 'bg-amber-100 text-amber-700'
   }
@@ -781,6 +866,7 @@ function StatusBadge({ status }: StatusBadgeProps) {
   const labels = {
     running: t('common.running'),
     success: t('executionLog.statusBadge.completed'),
+    pending_review: t('automation.pendingReview'),
     failed: t('common.failed'),
     cancelled: t('executionLog.statusBadge.cancelled')
   }

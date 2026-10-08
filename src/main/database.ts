@@ -1,8 +1,10 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
+import { rmSync } from 'fs'
 import { v4 as uuidv4 } from 'uuid'
-import { mapLegacyTask } from './migrations'
+import { disableLegacyWorkflows, mapLegacyTask } from './migrations'
+import { validateAutomationConfig } from './automation-config'
 import type {
   Task,
   CreateTaskInput,
@@ -15,6 +17,7 @@ import type {
   Settings,
   SettingKey
 } from '../shared/types'
+import type { RunSnapshot, ProviderId } from '../shared/types'
 
 let db: Database.Database | null = null
 
@@ -43,6 +46,7 @@ export function initDatabase(): Database.Database {
       week_interval INTEGER DEFAULT 1,
       enabled INTEGER DEFAULT 1,
       needs_review INTEGER DEFAULT 0,
+      automation TEXT,
       created_at TEXT,
       updated_at TEXT
     );
@@ -64,9 +68,65 @@ export function initDatabase(): Database.Database {
       value TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS inbox_claims (
+      task_id TEXT NOT NULL,
+      path TEXT NOT NULL,
+      modified_at_ms INTEGER NOT NULL,
+      size INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      log_id TEXT,
+      PRIMARY KEY (task_id, path, modified_at_ms, size)
+    );
+
+    CREATE TABLE IF NOT EXISTS run_snapshots (
+      log_id TEXT PRIMARY KEY,
+      prompt TEXT NOT NULL,
+      system_instruction TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      fallback_provider TEXT,
+      model TEXT,
+      attachment_paths TEXT NOT NULL,
+      add_dirs TEXT NOT NULL,
+      project_path TEXT,
+      skip_permissions INTEGER NOT NULL,
+      mcp_tools TEXT NOT NULL,
+      source_path TEXT,
+      source_size INTEGER,
+      source_modified_at_ms REAL,
+      source_url TEXT,
+      result_type TEXT NOT NULL,
+      require_review INTEGER NOT NULL,
+      destination TEXT,
+      email_to TEXT,
+      replay_of TEXT,
+      proposed_file_name TEXT,
+      review_status TEXT NOT NULL DEFAULT 'none',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS website_state (
+      task_id TEXT PRIMARY KEY,
+      url TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      content TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_execution_logs_task_id ON execution_logs(task_id);
     CREATE INDEX IF NOT EXISTS idx_execution_logs_started_at ON execution_logs(started_at);
   `)
+
+  // Preserve development databases created by earlier builds of this feature.
+  const snapshotColumns = new Set((db.pragma('table_info(run_snapshots)') as Array<{ name: string }>).map(row => row.name))
+  for (const [name, definition] of [
+    ['fallback_provider', 'TEXT'], ['source_size', 'INTEGER'], ['source_modified_at_ms', 'REAL'],
+    ['result_type', "TEXT NOT NULL DEFAULT 'report'"], ['require_review', 'INTEGER NOT NULL DEFAULT 0'],
+    ['destination', 'TEXT'], ['email_to', 'TEXT']
+  ] as const) {
+    if (!snapshotColumns.has(name)) db.exec(`ALTER TABLE run_snapshots ADD COLUMN ${name} ${definition}`)
+  }
+  const websiteColumns = new Set((db.pragma('table_info(website_state)') as Array<{ name: string }>).map(row => row.name))
+  if (!websiteColumns.has('content')) db.exec("ALTER TABLE website_state ADD COLUMN content TEXT NOT NULL DEFAULT ''")
 
   // Migration: Add attachments column if not exists
   try {
@@ -130,6 +190,11 @@ export function initDatabase(): Database.Database {
     db.exec(`ALTER TABLE execution_logs ADD COLUMN exit_code INTEGER`)
   }
 
+  const taskColumns = db.pragma('table_info(tasks)') as Array<{ name: string }>
+  if (!taskColumns.some((column) => column.name === 'automation')) {
+    db.exec('ALTER TABLE tasks ADD COLUMN automation TEXT')
+  }
+
   // Migration: Gemini removed -> convert to disabled Claude tasks needing review (idempotent).
   // Uses mapLegacyTask (single source of truth tested in migrations.test.ts) row-by-row so
   // the unit-tested logic is exactly what runs in production. Re-running is a no-op because
@@ -147,6 +212,18 @@ export function initDatabase(): Database.Database {
       }
     }
   }
+
+  disableLegacyWorkflows(db)
+
+  // A crash during approval may have completed an external action. Require
+  // inspection rather than silently retrying and possibly sending twice.
+  db.exec(`
+    UPDATE execution_logs SET status = 'failed', finished_at = datetime('now'),
+      error = 'Approval was interrupted; inspect external effects before replaying'
+      WHERE id IN (SELECT log_id FROM run_snapshots WHERE review_status = 'applying');
+    UPDATE run_snapshots SET review_status = 'rejected' WHERE review_status = 'applying';
+    UPDATE inbox_claims SET status = 'failed' WHERE status = 'running';
+  `)
 
   // Migration: drop obsolete credential settings
   db.exec(`DELETE FROM settings WHERE key IN ('gemini_api_key','gemini_cli_path','claude_session_token')`)
@@ -180,6 +257,9 @@ export function getEnabledTasks(): Task[] {
 
 export function createTask(input: CreateTaskInput): Task {
   const db = getDatabase()
+  if (input.automation && (input.automation.require_review || input.automation.source.type !== 'schedule') && input.cli_tool === 'antigravity') {
+    throw new Error('File, website and review tasks require Claude or Codex')
+  }
   const id = uuidv4()
   const now = new Date().toISOString()
 
@@ -201,13 +281,14 @@ export function createTask(input: CreateTaskInput): Task {
     week_interval: input.week_interval ?? 1,
     enabled: input.enabled !== false ? 1 : 0,
     needs_review: 0,
+    automation: input.automation ? JSON.stringify(validateAutomationConfig(input.automation)) : null,
     created_at: now,
     updated_at: now
   }
 
   db.prepare(`
-    INSERT INTO tasks (id, name, description, cron_expression, prompt, cli_tool, model, mcp_tools, attachments, output_type, email_to, knowledge_file, project_path, skip_permissions, week_interval, enabled, needs_review, created_at, updated_at)
-    VALUES (@id, @name, @description, @cron_expression, @prompt, @cli_tool, @model, @mcp_tools, @attachments, @output_type, @email_to, @knowledge_file, @project_path, @skip_permissions, @week_interval, @enabled, @needs_review, @created_at, @updated_at)
+    INSERT INTO tasks (id, name, description, cron_expression, prompt, cli_tool, model, mcp_tools, attachments, output_type, email_to, knowledge_file, project_path, skip_permissions, week_interval, enabled, needs_review, automation, created_at, updated_at)
+    VALUES (@id, @name, @description, @cron_expression, @prompt, @cli_tool, @model, @mcp_tools, @attachments, @output_type, @email_to, @knowledge_file, @project_path, @skip_permissions, @week_interval, @enabled, @needs_review, @automation, @created_at, @updated_at)
   `).run(task)
 
   return task
@@ -219,6 +300,12 @@ export function updateTask(input: UpdateTaskInput): Task {
 
   if (!existing) {
     throw new Error(`Task with id ${input.id} not found`)
+  }
+  const config = input.automation === undefined
+    ? (existing.automation ? validateAutomationConfig(JSON.parse(existing.automation)) : null)
+    : input.automation
+  if (config && (config.require_review || config.source.type !== 'schedule') && (input.cli_tool ?? existing.cli_tool) === 'antigravity') {
+    throw new Error('File, website and review tasks require Claude or Codex')
   }
 
   const now = new Date().toISOString()
@@ -245,6 +332,9 @@ export function updateTask(input: UpdateTaskInput): Task {
     week_interval: input.week_interval !== undefined ? input.week_interval : existing.week_interval,
     enabled: input.enabled !== undefined ? (input.enabled ? 1 : 0) : existing.enabled,
     needs_review: 0,
+    automation: input.automation !== undefined
+      ? (input.automation ? JSON.stringify(validateAutomationConfig(input.automation)) : null)
+      : existing.automation,
     updated_at: now
   }
 
@@ -266,16 +356,57 @@ export function updateTask(input: UpdateTaskInput): Task {
       week_interval = @week_interval,
       enabled = @enabled,
       needs_review = @needs_review,
+      automation = @automation,
       updated_at = @updated_at
     WHERE id = @id
   `).run(updated)
+
+  // Editing a retired workflow converts it into a regular task. Its original
+  // steps remain in archived_workflows for recovery.
+  const columns = db.pragma('table_info(tasks)') as Array<{ name: string }>
+  if (columns.some((column) => column.name === 'steps')) {
+    db.prepare('UPDATE tasks SET steps = NULL WHERE id = ?').run(input.id)
+  }
 
   return updated
 }
 
 export function deleteTask(id: string): void {
   const db = getDatabase()
+  db.prepare('DELETE FROM inbox_claims WHERE task_id = ?').run(id)
+  db.prepare('DELETE FROM website_state WHERE task_id = ?').run(id)
   db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
+}
+
+export function getWebsiteState(taskId: string, url: string): { hash: string; content: string } | null {
+  const row = getDatabase().prepare('SELECT content_hash, content FROM website_state WHERE task_id = ? AND url = ?')
+    .get(taskId, url) as { content_hash: string; content: string } | undefined
+  return row ? { hash: row.content_hash, content: row.content } : null
+}
+
+export function setWebsiteState(taskId: string, url: string, hash: string, content: string): void {
+  getDatabase().prepare(`
+    INSERT INTO website_state (task_id, url, content_hash, content, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(task_id) DO UPDATE SET url=excluded.url, content_hash=excluded.content_hash,
+      content=excluded.content, updated_at=excluded.updated_at
+  `).run(taskId, url, hash, content, new Date().toISOString())
+}
+
+export function claimInboxFile(taskId: string, path: string, modifiedAtMs: number, size: number): boolean {
+  const result = getDatabase().prepare(`
+    INSERT OR IGNORE INTO inbox_claims (task_id, path, modified_at_ms, size, status)
+    VALUES (?, ?, ?, ?, 'running')
+  `).run(taskId, path, Math.trunc(modifiedAtMs), size)
+  return result.changes === 1
+}
+
+export function finishInboxFile(taskId: string, path: string, modifiedAtMs: number, size: number,
+  status: 'success' | 'failed', logId: string): void {
+  getDatabase().prepare(`
+    UPDATE inbox_claims SET status = ?, log_id = ?
+    WHERE task_id = ? AND path = ? AND modified_at_ms = ? AND size = ?
+  `).run(status, logId, taskId, path, Math.trunc(modifiedAtMs), size)
 }
 
 export function toggleTask(id: string): Task {
@@ -284,6 +415,12 @@ export function toggleTask(id: string): Task {
 
   if (!task) {
     throw new Error(`Task with id ${id} not found`)
+  }
+
+  const columns = db.pragma('table_info(tasks)') as Array<{ name: string }>
+  if (columns.some((column) => column.name === 'steps')) {
+    const legacy = db.prepare('SELECT steps FROM tasks WHERE id = ?').get(id) as { steps: string | null }
+    if (legacy.steps !== null) throw new Error('Edit this retired workflow before enabling it')
   }
 
   const newEnabled = task.enabled === 1 ? 0 : 1
@@ -326,7 +463,7 @@ export function createExecutionLog(taskId: string): ExecutionLog {
 
 export function updateExecutionLog(
   id: string,
-  update: { status: 'success' | 'failed' | 'cancelled'; output?: string; error?: string; exitCode?: number | null }
+  update: { status: 'success' | 'failed' | 'cancelled' | 'pending_review'; output?: string; error?: string; exitCode?: number | null }
 ): ExecutionLog {
   const db = getDatabase()
   const now = new Date().toISOString()
@@ -342,6 +479,60 @@ export function updateExecutionLog(
   `).run(now, update.status, update.output ?? null, update.error ?? null, update.exitCode ?? null, id)
 
   return db.prepare('SELECT * FROM execution_logs WHERE id = ?').get(id) as ExecutionLog
+}
+
+export function finishReviewedLog(id: string, status: 'success' | 'failed' | 'cancelled', output: string | null, error: string | null = null): ExecutionLog {
+  getDatabase().prepare(`UPDATE execution_logs SET status = ?, output = ?, error = ? WHERE id = ?`)
+    .run(status, output, error, id)
+  return getExecutionLogById(id) as ExecutionLog
+}
+
+export function saveRunSnapshot(snapshot: RunSnapshot): void {
+  getDatabase().prepare(`
+    INSERT INTO run_snapshots (log_id, prompt, system_instruction, provider, fallback_provider, model, attachment_paths,
+      add_dirs, project_path, skip_permissions, mcp_tools, source_path, source_size, source_modified_at_ms, source_url,
+      result_type, require_review, destination, email_to, replay_of, proposed_file_name, review_status, created_at)
+    VALUES (@log_id, @prompt, @system_instruction, @provider, @fallback_provider, @model, @attachment_paths,
+      @add_dirs, @project_path, @skip_permissions, @mcp_tools, @source_path, @source_size, @source_modified_at_ms, @source_url,
+      @result_type, @require_review, @destination, @email_to, @replay_of, @proposed_file_name, @review_status, @created_at)
+    ON CONFLICT(log_id) DO UPDATE SET
+      provider=excluded.provider, model=excluded.model, proposed_file_name=excluded.proposed_file_name,
+      review_status=excluded.review_status
+  `).run({
+    ...snapshot,
+    attachment_paths: JSON.stringify(snapshot.attachment_paths),
+    add_dirs: JSON.stringify(snapshot.add_dirs),
+    skip_permissions: snapshot.skip_permissions ? 1 : 0,
+    require_review: snapshot.require_review ? 1 : 0,
+    mcp_tools: JSON.stringify(snapshot.mcp_tools)
+  })
+}
+
+export function getRunSnapshot(logId: string): RunSnapshot | null {
+  const row = getDatabase().prepare('SELECT * FROM run_snapshots WHERE log_id = ?').get(logId) as
+    (Omit<RunSnapshot, 'attachment_paths' | 'add_dirs' | 'mcp_tools' | 'skip_permissions' | 'require_review'> & {
+      attachment_paths: string; add_dirs: string; mcp_tools: string; skip_permissions: number; require_review: number
+    }) | undefined
+  if (!row) return null
+  return {
+    ...row,
+    provider: row.provider as ProviderId,
+    attachment_paths: JSON.parse(row.attachment_paths) as string[],
+    add_dirs: JSON.parse(row.add_dirs) as string[],
+    mcp_tools: JSON.parse(row.mcp_tools) as string[],
+    skip_permissions: row.skip_permissions === 1,
+    require_review: row.require_review === 1
+  }
+}
+
+export function updateRunReview(logId: string, status: RunSnapshot['review_status'], proposedFileName?: string | null): void {
+  getDatabase().prepare(`UPDATE run_snapshots SET review_status = ?, proposed_file_name = COALESCE(?, proposed_file_name) WHERE log_id = ?`)
+    .run(status, proposedFileName ?? null, logId)
+}
+
+export function claimRunReview(logId: string): boolean {
+  return getDatabase().prepare(`UPDATE run_snapshots SET review_status = 'applying'
+    WHERE log_id = ? AND review_status = 'pending'`).run(logId).changes === 1
 }
 
 // Update output while task is still running (for streaming)
@@ -393,7 +584,7 @@ export function searchExecutionLogs(input: LogSearchInput): LogSearchResult {
     conditions.push("instr(lower(COALESCE(t.name, '')), lower(?)) > 0")
     params.push(query)
   }
-  if (status && status !== 'all' && ['running', 'success', 'failed', 'cancelled'].includes(status)) {
+  if (status && status !== 'all' && ['running', 'success', 'failed', 'cancelled', 'pending_review'].includes(status)) {
     conditions.push('el.status = ?')
     params.push(status)
   }
@@ -413,7 +604,7 @@ export function searchExecutionLogs(input: LogSearchInput): LogSearchResult {
   return { logs, total }
 }
 
-export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions24h' | 'activity24h' | 'recent_runs' | 'recent_failures' | 'top_tasks' | 'duration14d'> {
+export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions24h' | 'activity24h' | 'recent_runs' | 'recent_failures' | 'pending_reviews' | 'top_tasks' | 'duration14d'> {
   const db = getDatabase()
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
   const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -423,7 +614,8 @@ export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions2
       COALESCE(SUM(status = 'success'), 0) AS success,
       COALESCE(SUM(status = 'failed'), 0) AS failed,
       COALESCE(SUM(status = 'running'), 0) AS running,
-      COALESCE(SUM(status = 'cancelled'), 0) AS cancelled
+      COALESCE(SUM(status = 'cancelled'), 0) AS cancelled,
+      COALESCE(SUM(status = 'pending_review'), 0) AS pending_review
     FROM execution_logs WHERE started_at >= ?
   `).get(since24h) as DashboardData['executions24h']
   const activity24h = db.prepare(`
@@ -431,7 +623,8 @@ export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions2
       COALESCE(SUM(status = 'success'), 0) AS success,
       COALESCE(SUM(status = 'failed'), 0) AS failed,
       COALESCE(SUM(status = 'running'), 0) AS running,
-      COALESCE(SUM(status = 'cancelled'), 0) AS cancelled
+      COALESCE(SUM(status = 'cancelled'), 0) AS cancelled,
+      COALESCE(SUM(status = 'pending_review'), 0) AS pending_review
     FROM execution_logs WHERE started_at >= ?
     GROUP BY substr(started_at, 1, 13) ORDER BY hour
   `).all(since24h) as DashboardData['activity24h']
@@ -448,6 +641,13 @@ export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions2
     WHERE el.status = 'failed' AND el.started_at >= ?
     ORDER BY el.started_at DESC LIMIT 3
   `).all(since7d) as DashboardData['recent_failures']
+  const pending_reviews = db.prepare(`
+    SELECT el.id, el.task_id, t.name AS task_name, el.started_at, el.finished_at,
+      el.status, NULL AS error
+    FROM execution_logs el LEFT JOIN tasks t ON t.id = el.task_id
+    WHERE el.status = 'pending_review'
+    ORDER BY el.started_at DESC LIMIT 3
+  `).all() as DashboardData['pending_reviews']
   const top_tasks = db.prepare(`
     SELECT el.task_id, t.name AS task_name, COUNT(*) AS total,
       COALESCE(SUM(el.status = 'failed'), 0) AS failed
@@ -502,7 +702,7 @@ export function getDashboardLogData(now: Date): Pick<DashboardData, 'executions2
     slowest: durations.slice(-3).reverse(),
     anomalies: anomalies.slice(0, 3)
   }
-  return { executions24h, activity24h, recent_runs, recent_failures, top_tasks, duration14d }
+  return { executions24h, activity24h, recent_runs, recent_failures, pending_reviews, top_tasks, duration14d }
 }
 
 export function getExecutionLogById(id: string): ExecutionLog | null {
@@ -522,8 +722,18 @@ export function getExecutionLogWithTask(id: string): ExecutionLogWithTask | null
 
 export function deleteExecutionLogs(ids: string[]): void {
   const db = getDatabase()
+  if (ids.length === 0) return
   const placeholders = ids.map(() => '?').join(',')
-  db.prepare(`DELETE FROM execution_logs WHERE id IN (${placeholders})`).run(...ids)
+  const busy = db.prepare(`SELECT COUNT(*) AS count FROM execution_logs WHERE id IN (${placeholders}) AND status IN ('running', 'pending_review')`)
+    .get(...ids) as { count: number }
+  if (busy.count > 0) throw new Error('Running or pending review logs cannot be deleted')
+  db.transaction(() => {
+    db.prepare(`DELETE FROM run_snapshots WHERE log_id IN (${placeholders})`).run(...ids)
+    db.prepare(`DELETE FROM execution_logs WHERE id IN (${placeholders})`).run(...ids)
+  })()
+  for (const id of ids) {
+    if (/^[0-9a-f-]{36}$/i.test(id)) rmSync(join(app.getPath('userData'), 'run-inputs', id), { recursive: true, force: true })
+  }
 }
 
 // ============ Settings Operations ============

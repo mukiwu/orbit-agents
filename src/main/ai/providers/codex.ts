@@ -28,7 +28,9 @@ export function buildCodexArgs(
   configuredReasoningEffort = readConfiguredReasoningEffort()
 ): string[] {
   const args: string[] = ['exec', '--json', '--skip-git-repo-check']
-  if (ctx.skipPermissions) {
+  if (ctx.reviewMode) {
+    args.push('--sandbox', 'read-only', '--ignore-user-config', '--ephemeral')
+  } else if (ctx.skipPermissions) {
     args.push('--dangerously-bypass-approvals-and-sandbox')
   } else {
     args.push('--sandbox', 'workspace-write')

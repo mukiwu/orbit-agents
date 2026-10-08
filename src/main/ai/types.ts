@@ -11,6 +11,7 @@ export interface ExecutionContext {
   addDirs: string[]              // 要授權讀取的目錄（附件所在目錄 + project）
   projectPath: string | null
   skipPermissions: boolean
+  reviewMode?: boolean
 }
 
 export interface ModelOption {

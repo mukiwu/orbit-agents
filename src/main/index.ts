@@ -18,6 +18,7 @@ import {
   searchExecutionLogs,
   getDashboardLogData,
   getExecutionLogWithTask,
+  getRunSnapshot,
   deleteExecutionLogs,
   getAllSettings,
   updateSettings
@@ -29,7 +30,10 @@ import {
   unscheduleTask,
   runTaskNow,
   onExecutionUpdate,
-  getNextExecutionTime
+  getNextExecutionTime,
+  reviewRun,
+  replayRun,
+  resumeDeliveryRun
 } from './scheduler'
 import { getProvider } from './ai'
 import { getCodexAuthStatus, loginWithChatGPT, logoutCodex } from './ai/codex-auth'
@@ -193,6 +197,11 @@ function registerIpcHandlers(): void {
   ipcMain.handle('log:cancel', (_, id: string) => {
     return cancelProcess(id)
   })
+
+  ipcMain.handle('log:snapshot', (_, id: string) => getRunSnapshot(id))
+  ipcMain.handle('log:review', (_, id: string, approve: boolean) => reviewRun(id, approve))
+  ipcMain.handle('log:replay', (_, id: string, provider?: ProviderId) => replayRun(id, provider))
+  ipcMain.handle('log:resume-delivery', (_, id: string) => resumeDeliveryRun(id))
 
   ipcMain.handle('link:open', (_, url: string) => {
     openAgentLink(url)
