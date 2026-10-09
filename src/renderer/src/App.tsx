@@ -175,7 +175,7 @@ export default function App() {
 
         {/* Version info */}
         <div className="p-4 text-sm text-gray-400">
-          v1.2.1 {import.meta.env.DEV && <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">DEV</span>}
+          v1.2.2 {import.meta.env.DEV && <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">DEV</span>}
         </div>
       </div>
 
