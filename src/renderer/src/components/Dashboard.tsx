@@ -113,7 +113,7 @@ export default function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLo
   }
 
   return <div className="h-full overflow-y-auto bg-white">
-    <div className="max-w-5xl space-y-5 p-6 pb-10">
+    <div className="space-y-5 p-6 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">{t('dashboard.title')}</h1>
