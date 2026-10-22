@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'fs'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { createRunPipeline, type RunPipelineDeps, type RunStore } from './run-pipeline'
@@ -186,5 +186,25 @@ describe('createRunPipeline', () => {
     expect(ctx.skipPermissions).toBe(false)
     expect(ctx.mcpTools).toEqual([])
     expect(ctx.prompt).toContain('只分析與提出變更建議')
+  })
+
+  it('maps each replayed attachment to its own new copy when an earlier copy is missing', async () => {
+    const missing = join(userDataPath, 'old', 'gone.txt')
+    const kept = join(userDataPath, 'old', 'kept.txt')
+    mkdirSync(join(userDataPath, 'old'))
+    writeFileSync(kept, 'still here')
+    const replay: RunSnapshot = {
+      log_id: 'log-old', prompt: `Read ${missing} and ${kept}`, system_instruction: '',
+      provider: 'claude', fallback_provider: null, model: null, attachment_paths: [missing, kept],
+      add_dirs: [], project_path: null, skip_permissions: false, mcp_tools: [], source_path: null,
+      source_size: null, source_modified_at_ms: null, source_url: null, result_type: 'report',
+      require_review: false, destination: null, email_to: null, replay_of: null,
+      proposed_file_name: null, review_status: 'none', created_at: 'then'
+    }
+    providerReturns({ success: true, output: 'ok' })
+    const log = await createRunPipeline(deps)(task(), { replay })
+
+    const keptCopy = join(userDataPath, 'run-inputs', log.id, '1', 'kept.txt')
+    expect(deps.runProvider.mock.calls[0][1].prompt).toBe(`Read ${missing} and ${keptCopy}`)
   })
 })

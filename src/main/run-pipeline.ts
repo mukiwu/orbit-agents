@@ -153,6 +153,8 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
 
       const sourceFile = options.sourceFile
       const snapshotPaths: string[] = []
+      // Original attachment path -> its copy for this run; missing attachments have no entry
+      const copiedPaths = new Map<string, string>()
       if (options.replay || task.attachments || sourceFile) {
         const attachmentPaths = options.replay?.attachment_paths || (task.attachments ? JSON.parse(task.attachments) as string[] : [])
         if (!options.replay && sourceFile && !attachmentPaths.includes(sourceFile)) attachmentPaths.push(sourceFile)
@@ -169,6 +171,7 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
           mkdirSync(dirname(inputCopy), { recursive: true })
           copyFileSync(filePath, inputCopy)
           snapshotPaths.push(inputCopy)
+          copiedPaths.set(filePath, inputCopy)
 
           if (['.pdf', '.docx'].includes(extname(inputCopy).toLowerCase())) {
             try {
@@ -251,8 +254,8 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
       if (readOnlyMode && providerId === 'antigravity') throw new Error('File and website automations require Claude or Codex')
       if (options.replay) {
         promptWithTextFiles = options.replay.prompt
-        for (const [index, oldPath] of options.replay.attachment_paths.entries()) {
-          const newPath = snapshotPaths[index]
+        for (const oldPath of options.replay.attachment_paths) {
+          const newPath = copiedPaths.get(oldPath)
           if (newPath) promptWithTextFiles = promptWithTextFiles.replaceAll(oldPath, newPath)
         }
       }
