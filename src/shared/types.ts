@@ -251,6 +251,7 @@ export interface IpcApi {
   // Settings operations
   'settings:get': () => Promise<Settings>
   'settings:update': (settings: Partial<Settings>) => Promise<void>
+  'settings:test-email': (toAddress: string) => Promise<void>
 
   // Generalized AI provider operations
   'ai:test': (provider: ProviderId) => Promise<ProviderTestResult>
@@ -265,6 +266,8 @@ export interface IpcApi {
   // Skill operations
   'skill:scan': (projectPath?: string, provider?: ProviderId) => Promise<SkillScanResult>
   'dialog:open-directory': () => Promise<string | null>
+  'dialog:open-files': () => Promise<string[]>
+  'dialog:save-file': (defaultPath?: string) => Promise<string | null>
 
   // Auto-updater operations
   'updater:check': () => Promise<UpdateStatus>

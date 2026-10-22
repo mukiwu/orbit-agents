@@ -1014,7 +1014,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
                 <button
                   type="button"
                   onClick={async () => {
-                    const files = await (window.electronApi.invoke as (channel: string) => Promise<string[]>)('dialog:open-files')
+                    const files = await window.electronApi.invoke('dialog:open-files')
                     if (files.length > 0) {
                       setFormData((prev) => ({
                         ...prev,
@@ -1133,7 +1133,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
                       type="button"
                       onClick={async () => {
                         const defaultName = formData.name ? formData.name.toLowerCase().replace(/\s+/g, '-') : 'task'
-                        const filePath = await (window.electronApi.invoke as (channel: string, ...args: unknown[]) => Promise<string | null>)('dialog:save-file', `${defaultName}.md`)
+                        const filePath = await window.electronApi.invoke('dialog:save-file', `${defaultName}.md`)
                         if (filePath) {
                           setFormData((prev) => ({ ...prev, knowledge_file: filePath }))
                         }
