@@ -88,7 +88,7 @@ export default function Settings({}: SettingsProps) {
   const handleCheckForUpdates = async () => {
     setCheckingUpdate(true)
     try {
-      const status = await window.electronApi.invoke('updater:check' as any)
+      const status = await window.electronApi.invoke('updater:check')
       setUpdateStatus(status)
     } catch (err) {
       setUpdateStatus({
@@ -108,7 +108,7 @@ export default function Settings({}: SettingsProps) {
   // Download update handler
   const handleDownloadUpdate = async () => {
     try {
-      await window.electronApi.invoke('updater:download' as any)
+      await window.electronApi.invoke('updater:download')
     } catch (err) {
       console.error('Download failed:', err)
     }
@@ -117,7 +117,7 @@ export default function Settings({}: SettingsProps) {
   // Install update handler
   const handleInstallUpdate = async () => {
     try {
-      await window.electronApi.invoke('updater:install' as any)
+      await window.electronApi.invoke('updater:install')
     } catch (err) {
       console.error('Install failed:', err)
     }

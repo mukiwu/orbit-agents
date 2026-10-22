@@ -209,10 +209,7 @@ export function useSettings() {
   }, [])
 
   const testEmail = useCallback(async (toAddress: string): Promise<void> => {
-    await (api.invoke as (channel: string, ...args: unknown[]) => Promise<void>)(
-      'settings:test-email',
-      toAddress
-    )
+    await api.invoke('settings:test-email', toAddress)
   }, [])
 
   return { settings, loading, error, fetchSettings, updateSettings, testEmail }
@@ -318,7 +315,7 @@ export function useSkills() {
   }, [])
 
   const selectProject = useCallback(async (provider: ProviderId) => {
-    const dirPath = await (api.invoke as (channel: string) => Promise<string | null>)('dialog:open-directory')
+    const dirPath = await api.invoke('dialog:open-directory')
     if (dirPath) {
       setProjectPath(dirPath)
       await scanSkills(dirPath, provider)

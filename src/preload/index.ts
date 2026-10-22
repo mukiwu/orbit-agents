@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcApi, ElectronApi } from '../shared/types'
 
-type IpcChannel = keyof IpcApi | 'settings:test-email' | 'dialog:open-files' | 'dialog:save-file' | 'dialog:open-directory' | 'updater:check' | 'updater:download' | 'updater:install' | 'updater:status'
+type IpcChannel = keyof IpcApi
 
 type RendererListener = (event: unknown, ...args: unknown[]) => void
 
