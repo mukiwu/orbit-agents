@@ -10,7 +10,7 @@ import { moveReviewedFile } from './result-actions'
 
 import { getProvider, runProvider } from './ai'
 import { createRunPipeline, extractAndSaveKnowledge, KNOWLEDGE_REGEX, type CompletionStatus } from './run-pipeline'
-import { wasCancelled, clearCancelled } from './process-manager'
+import { beginExecution, endExecution, wasCancelled, clearCancelled } from './process-manager'
 import { sendTaskResultEmail } from './email'
 import { t } from './i18n'
 import type { Task, ExecutionLog, ExecutionLogWithTask, ProviderId } from '../shared/types'
@@ -63,6 +63,8 @@ const executeTask = createRunPipeline({
   sendEmail: sendTaskResultEmail,
   get userDataPath() { return app.getPath('userData') },
   sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+  beginExecution,
+  endExecution,
   wasCancelled,
   clearCancelled
 })

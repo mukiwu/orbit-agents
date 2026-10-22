@@ -116,6 +116,8 @@ export interface RunPipelineDeps {
   sendEmail(task: Task, log: ExecutionLog): Promise<void>
   userDataPath: string
   sleep(ms: number): Promise<void>
+  beginExecution(executionId: string): void
+  endExecution(executionId: string): void
   wasCancelled(executionId: string): boolean
   clearCancelled(executionId: string): void
 }
@@ -136,6 +138,7 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
 
     // Create execution log
     const log = store.createExecutionLog(task.id)
+    deps.beginExecution(log.id)
     deps.onUpdate(log)
 
     try {
@@ -319,6 +322,7 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
           deps.onUpdate(retryLog)
 
           await deps.sleep(delay)
+          if (deps.wasCancelled(log.id)) break
         }
 
         const ctx: ExecutionContext = {
@@ -412,6 +416,8 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
       deps.onUpdate(updatedLog)
       deps.onFinished(task.name, 'failed')
       return updatedLog
+    } finally {
+      deps.endExecution(log.id)
     }
   }
 }

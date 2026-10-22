@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { registerProcess, cancelProcess, wasCancelled, clearCancelled } from './process-manager'
+import { registerProcess, cancelProcess, wasCancelled, clearCancelled, beginExecution, endExecution } from './process-manager'
 import type { ChildProcess } from 'child_process'
 
 function fakeProc(): ChildProcess {
@@ -28,6 +28,24 @@ describe('cancelProcess', () => {
   it('returns false and marks nothing when no process is registered for the id', () => {
     expect(cancelProcess('missing')).toBe(false)
     expect(wasCancelled('missing')).toBe(false)
+  })
+
+  it('marks an unfinished execution as cancelled even while no process is running', () => {
+    beginExecution('exec-3')
+
+    expect(cancelProcess('exec-3')).toBe(true)
+    expect(wasCancelled('exec-3')).toBe(true)
+
+    endExecution('exec-3')
+    clearCancelled('exec-3')
+  })
+
+  it('does not mark an execution that has already ended', () => {
+    beginExecution('exec-4')
+    endExecution('exec-4')
+
+    expect(cancelProcess('exec-4')).toBe(false)
+    expect(wasCancelled('exec-4')).toBe(false)
   })
 
   it('clearCancelled removes the cancelled flag', () => {

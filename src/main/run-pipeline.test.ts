@@ -54,6 +54,7 @@ describe('createRunPipeline', () => {
   let deps: RunPipelineDeps & {
     runProvider: Mock<RunPipelineDeps['runProvider']>
     sendEmail: Mock<RunPipelineDeps['sendEmail']>
+    sleep: Mock<RunPipelineDeps['sleep']>
   }
 
   function providerReturns(...results: ProviderResult[]): void {
@@ -71,7 +72,9 @@ describe('createRunPipeline', () => {
       onFinished: vi.fn(),
       sendEmail: vi.fn<RunPipelineDeps['sendEmail']>().mockResolvedValue(undefined),
       userDataPath,
-      sleep: vi.fn().mockResolvedValue(undefined),
+      sleep: vi.fn<RunPipelineDeps['sleep']>().mockResolvedValue(undefined),
+      beginExecution: () => {},
+      endExecution: () => {},
       wasCancelled: (id) => cancelled.has(id),
       clearCancelled: (id) => { cancelled.delete(id) }
     }
@@ -206,5 +209,20 @@ describe('createRunPipeline', () => {
 
     const keptCopy = join(userDataPath, 'run-inputs', log.id, '1', 'kept.txt')
     expect(deps.runProvider.mock.calls[0][1].prompt).toBe(`Read ${missing} and ${keptCopy}`)
+  })
+
+  it('stops retrying when the run is cancelled during the retry backoff', async () => {
+    providerReturns(
+      { success: false, output: '', error: 'socket hang up' },
+      { success: true, output: 'should not run' }
+    )
+    deps.sleep.mockImplementationOnce(async () => {
+      cancelled.add(mem.logs.keys().next().value!)
+    })
+    const log = await createRunPipeline(deps)(task())
+
+    expect(log.status).toBe('cancelled')
+    expect(deps.runProvider).toHaveBeenCalledOnce()
+    expect(deps.onFinished).not.toHaveBeenCalled()
   })
 })
