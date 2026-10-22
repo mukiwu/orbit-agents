@@ -4,7 +4,6 @@ import { extractDocumentText } from './document-text'
 import { parseAutomationConfig } from './automation-config'
 import { proposedFileName } from './result-actions'
 import { buildUnattendedInstruction } from './ai/unattended'
-import { wasCancelled, clearCancelled } from './process-manager'
 import type { ExecutionContext, ProviderResult } from './ai/types'
 import type { RunProviderOptions } from './ai/runner'
 import { t, getMainLocale } from './i18n'
@@ -67,8 +66,6 @@ function isNetworkError(error: string): boolean {
   return NETWORK_ERROR_PATTERNS.some(pattern => lower.includes(pattern.toLowerCase()))
 }
 
-const KNOWLEDGE_START = '<!-- KNOWLEDGE_START -->'
-const KNOWLEDGE_END = '<!-- KNOWLEDGE_END -->'
 export const KNOWLEDGE_REGEX = /<!-- KNOWLEDGE_START -->([\s\S]*?)<!-- KNOWLEDGE_END -->/g
 
 export function extractAndSaveKnowledge(task: Task, output: string): string {
@@ -119,6 +116,8 @@ export interface RunPipelineDeps {
   sendEmail(task: Task, log: ExecutionLog): Promise<void>
   userDataPath: string
   sleep(ms: number): Promise<void>
+  wasCancelled(executionId: string): boolean
+  clearCancelled(executionId: string): void
 }
 
 export interface RunOptions {
@@ -130,18 +129,14 @@ export interface RunOptions {
 }
 
 export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?: RunOptions) => Promise<ExecutionLog> {
-  const { createExecutionLog, updateExecutionLog, updateExecutionLogOutput, saveRunSnapshot, updateRunReview } = deps.store
-  const notifyExecutionUpdate = deps.onUpdate
-  const showCompletionNotification = deps.onFinished
-  const sleep = deps.sleep
-  const sendTaskResultEmail = deps.sendEmail
+  const { store } = deps
 
   return async function executeTask(task: Task, options: RunOptions = {}): Promise<ExecutionLog> {
     console.log(`[Scheduler] Executing task: ${task.name} (${task.id})`)
 
     // Create execution log
-    const log = createExecutionLog(task.id)
-    notifyExecutionUpdate(log)
+    const log = store.createExecutionLog(task.id)
+    deps.onUpdate(log)
 
     try {
       // Parse MCP tools
@@ -290,7 +285,7 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
         replay_of: options.replay?.log_id ?? null,
         proposed_file_name: null, review_status: 'none', created_at: new Date().toISOString()
       }
-      saveRunSnapshot(snapshot)
+      store.saveRunSnapshot(snapshot)
 
       console.log(`[Scheduler] Calling ${providerId} CLI with prompt length: ${promptWithTextFiles.length}, model: ${model || 'default'}, binary attachments: ${binaryFiles.length}`)
 
@@ -303,8 +298,8 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
         if (now - lastUpdateTime > UPDATE_INTERVAL) {
           lastUpdateTime = now
           // Update the log with partial output
-          const updatedLog = updateExecutionLogOutput(log.id, partialOutput)
-          notifyExecutionUpdate(updatedLog)
+          const updatedLog = store.updateExecutionLogOutput(log.id, partialOutput)
+          deps.onUpdate(updatedLog)
         }
       }
 
@@ -317,10 +312,10 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
           console.log(`[Scheduler] Retry ${attempt}/${MAX_RETRIES} for task ${task.name} after ${delay / 1000}s delay (error: ${lastError})`)
 
           // Update log to show retry status
-          const retryLog = updateExecutionLogOutput(log.id, t('main.retry.networkError', { delay: delay / 1000, attempt, max: MAX_RETRIES, error: lastError }))
-          notifyExecutionUpdate(retryLog)
+          const retryLog = store.updateExecutionLogOutput(log.id, t('main.retry.networkError', { delay: delay / 1000, attempt, max: MAX_RETRIES, error: lastError }))
+          deps.onUpdate(retryLog)
 
-          await sleep(delay)
+          await deps.sleep(delay)
         }
 
         const ctx: ExecutionContext = {
@@ -337,7 +332,7 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
         result = await deps.runProvider(providerId, ctx, { executionId: log.id, onOutput })
 
         // User cancelled this execution — stop immediately, do not retry
-        if (wasCancelled(log.id)) {
+        if (deps.wasCancelled(log.id)) {
           break
         }
 
@@ -373,30 +368,30 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
       // A user-cancelled run is recorded as 'cancelled' (not 'failed') so the UI
       // can show it distinctly. executeTask is the only writer of the final status,
       // which avoids racing with the cancel handler.
-      const cancelled = wasCancelled(log.id)
-      if (cancelled) clearCancelled(log.id)
+      const cancelled = deps.wasCancelled(log.id)
+      if (cancelled) deps.clearCancelled(log.id)
 
       // Update execution log
       const needsReview = !cancelled && result!.success && reviewMode &&
         (resultType === 'organize-file' || Boolean(snapshot.email_to))
-      if (needsReview) updateRunReview(log.id, 'pending',
+      if (needsReview) store.updateRunReview(log.id, 'pending',
         resultType === 'organize-file' && sourcePath ? proposedFileName(cleanOutput, sourcePath) : null)
-      const updatedLog = updateExecutionLog(log.id, {
+      const updatedLog = store.updateExecutionLog(log.id, {
         status: cancelled ? 'cancelled' : needsReview ? 'pending_review' : result!.success ? 'success' : 'failed',
         output: cleanOutput,
         error: cancelled ? undefined : result!.error,
         exitCode: cancelled ? null : result!.exitCode
       })
 
-      notifyExecutionUpdate(updatedLog)
+      deps.onUpdate(updatedLog)
       if (!cancelled) {
-        showCompletionNotification(task.name, needsReview ? 'pending_review' : result!.success ? 'success' : 'failed')
+        deps.onFinished(task.name, needsReview ? 'pending_review' : result!.success ? 'success' : 'failed')
       }
 
       // Send email if configured (only on success — failures stay in logs)
       if (task.output_type === 'both' && task.email_to && updatedLog.status === 'success') {
         try {
-          await sendTaskResultEmail(task, updatedLog)
+          await deps.sendEmail(task, updatedLog)
         } catch (emailError) {
           console.error('Failed to send email:', emailError)
         }
@@ -404,15 +399,15 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
 
       return updatedLog
     } catch (error) {
-      clearCancelled(log.id)
+      deps.clearCancelled(log.id)
       const errorMessage = error instanceof Error ? error.message : String(error)
-      const updatedLog = updateExecutionLog(log.id, {
+      const updatedLog = store.updateExecutionLog(log.id, {
         status: 'failed',
         error: errorMessage
       })
 
-      notifyExecutionUpdate(updatedLog)
-      showCompletionNotification(task.name, 'failed')
+      deps.onUpdate(updatedLog)
+      deps.onFinished(task.name, 'failed')
       return updatedLog
     }
   }

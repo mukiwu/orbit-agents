@@ -50,6 +50,7 @@ function memoryStore() {
 describe('createRunPipeline', () => {
   let userDataPath: string
   let mem: ReturnType<typeof memoryStore>
+  let cancelled: Set<string>
   let deps: RunPipelineDeps & {
     runProvider: Mock<RunPipelineDeps['runProvider']>
     sendEmail: Mock<RunPipelineDeps['sendEmail']>
@@ -62,6 +63,7 @@ describe('createRunPipeline', () => {
   beforeEach(() => {
     userDataPath = mkdtempSync(join(tmpdir(), 'orbit-run-'))
     mem = memoryStore()
+    cancelled = new Set()
     deps = {
       store: mem.store,
       runProvider: vi.fn<RunPipelineDeps['runProvider']>(),
@@ -69,7 +71,9 @@ describe('createRunPipeline', () => {
       onFinished: vi.fn(),
       sendEmail: vi.fn<RunPipelineDeps['sendEmail']>().mockResolvedValue(undefined),
       userDataPath,
-      sleep: vi.fn().mockResolvedValue(undefined)
+      sleep: vi.fn().mockResolvedValue(undefined),
+      wasCancelled: (id) => cancelled.has(id),
+      clearCancelled: (id) => { cancelled.delete(id) }
     }
   })
 
@@ -151,5 +155,36 @@ describe('createRunPipeline', () => {
 
     expect(deps.sendEmail).toHaveBeenCalledOnce()
     expect(deps.sendEmail.mock.calls[0][1].id).toBe(log.id)
+  })
+
+  it('records a cancelled run without retrying or notifying completion', async () => {
+    deps.runProvider.mockImplementationOnce(async (_provider, _ctx, options) => {
+      cancelled.add(options.executionId!)
+      return { success: false, output: '', error: 'socket hang up' }
+    })
+    const log = await createRunPipeline(deps)(task())
+
+    expect(log.status).toBe('cancelled')
+    expect(log.error).toBeNull()
+    expect(deps.runProvider).toHaveBeenCalledOnce()
+    expect(deps.onFinished).not.toHaveBeenCalled()
+    expect(cancelled.has(log.id)).toBe(false)
+  })
+
+  it('runs file-sourced automations read-only', async () => {
+    const source = join(userDataPath, 'invoice.txt')
+    writeFileSync(source, 'total 100')
+    const automation = JSON.stringify({ source: { type: 'folder', path: userDataPath }, result: { type: 'report' }, require_review: false, fallback_provider: null })
+    providerReturns({ success: true, output: 'ok' })
+    await createRunPipeline(deps)(
+      task({ automation, skip_permissions: 1, mcp_tools: JSON.stringify(['mcp__gmail']) }),
+      { sourceFile: source }
+    )
+
+    const ctx = deps.runProvider.mock.calls[0][1]
+    expect(ctx.reviewMode).toBe(true)
+    expect(ctx.skipPermissions).toBe(false)
+    expect(ctx.mcpTools).toEqual([])
+    expect(ctx.prompt).toContain('只分析與提出變更建議')
   })
 })
