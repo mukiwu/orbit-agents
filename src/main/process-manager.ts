@@ -4,16 +4,15 @@ const activeProcesses = new Map<string, ChildProcess>()
 // Execution ids the user explicitly cancelled, so executeTask can record them as
 // 'cancelled' instead of 'failed' once the killed process closes.
 const cancelledIds = new Set<string>()
-// Execution ids that have started and not yet finished, including the gaps
-// between provider processes such as a retry backoff.
-const unfinishedIds = new Set<string>()
+// Execution ids waiting out a retry backoff, when no provider process is running.
+const backoffIds = new Set<string>()
 
-export function beginExecution(executionId: string): void {
-  unfinishedIds.add(executionId)
+export function beginBackoff(executionId: string): void {
+  backoffIds.add(executionId)
 }
 
-export function endExecution(executionId: string): void {
-  unfinishedIds.delete(executionId)
+export function endBackoff(executionId: string): void {
+  backoffIds.delete(executionId)
 }
 
 export function registerProcess(executionId: string, process: ChildProcess): void {
@@ -34,10 +33,10 @@ export function unregisterProcess(executionId: string): void {
 }
 
 // Stop a running execution: flag it as cancelled and terminate its process, if any.
-// Returns false when the execution has already finished.
+// Returns false when the execution has no running process and is not in a retry backoff.
 export function cancelProcess(executionId: string): boolean {
   const proc = activeProcesses.get(executionId)
-  if (!proc && !unfinishedIds.has(executionId)) return false
+  if (!proc && !backoffIds.has(executionId)) return false
 
   cancelledIds.add(executionId)
   proc?.kill('SIGTERM')

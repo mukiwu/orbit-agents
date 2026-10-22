@@ -73,8 +73,8 @@ describe('createRunPipeline', () => {
       sendEmail: vi.fn<RunPipelineDeps['sendEmail']>().mockResolvedValue(undefined),
       userDataPath,
       sleep: vi.fn<RunPipelineDeps['sleep']>().mockResolvedValue(undefined),
-      beginExecution: () => {},
-      endExecution: () => {},
+      beginBackoff: () => {},
+      endBackoff: () => {},
       wasCancelled: (id) => cancelled.has(id),
       clearCancelled: (id) => { cancelled.delete(id) }
     }
@@ -209,6 +209,27 @@ describe('createRunPipeline', () => {
 
     const keptCopy = join(userDataPath, 'run-inputs', log.id, '1', 'kept.txt')
     expect(deps.runProvider.mock.calls[0][1].prompt).toBe(`Read ${missing} and ${keptCopy}`)
+  })
+
+  it('rewrites a replayed path that is a prefix of another attachment path correctly', async () => {
+    const short = join(userDataPath, 'old', 'a.txt')
+    const long = join(userDataPath, 'old', 'a.txt.bak')
+    mkdirSync(join(userDataPath, 'old'))
+    writeFileSync(short, 'short')
+    writeFileSync(long, 'long')
+    const replay: RunSnapshot = {
+      log_id: 'log-old', prompt: `Read ${long}`, system_instruction: '',
+      provider: 'claude', fallback_provider: null, model: null, attachment_paths: [short, long],
+      add_dirs: [], project_path: null, skip_permissions: false, mcp_tools: [], source_path: null,
+      source_size: null, source_modified_at_ms: null, source_url: null, result_type: 'report',
+      require_review: false, destination: null, email_to: null, replay_of: null,
+      proposed_file_name: null, review_status: 'none', created_at: 'then'
+    }
+    providerReturns({ success: true, output: 'ok' })
+    const log = await createRunPipeline(deps)(task(), { replay })
+
+    const longCopy = join(userDataPath, 'run-inputs', log.id, '1', 'a.txt.bak')
+    expect(deps.runProvider.mock.calls[0][1].prompt).toBe(`Read ${longCopy}`)
   })
 
   it('stops retrying when the run is cancelled during the retry backoff', async () => {
