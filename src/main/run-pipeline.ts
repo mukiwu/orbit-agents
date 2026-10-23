@@ -116,6 +116,8 @@ export interface RunPipelineDeps {
   sendEmail(task: Task, log: ExecutionLog): Promise<void>
   userDataPath: string
   sleep(ms: number): Promise<void>
+  beginBackoff(executionId: string): void
+  endBackoff(executionId: string): void
   wasCancelled(executionId: string): boolean
   clearCancelled(executionId: string): void
 }
@@ -153,6 +155,8 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
 
       const sourceFile = options.sourceFile
       const snapshotPaths: string[] = []
+      // Original attachment path -> its copy for this run; missing attachments have no entry
+      const copiedPaths = new Map<string, string>()
       if (options.replay || task.attachments || sourceFile) {
         const attachmentPaths = options.replay?.attachment_paths || (task.attachments ? JSON.parse(task.attachments) as string[] : [])
         if (!options.replay && sourceFile && !attachmentPaths.includes(sourceFile)) attachmentPaths.push(sourceFile)
@@ -169,6 +173,7 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
           mkdirSync(dirname(inputCopy), { recursive: true })
           copyFileSync(filePath, inputCopy)
           snapshotPaths.push(inputCopy)
+          copiedPaths.set(filePath, inputCopy)
 
           if (['.pdf', '.docx'].includes(extname(inputCopy).toLowerCase())) {
             try {
@@ -251,8 +256,10 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
       if (readOnlyMode && providerId === 'antigravity') throw new Error('File and website automations require Claude or Codex')
       if (options.replay) {
         promptWithTextFiles = options.replay.prompt
-        for (const [index, oldPath] of options.replay.attachment_paths.entries()) {
-          const newPath = snapshotPaths[index]
+        // Longest paths first, so a path that prefixes another is not replaced inside it
+        const oldPaths = [...options.replay.attachment_paths].sort((a, b) => b.length - a.length)
+        for (const oldPath of oldPaths) {
+          const newPath = copiedPaths.get(oldPath)
           if (newPath) promptWithTextFiles = promptWithTextFiles.replaceAll(oldPath, newPath)
         }
       }
@@ -315,7 +322,13 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
           const retryLog = store.updateExecutionLogOutput(log.id, t('main.retry.networkError', { delay: delay / 1000, attempt, max: MAX_RETRIES, error: lastError }))
           deps.onUpdate(retryLog)
 
-          await deps.sleep(delay)
+          deps.beginBackoff(log.id)
+          try {
+            await deps.sleep(delay)
+          } finally {
+            deps.endBackoff(log.id)
+          }
+          if (deps.wasCancelled(log.id)) break
         }
 
         const ctx: ExecutionContext = {
@@ -369,7 +382,6 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
       // can show it distinctly. executeTask is the only writer of the final status,
       // which avoids racing with the cancel handler.
       const cancelled = deps.wasCancelled(log.id)
-      if (cancelled) deps.clearCancelled(log.id)
 
       // Update execution log
       const needsReview = !cancelled && result!.success && reviewMode &&
@@ -399,7 +411,6 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
 
       return updatedLog
     } catch (error) {
-      deps.clearCancelled(log.id)
       const errorMessage = error instanceof Error ? error.message : String(error)
       const updatedLog = store.updateExecutionLog(log.id, {
         status: 'failed',
@@ -409,6 +420,8 @@ export function createRunPipeline(deps: RunPipelineDeps): (task: Task, options?:
       deps.onUpdate(updatedLog)
       deps.onFinished(task.name, 'failed')
       return updatedLog
+    } finally {
+      deps.clearCancelled(log.id)
     }
   }
 }
