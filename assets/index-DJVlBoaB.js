@@ -9669,9 +9669,9 @@ function useTasks() {
   const [tasks, setTasks] = reactExports.useState([]);
   const [loading, setLoading] = reactExports.useState(true);
   const [error, setError] = reactExports.useState(null);
-  const fetchTasks = reactExports.useCallback(async () => {
+  const fetchTasks = reactExports.useCallback(async (quiet = false) => {
     try {
-      setLoading(true);
+      if (!quiet) setLoading(true);
       const data = await api.invoke("task:list");
       setTasks(data);
       setError(null);
@@ -9717,51 +9717,6 @@ function useTasks() {
     toggleTask,
     runTaskNow
   };
-}
-function useExecutionLogs(taskId, limit = 100) {
-  const [logs, setLogs] = reactExports.useState([]);
-  const [loading, setLoading] = reactExports.useState(true);
-  const [error, setError] = reactExports.useState(null);
-  const fetchLogs = reactExports.useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await api.invoke("log:list", taskId, limit);
-      setLogs(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch logs");
-    } finally {
-      setLoading(false);
-    }
-  }, [taskId, limit]);
-  reactExports.useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
-  reactExports.useEffect(() => {
-    const handleUpdate = (log) => {
-      setLogs((prev) => {
-        const exists = prev.find((l2) => l2.id === log.id);
-        if (exists) {
-          return prev.map((l2) => l2.id === log.id ? { ...l2, ...log } : l2);
-        }
-        return [log, ...prev];
-      });
-    };
-    api.on("execution:update", handleUpdate);
-    return () => {
-      api.off("execution:update", handleUpdate);
-    };
-  }, []);
-  const deleteLogs = reactExports.useCallback(async (ids) => {
-    try {
-      await api.invoke("log:delete", ids);
-      setLogs((prev) => prev.filter((l2) => !ids.includes(l2.id)));
-    } catch (err) {
-      console.error("Failed to delete logs:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete logs");
-    }
-  }, []);
-  return { logs, loading, error, fetchLogs, deleteLogs };
 }
 function useExecutionLog(id2) {
   const [log, setLog] = reactExports.useState(null);
@@ -9820,10 +9775,7 @@ function useSettings() {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   }, []);
   const testEmail = reactExports.useCallback(async (toAddress) => {
-    await api.invoke(
-      "settings:test-email",
-      toAddress
-    );
+    await api.invoke("settings:test-email", toAddress);
   }, []);
   return { settings: settings2, loading, error, fetchSettings, updateSettings, testEmail };
 }
@@ -10064,7 +10016,34 @@ const createLucideIcon = (iconName, iconNode) => {
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$n = [
+const __iconNode$t = [
+  [
+    "path",
+    {
+      d: "M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2",
+      key: "169zse"
+    }
+  ]
+];
+const Activity = createLucideIcon("activity", __iconNode$t);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$s = [
+  ["path", { d: "M5 12h14", key: "1ays0h" }],
+  ["path", { d: "m12 5 7 7-7 7", key: "xquz4c" }]
+];
+const ArrowRight = createLucideIcon("arrow-right", __iconNode$s);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$r = [
   [
     "path",
     {
@@ -10075,14 +10054,29 @@ const __iconNode$n = [
   ["path", { d: "m3.3 7 8.7 5 8.7-5", key: "g66t2b" }],
   ["path", { d: "M12 22V12", key: "d0xqtd" }]
 ];
-const Box = createLucideIcon("box", __iconNode$n);
+const Box = createLucideIcon("box", __iconNode$r);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$m = [
+const __iconNode$q = [
+  ["path", { d: "M16 14v2.2l1.6 1", key: "fo4ql5" }],
+  ["path", { d: "M16 2v4", key: "4m81vk" }],
+  ["path", { d: "M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5", key: "1osxxc" }],
+  ["path", { d: "M3 10h5", key: "r794hk" }],
+  ["path", { d: "M8 2v4", key: "1cmpym" }],
+  ["circle", { cx: "16", cy: "16", r: "6", key: "qoo3c4" }]
+];
+const CalendarClock = createLucideIcon("calendar-clock", __iconNode$q);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$p = [
   ["path", { d: "M8 2v4", key: "1cmpym" }],
   ["path", { d: "M16 2v4", key: "4m81vk" }],
   ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
@@ -10094,7 +10088,36 @@ const __iconNode$m = [
   ["path", { d: "M12 18h.01", key: "mhygvu" }],
   ["path", { d: "M16 18h.01", key: "kzsmim" }]
 ];
-const CalendarDays = createLucideIcon("calendar-days", __iconNode$m);
+const CalendarDays = createLucideIcon("calendar-days", __iconNode$p);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$o = [
+  ["path", { d: "M8 2v4", key: "1cmpym" }],
+  ["path", { d: "M16 2v4", key: "4m81vk" }],
+  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
+  ["path", { d: "M3 10h18", key: "8toen8" }]
+];
+const Calendar = createLucideIcon("calendar", __iconNode$o);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$n = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$n);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$m = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$m);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10102,28 +10125,33 @@ const CalendarDays = createLucideIcon("calendar-days", __iconNode$m);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$l = [
-  ["path", { d: "M8 2v4", key: "1cmpym" }],
-  ["path", { d: "M16 2v4", key: "4m81vk" }],
-  ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
-  ["path", { d: "M3 10h18", key: "8toen8" }]
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
+  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
 ];
-const Calendar = createLucideIcon("calendar", __iconNode$l);
+const CircleAlert = createLucideIcon("circle-alert", __iconNode$l);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$k = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$k);
+const __iconNode$k = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+];
+const CircleCheck = createLucideIcon("circle-check", __iconNode$k);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$j = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-const ChevronDown = createLucideIcon("chevron-down", __iconNode$j);
+const __iconNode$j = [
+  ["path", { d: "M12 6v6h4", key: "135r8i" }],
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
+];
+const Clock3 = createLucideIcon("clock-3", __iconNode$j);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10131,11 +10159,10 @@ const ChevronDown = createLucideIcon("chevron-down", __iconNode$j);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$i = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["line", { x1: "12", x2: "12", y1: "8", y2: "12", key: "1pkeuh" }],
-  ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16", key: "4dfq90" }]
+  ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }],
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
 ];
-const CircleAlert = createLucideIcon("circle-alert", __iconNode$i);
+const Clock = createLucideIcon("clock", __iconNode$i);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10143,17 +10170,6 @@ const CircleAlert = createLucideIcon("circle-alert", __iconNode$i);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$h = [
-  ["path", { d: "M12 6v6l4 2", key: "mmk7yg" }],
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
-];
-const Clock = createLucideIcon("clock", __iconNode$h);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$g = [
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M17 20v2", key: "1rnc9c" }],
@@ -10169,7 +10185,19 @@ const __iconNode$g = [
   ["rect", { x: "4", y: "4", width: "16", height: "16", rx: "2", key: "1vbyd7" }],
   ["rect", { x: "8", y: "8", width: "8", height: "8", rx: "1", key: "z9xiuo" }]
 ];
-const Cpu = createLucideIcon("cpu", __iconNode$g);
+const Cpu = createLucideIcon("cpu", __iconNode$h);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$g = [
+  ["path", { d: "M12 15V3", key: "m9g1x1" }],
+  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
+  ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
+];
+const Download = createLucideIcon("download", __iconNode$g);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10177,18 +10205,6 @@ const Cpu = createLucideIcon("cpu", __iconNode$g);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$f = [
-  ["path", { d: "M12 15V3", key: "m9g1x1" }],
-  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
-  ["path", { d: "m7 10 5 5 5-5", key: "brsn70" }]
-];
-const Download = createLucideIcon("download", __iconNode$f);
-/**
- * @license lucide-react v0.563.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$e = [
   [
     "path",
     {
@@ -10197,7 +10213,21 @@ const __iconNode$e = [
     }
   ]
 ];
-const FolderOpen = createLucideIcon("folder-open", __iconNode$e);
+const FolderOpen = createLucideIcon("folder-open", __iconNode$f);
+/**
+ * @license lucide-react v0.563.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$e = [
+  ["path", { d: "M13 5h8", key: "a7qcls" }],
+  ["path", { d: "M13 12h8", key: "h98zly" }],
+  ["path", { d: "M13 19h8", key: "c3s6r1" }],
+  ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
+  ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }]
+];
+const ListChecks = createLucideIcon("list-checks", __iconNode$e);
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10717,8 +10747,16 @@ function removePromptSnippet(prompt, snippet) {
 
 ${after}` : before + after;
 }
-function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
-  const { t: t2 } = useTranslation();
+const defaultAutomation = {
+  source: { type: "schedule" },
+  result: { type: "report" },
+  require_review: false,
+  fallback_provider: null
+};
+function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = "modal" }) {
+  const { t: t2, i18n } = useTranslation();
+  const savedNextRun = nextRun === void 0 ? task?.next_run : nextRun;
+  const savedScheduleEnabled = scheduleEnabled ?? task?.enabled === 1;
   const { createTask, updateTask } = useTasks();
   const { listMcps: listAiMcps, listModels } = useAiProvider();
   const { skills, loading: loadingSkills, projectPath, setProjectPath, selectProject, clearProject, scanSkills } = useSkills();
@@ -10735,6 +10773,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
   const [error, setError] = reactExports.useState(null);
   const [mcpServers, setMcpServers] = reactExports.useState([]);
   const [loadingMcps, setLoadingMcps] = reactExports.useState(false);
+  const [automation2, setAutomation] = reactExports.useState(task?.automation ? JSON.parse(task.automation) : defaultAutomation);
   const initialSchedule = reactExports.useMemo(() => {
     return parseCronToSimple(task?.cron_expression || "0 9 * * *");
   }, [task?.cron_expression]);
@@ -10751,6 +10790,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
     setSelectedWeekdays(parsed.weekdays);
     setWeekInterval(task?.week_interval || parsed.weekInterval);
     setMonthDay(parsed.monthDay);
+    setAutomation(task?.automation ? JSON.parse(task.automation) : defaultAutomation);
     if (task) {
       setFormData({
         name: task.name || "",
@@ -10979,6 +11019,10 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loadingModels) return;
+    if ((automation2.require_review || automation2.source.type !== "schedule") && formData.cli_tool === "antigravity") {
+      setError(t2("automation.reviewProviderError"));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -10997,7 +11041,8 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
         project_path: projectPath ?? null,
         skip_permissions: formData.skip_permissions,
         week_interval: weekInterval,
-        enabled: formData.enabled
+        enabled: formData.enabled,
+        automation: automation2
       };
       if (task) {
         await updateTask({ id: task.id, ...input });
@@ -11089,7 +11134,128 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
           }
         )
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3 rounded-xl border border-gray-200 bg-gray-50/70 p-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm font-semibold text-gray-800", children: t2("automation.templates") }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-2 gap-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => {
+            setAutomation({ source: { type: "folder", path: "" }, result: { type: "organize-file", destination: "" }, require_review: true, fallback_provider: null });
+            setFormData((prev) => ({ ...prev, name: t2("automation.fileTemplateName"), prompt: t2("automation.fileTemplatePrompt"), skip_permissions: false }));
+          }, className: "rounded-lg border border-gray-200 bg-white p-3 text-left text-sm hover:border-blue-300 hover:bg-blue-50", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "block text-gray-900", children: t2("automation.fileTemplate") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-gray-500", children: t2("automation.fileTemplateDesc") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => {
+            setAutomation({ source: { type: "website", url: "" }, result: { type: "report" }, require_review: false, fallback_provider: null });
+            setFormData((prev) => ({ ...prev, name: t2("automation.websiteTemplateName"), prompt: t2("automation.websiteTemplatePrompt") }));
+          }, className: "rounded-lg border border-gray-200 bg-white p-3 text-left text-sm hover:border-blue-300 hover:bg-blue-50", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "block text-gray-900", children: t2("automation.websiteTemplate") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-gray-500", children: t2("automation.websiteTemplateDesc") })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", role: "group", "aria-label": t2("automation.trigger"), children: ["schedule", "folder", "website"].map((type) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "aria-pressed": automation2.source.type === type,
+            onClick: () => setAutomation((prev) => ({
+              ...prev,
+              source: type === "schedule" ? { type } : type === "folder" ? { type, path: "" } : { type, url: "" },
+              result: type === "folder" ? prev.result : { type: "report" }
+            })),
+            className: `rounded-md px-3 py-1.5 text-xs font-medium ${automation2.source.type === type ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`,
+            children: t2(`automation.source.${type}`)
+          },
+          type
+        )) }),
+        automation2.source.type === "folder" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-xs font-medium text-gray-600", children: t2("automation.watchFolder") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "text",
+                required: true,
+                value: automation2.source.path,
+                onChange: (e) => setAutomation((prev) => ({ ...prev, source: { type: "folder", path: e.target.value } })),
+                className: "min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => void window.electronApi.invoke("dialog:open-directory").then((path2) => {
+              if (path2) setAutomation((prev) => ({ ...prev, source: { type: "folder", path: path2 } }));
+            }), className: "rounded-lg border border-gray-200 bg-white px-3 text-sm", children: t2("automation.browse") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", role: "group", "aria-label": t2("automation.resultLabel"), children: ["report", "organize-file"].map((type) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              "aria-pressed": automation2.result.type === type,
+              onClick: () => setAutomation((prev) => ({
+                ...prev,
+                result: type === "report" ? { type } : { type, destination: "" },
+                require_review: type === "organize-file" ? true : prev.require_review
+              })),
+              className: `rounded-md px-3 py-1.5 text-xs font-medium ${automation2.result.type === type ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`,
+              children: t2(`automation.result.${type}`)
+            },
+            type
+          )) }),
+          automation2.result.type === "organize-file" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "text",
+                required: true,
+                placeholder: t2("automation.destination"),
+                value: automation2.result.destination,
+                onChange: (e) => setAutomation((prev) => ({ ...prev, result: { type: "organize-file", destination: e.target.value } })),
+                className: "min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => void window.electronApi.invoke("dialog:open-directory").then((path2) => {
+              if (path2) setAutomation((prev) => ({ ...prev, result: { type: "organize-file", destination: path2 } }));
+            }), className: "rounded-lg border border-gray-200 bg-white px-3 text-sm", children: t2("automation.browse") })
+          ] })
+        ] }),
+        automation2.source.type === "website" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "input",
+          {
+            type: "url",
+            required: true,
+            placeholder: "https://example.com",
+            value: automation2.source.url,
+            onChange: (e) => setAutomation((prev) => ({ ...prev, source: { type: "website", url: e.target.value } })),
+            className: "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 text-xs text-gray-600", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "inline-flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                type: "checkbox",
+                checked: automation2.require_review,
+                disabled: automation2.result.type === "organize-file",
+                onChange: (e) => setAutomation((prev) => ({ ...prev, require_review: e.target.checked }))
+              }
+            ),
+            t2("automation.requireReview")
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t2("automation.reviewHint") })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "block text-xs text-gray-600", children: t2("automation.fallbackProvider") }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: [null, "claude", "codex", "antigravity"].map((provider) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "aria-pressed": automation2.fallback_provider === provider,
+            onClick: () => setAutomation((prev) => ({ ...prev, fallback_provider: provider })),
+            className: `rounded-md px-2 py-1 text-xs ${automation2.fallback_provider === provider ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`,
+            children: provider ?? t2("automation.none")
+          },
+          provider ?? "none"
+        )) })
+      ] }),
+      automation2.source.type !== "folder" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-2", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block text-sm font-medium text-gray-600", children: [
             t2("taskForm.schedule.label"),
@@ -11289,6 +11455,18 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
               ] })
             ] })
           ] })
+        ] }),
+        task && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "mt-2 text-xs text-gray-500", children: [
+          t2("taskForm.schedule.savedNextRun"),
+          ": ",
+          " ",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-medium text-gray-700", children: !savedScheduleEnabled ? t2("taskList.paused") : savedNextRun ? new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(new Date(savedNextRun)) : t2("taskList.unscheduled") })
         ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
@@ -11610,8 +11788,9 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
             "button",
             {
               type: "button",
-              "aria-pressed": formData.skip_permissions,
+              "aria-pressed": automation2.require_review || automation2.source.type !== "schedule" ? false : formData.skip_permissions,
               "aria-label": t2("taskForm.permissions.label"),
+              disabled: automation2.require_review || automation2.source.type !== "schedule",
               onClick: () => setFormData((prev) => ({ ...prev, skip_permissions: !prev.skip_permissions })),
               className: `relative w-9 h-5 rounded-full transition-colors ${formData.skip_permissions ? "bg-amber-600" : "bg-gray-300"}`,
               children: /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -11624,7 +11803,7 @@ function TaskForm({ task, onClose, onSaved, variant = "modal" }) {
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "text-sm font-medium text-gray-700", children: t2("taskForm.permissions.label") })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-amber-800", children: t2("taskForm.permissions.description") })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-amber-800", children: automation2.require_review || automation2.source.type !== "schedule" ? t2("automation.readOnlyMode") : t2("taskForm.permissions.description") })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 pt-2", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -11683,11 +11862,36 @@ function TaskList({
   onCloseForm,
   onTaskSaved
 }) {
-  const { t: t2 } = useTranslation();
-  const { tasks, loading, error, toggleTask, deleteTask, runTaskNow } = useTasks();
+  const { t: t2, i18n } = useTranslation();
+  const { tasks, loading, error, toggleTask, deleteTask, runTaskNow, fetchTasks } = useTasks();
   const [runningTasks, setRunningTasks] = reactExports.useState(/* @__PURE__ */ new Set());
   const [deletingTask, setDeletingTask] = reactExports.useState(null);
+  const [runNotice, setRunNotice] = reactExports.useState(null);
+  const [now, setNow] = reactExports.useState(Date.now());
+  reactExports.useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      void fetchTasks(true);
+    }, 6e4);
+    return () => window.clearInterval(timer);
+  }, [fetchTasks]);
+  const nextRunLabel = (task) => {
+    if (task.enabled !== 1) return t2("taskList.paused");
+    if (task.automation) {
+      try {
+        if (JSON.parse(task.automation).source?.type === "folder") return t2("automation.watching");
+      } catch {
+      }
+    }
+    if (!task.next_run) return t2("taskList.unscheduled");
+    const minutes = Math.max(0, Math.ceil((new Date(task.next_run).getTime() - now) / 6e4));
+    const formatter = new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language, { numeric: "auto" });
+    if (minutes < 60) return formatter.format(minutes, "minute");
+    if (minutes < 1440) return formatter.format(Math.ceil(minutes / 60), "hour");
+    return formatter.format(Math.ceil(minutes / 1440), "day");
+  };
   const selectedTaskId = editingTask?.id;
+  const currentTask = tasks.find((task) => task.id === selectedTaskId);
   const handleToggle = async (e, task) => {
     e.stopPropagation();
     try {
@@ -11698,11 +11902,15 @@ function TaskList({
   };
   const handleRunNow = async (e, taskId) => {
     e.stopPropagation();
+    setRunNotice(null);
     setRunningTasks((prev) => new Set(prev).add(taskId));
     try {
-      await runTaskNow(taskId);
+      const log = await runTaskNow(taskId);
+      if (log.status === "failed") setRunNotice({ taskId, text: t2("automation.runFailed") });
     } catch (err) {
       console.error("Failed to run task:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      setRunNotice({ taskId, text: message.includes("No new files") ? t2("automation.noNewFiles") : message.includes("has not changed") ? t2("automation.noWebsiteChange") : message });
     } finally {
       setRunningTasks((prev) => {
         const next = new Set(prev);
@@ -11745,8 +11953,8 @@ function TaskList({
   }
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full gap-8", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "w-80 flex-shrink-0 flex flex-col gap-1", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-4 px-2 flex items-center justify-between", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-bold text-gray-900", children: t2("taskList.title") }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-4 flex items-center justify-between", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-semibold text-gray-900", children: t2("taskList.title") }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-400 mt-1", children: t2("taskList.subtitle") })
       ] }) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto space-y-2 pr-2", children: tasks.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center py-12 px-4 border-2 border-dashed border-gray-200 rounded-xl", children: [
@@ -11766,10 +11974,18 @@ function TaskList({
                   /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: `font-semibold text-sm truncate ${isSelected ? "text-blue-900" : "text-gray-900"}`, children: task.name }),
                   task.needs_review === 1 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 mb-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[10px] text-amber-700 font-medium", children: t2("taskList.needsReview") }),
                   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5 mt-1", children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${task.cli_tool === "claude" ? "bg-orange-100 text-orange-700" : "bg-indigo-100 text-indigo-700"}`, children: task.cli_tool }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${task.cli_tool === "claude" ? "bg-orange-100 text-orange-700" : task.cli_tool === "codex" ? "bg-indigo-100 text-indigo-700" : "bg-teal-100 text-teal-800"}`, children: task.cli_tool }),
                     /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-gray-400 flex items-center gap-0.5 ml-1", children: [
                       /* @__PURE__ */ jsxRuntimeExports.jsx(Clock, { className: "w-3 h-3" }),
                       (() => {
+                        if (task.automation) {
+                          try {
+                            const source = JSON.parse(task.automation).source;
+                            if (source?.type === "folder") return t2("automation.source.folder");
+                            if (source?.type === "website") return t2("automation.source.website");
+                          } catch {
+                          }
+                        }
                         const params = parseCronToSimple(task.cron_expression || "");
                         if (params.mode === "advanced") return task.cron_expression;
                         return getScheduleDescription(
@@ -11784,7 +12000,20 @@ function TaskList({
                         );
                       })()
                     ] })
-                  ] })
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    "p",
+                    {
+                      className: "mt-1 truncate pr-12 text-[11px] text-gray-500",
+                      title: task.next_run ? new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(task.next_run)) : void 0,
+                      children: [
+                        t2("taskList.nextRun"),
+                        ": ",
+                        nextRunLabel(task)
+                      ]
+                    }
+                  ),
+                  runNotice?.taskId === task.id && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: "mt-1 text-xs text-amber-700", children: runNotice.text })
                 ] }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-1", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
                   "button",
@@ -11831,6 +12060,8 @@ function TaskList({
       TaskForm,
       {
         task: editingTask,
+        nextRun: currentTask ? currentTask.next_run : editingTask?.next_run,
+        scheduleEnabled: (currentTask ?? editingTask)?.enabled === 1,
         onClose: onCloseForm,
         onSaved: onTaskSaved,
         variant: "panel"
@@ -24412,17 +24643,152 @@ function linkifyIframes(markdown, label) {
     (_match, src) => `[${label}](<${src}>)`
   );
 }
-function ExecutionLog() {
-  const { t: t2 } = useTranslation();
-  const { logs, loading, error, deleteLogs } = useExecutionLogs(void 0, 200);
-  const [selectedLogId, setSelectedLogId] = reactExports.useState(null);
+function formatDurationMs(diffMs) {
+  if (!Number.isFinite(diffMs) || diffMs < 0) return "—";
+  if (diffMs < 1e3) return `${Math.round(diffMs)}ms`;
+  if (diffMs < 6e4) return `${(diffMs / 1e3).toFixed(1)}s`;
+  const totalSeconds = Math.round(diffMs / 1e3);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+}
+function formatDuration(start, end) {
+  return formatDurationMs(new Date(end).getTime() - new Date(start).getTime());
+}
+function classifyProviderFailure(message) {
+  const text2 = message.toLowerCase();
+  if (/\b(401|403|unauthori[sz]ed|sign.?in|log.?in|authentication|invalid.api.key|subscription)\b/.test(text2)) return "auth";
+  if (/\b(model.*(not found|unsupported|unavailable|access|does not exist)|unknown model|invalid model|404)\b/.test(text2)) return "model";
+  if (/\b(enoent|command not found|failed to execute|spawn.*failed|executable not found)\b/.test(text2)) return "cli";
+  if (/\b(429|rate limit|too many requests|quota exceeded)\b/.test(text2)) return "rate";
+  if (/\b(etimedout|econnreset|enotfound|network error|fetch failed)\b/.test(text2)) return "network";
+  return "other";
+}
+const pageSize = 50;
+function ExecutionLog({ initialLogId = null }) {
+  const { t: t2, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || i18n.language;
+  const [logs, setLogs] = reactExports.useState([]);
+  const [total, setTotal] = reactExports.useState(0);
+  const [loading, setLoading] = reactExports.useState(true);
+  const [loadingMore, setLoadingMore] = reactExports.useState(false);
+  const [error, setError] = reactExports.useState(null);
+  const [searchInput, setSearchInput] = reactExports.useState("");
+  const [query, setQuery] = reactExports.useState("");
+  const [statusFilter, setStatusFilter] = reactExports.useState("all");
+  const [selectedLogId, setSelectedLogId] = reactExports.useState(initialLogId);
+  const [selectedLogFallback, setSelectedLogFallback] = reactExports.useState(null);
   const [checkedLogIds, setCheckedLogIds] = reactExports.useState(/* @__PURE__ */ new Set());
+  const requestId = reactExports.useRef(0);
+  const loadedCount = reactExports.useRef(pageSize);
+  const hasMounted = reactExports.useRef(false);
+  const selectAllRef = reactExports.useRef(null);
+  const checkedVisibleCount = logs.filter((log) => checkedLogIds.has(log.id)).length;
   reactExports.useEffect(() => {
-    if (logs.length > 0 && !selectedLogId) {
-      setSelectedLogId(logs[0].id);
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = checkedVisibleCount > 0 && checkedVisibleCount < logs.length;
     }
-  }, [logs, selectedLogId]);
-  const selectedLog = logs.find((l2) => l2.id === selectedLogId) || null;
+  }, [checkedVisibleCount, logs.length]);
+  reactExports.useEffect(() => {
+    setCheckedLogIds((previous2) => {
+      const visible = new Set(logs.map((log) => log.id));
+      const next = new Set([...previous2].filter((id2) => visible.has(id2)));
+      return next.size === previous2.size ? previous2 : next;
+    });
+  }, [logs]);
+  reactExports.useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(searchInput.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+  const fetchLogs = reactExports.useCallback(async (offset, limit, append = false, quiet = false) => {
+    const currentRequest = ++requestId.current;
+    if (append) setLoadingMore(true);
+    else if (!quiet) setLoading(true);
+    try {
+      const result = await window.electronApi.invoke("log:search", {
+        query,
+        status: statusFilter,
+        offset,
+        limit
+      });
+      if (currentRequest !== requestId.current) return;
+      setLogs((previous2) => append ? [...new Map([...previous2, ...result.logs].map((log) => [log.id, log])).values()] : result.logs);
+      setTotal(result.total);
+      loadedCount.current = offset + result.logs.length;
+      setError(null);
+    } catch (cause) {
+      if (currentRequest === requestId.current) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      }
+    } finally {
+      if (currentRequest === requestId.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
+  }, [query, statusFilter]);
+  reactExports.useEffect(() => {
+    loadedCount.current = pageSize;
+    setCheckedLogIds(/* @__PURE__ */ new Set());
+    if (hasMounted.current) {
+      setSelectedLogId(null);
+      setSelectedLogFallback(null);
+    } else {
+      hasMounted.current = true;
+    }
+    void fetchLogs(0, pageSize);
+  }, [fetchLogs]);
+  reactExports.useEffect(() => {
+    let pending = null;
+    const onExecutionUpdate = () => {
+      if (pending !== null) return;
+      pending = window.setTimeout(() => {
+        pending = null;
+        void fetchLogs(0, Math.max(pageSize, loadedCount.current), false, true);
+      }, 1200);
+    };
+    window.electronApi.on("execution:update", onExecutionUpdate);
+    return () => {
+      if (pending !== null) window.clearTimeout(pending);
+      window.electronApi.off("execution:update", onExecutionUpdate);
+    };
+  }, [fetchLogs]);
+  reactExports.useEffect(() => {
+    if (!loading && logs.length > 0 && !selectedLogId) setSelectedLogId(logs[0].id);
+  }, [logs, loading, selectedLogId]);
+  reactExports.useEffect(() => {
+    if (!initialLogId || selectedLogId !== initialLogId || logs.some((log) => log.id === initialLogId) || selectedLogFallback?.id === initialLogId) return;
+    let cancelled = false;
+    void window.electronApi.invoke("log:get", initialLogId).then((log) => {
+      if (!cancelled) setSelectedLogFallback(log);
+    }).catch(() => void 0);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialLogId, logs, selectedLogFallback, selectedLogId]);
+  const dateGroups = reactExports.useMemo(() => {
+    const groups = [];
+    for (const log of logs) {
+      const date = new Date(log.started_at);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      if (groups[groups.length - 1]?.key !== key) {
+        const label = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(date);
+        groups.push({ key, label, logs: [] });
+      }
+      groups[groups.length - 1].logs.push(log);
+    }
+    return groups;
+  }, [logs, locale]);
+  const selectedLog = logs.find((l2) => l2.id === selectedLogId) || (selectedLogFallback?.id === selectedLogId ? selectedLogFallback : null);
+  const statusOptions = [
+    { value: "all", label: t2("executionLog.filter.all") },
+    { value: "running", label: t2("common.running") },
+    { value: "failed", label: t2("common.failed") },
+    { value: "success", label: t2("common.done") },
+    { value: "pending_review", label: t2("automation.pendingReview") },
+    { value: "cancelled", label: t2("common.cancelled") }
+  ];
   const handleCheck = (id2, checked) => {
     const newChecked = new Set(checkedLogIds);
     if (checked) {
@@ -24443,121 +24809,237 @@ function ExecutionLog() {
     if (checkedLogIds.size === 0) return;
     if (!confirm(t2("executionLog.confirmDelete", { count: checkedLogIds.size }))) return;
     const idsToDelete = Array.from(checkedLogIds);
-    await deleteLogs(idsToDelete);
-    setCheckedLogIds(/* @__PURE__ */ new Set());
-    if (selectedLogId && idsToDelete.includes(selectedLogId)) {
-      const remainingLogs = logs.filter((l2) => !idsToDelete.includes(l2.id));
-      if (remainingLogs.length > 0) {
-        setSelectedLogId(remainingLogs[0].id);
-      } else {
+    try {
+      await window.electronApi.invoke("log:delete", idsToDelete);
+      setCheckedLogIds(/* @__PURE__ */ new Set());
+      if (selectedLogId && idsToDelete.includes(selectedLogId)) {
         setSelectedLogId(null);
+        setSelectedLogFallback(null);
       }
+      await fetchLogs(0, Math.max(pageSize, loadedCount.current), false, true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
-  if (loading) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full flex items-center justify-center bg-white rounded-tl-2xl", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" }) });
-  }
-  if (error) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "bg-red-50 border border-red-200 rounded-lg p-4 text-red-700", children: error }) });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full gap-8", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "w-80 flex-shrink-0 flex flex-col gap-1", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-4 px-2 flex items-center justify-between", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-bold text-gray-900", children: t2("executionLog.listTitle") }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 mt-1", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full gap-6", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "w-[clamp(290px,32vw,380px)] flex-shrink-0 flex flex-col min-h-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "shrink-0 space-y-3 pb-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-baseline justify-between gap-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-semibold text-gray-900", children: t2("executionLog.listTitle") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs tabular-nums text-gray-400", children: t2("executionLog.shown", { shown: logs.length, total }) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "relative block", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Search, { className: "pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "input",
+            {
+              type: "search",
+              value: searchInput,
+              onChange: (event) => setSearchInput(event.target.value),
+              "aria-label": t2("executionLog.searchPlaceholder"),
+              placeholder: t2("executionLog.searchPlaceholder"),
+              className: "h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-1 overflow-x-auto pb-0.5", role: "group", "aria-label": t2("executionLog.filter.label"), children: statusOptions.map((option) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: () => setStatusFilter(option.value),
+            "aria-pressed": statusFilter === option.value,
+            className: `shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${statusFilter === option.value ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`,
+            children: option.label
+          },
+          option.value
+        )) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-h-7 items-center justify-between gap-2 text-xs", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "inline-flex items-center gap-2 text-gray-500", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "input",
               {
                 type: "checkbox",
-                className: "rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5",
-                checked: logs.length > 0 && checkedLogIds.size === logs.length,
-                onChange: (e) => handleSelectAll(e.target.checked),
+                className: "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
+                ref: selectAllRef,
+                checked: logs.length > 0 && checkedVisibleCount === logs.length,
+                onChange: (event) => handleSelectAll(event.target.checked),
                 disabled: logs.length === 0
               }
             ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-gray-400", children: t2("executionLog.selectAll") })
-          ] })
-        ] }),
-        checkedLogIds.size > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            onClick: handleDeleteSelected,
-            className: "text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors",
-            children: t2("executionLog.deleteSelected", { count: checkedLogIds.size })
-          }
-        )
+            t2("executionLog.selectVisible")
+          ] }),
+          checkedLogIds.size > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => void handleDeleteSelected(),
+              className: "rounded-md px-2 py-1 font-medium text-red-600 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500",
+              children: t2("executionLog.deleteSelected", { count: checkedLogIds.size })
+            }
+          )
+        ] })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto pr-2 space-y-2", children: logs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center py-12 px-4 border-2 border-dashed border-gray-200 rounded-xl", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-8 h-8 text-gray-300 mx-auto mb-2", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 1.5, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-500", children: t2("executionLog.noLogsFound") })
-      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: logs.map((log) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-        LogListItem,
-        {
-          log,
-          isSelected: selectedLogId === log.id,
-          isChecked: checkedLogIds.has(log.id),
-          onCheck: (checked) => handleCheck(log.id, checked),
-          onClick: () => setSelectedLogId(log.id)
-        },
-        log.id
-      )) }) })
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-h-0 flex-1 overflow-y-auto pr-2", children: [
+        error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { role: "alert", className: "mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700", children: error }),
+        loading ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-center gap-2 py-12 text-sm text-gray-500", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" }),
+          t2("common.loading")
+        ] }) : logs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-xl bg-gray-50 px-4 py-10 text-center text-sm text-gray-500", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: query || statusFilter !== "all" ? t2("executionLog.noMatching") : t2("executionLog.noLogsFound") }),
+          (query || statusFilter !== "all") && /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => {
+            setSearchInput("");
+            setQuery("");
+            setStatusFilter("all");
+          }, className: "mt-2 font-medium text-blue-600 hover:underline", children: t2("executionLog.clearFilters") })
+        ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          dateGroups.map((group) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "sticky top-0 z-10 bg-white/95 px-3 pb-1 pt-3 text-xs font-semibold text-gray-400 backdrop-blur-sm", children: group.label }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1", children: group.logs.map((log) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              LogListItem,
+              {
+                log,
+                locale,
+                isSelected: selectedLogId === log.id,
+                isChecked: checkedLogIds.has(log.id),
+                onCheck: (checked) => handleCheck(log.id, checked),
+                onClick: () => setSelectedLogId(log.id)
+              },
+              log.id
+            )) })
+          ] }, group.key)),
+          logs.length < total && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => void fetchLogs(logs.length, pageSize, true),
+              disabled: loadingMore,
+              className: "my-4 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50",
+              children: loadingMore ? t2("common.loading") : t2("executionLog.loadMore")
+            }
+          )
+        ] })
+      ] })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 bg-gray-50/50 rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden min-w-0", children: selectedLog ? /* @__PURE__ */ jsxRuntimeExports.jsx(LogDetail, { log: selectedLog }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 bg-gray-50/50 rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden min-w-0", children: selectedLog ? /* @__PURE__ */ jsxRuntimeExports.jsx(LogDetail, { log: selectedLog, onNewLog: (newLog) => {
+      setSelectedLogId(newLog.id);
+      setSelectedLogFallback({ ...newLog, task_name: selectedLog.task_name });
+      void fetchLogs(0, Math.max(pageSize, loadedCount.current), false, true);
+    } }, selectedLog.id) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-16 h-16 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center mb-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-8 h-8 text-gray-300", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 1.5, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-gray-900 font-medium mb-1", children: t2("executionLog.noLogSelected") }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm max-w-xs mx-auto", children: t2("executionLog.noLogSelectedDesc") })
     ] }) })
   ] });
 }
-function LogListItem({ log, isSelected, isChecked, onCheck, onClick }) {
+function LogListItem({ log, locale, isSelected, isChecked, onCheck, onClick }) {
   const { t: t2 } = useTranslation();
   const statusColors = {
     running: "bg-blue-500",
     success: "bg-emerald-500",
+    pending_review: "bg-violet-500",
     failed: "bg-red-500",
     cancelled: "bg-amber-500"
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "div",
-    {
-      onClick,
-      className: `group w-full flex items-center p-3 rounded-xl transition-all border cursor-pointer relative ${isSelected ? "bg-white shadow-md border-blue-200 ring-1 ring-blue-100 z-10" : "bg-white/40 border-transparent hover:bg-white hover:shadow-sm hover:border-gray-200"}`,
-      children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "input",
-          {
-            type: "checkbox",
-            className: "mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
-            checked: isChecked,
-            onChange: (e) => onCheck(e.target.checked),
-            onClick: (e) => e.stopPropagation()
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "div",
-          {
-            className: "flex-1 flex items-start gap-3 text-left min-w-0",
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${statusColors[log.status]}`, children: log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "flex h-2 w-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75" }) }) }),
-              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: `text-sm truncate ${isSelected ? "font-medium text-gray-900" : "text-gray-700"}`, children: log.task_name || t2("executionLog.unknownTask") }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-gray-400 mt-0.5", children: formatRelativeTime(log.started_at, t2) })
-              ] }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `text-sm font-medium px-1.5 py-0.5 rounded ${log.status === "running" ? "bg-blue-100 text-blue-700" : log.status === "success" ? "bg-emerald-100 text-emerald-700" : log.status === "cancelled" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`, children: log.status === "running" ? t2("common.running") : log.status === "success" ? t2("common.done") : log.status === "cancelled" ? t2("common.cancelled") : t2("common.failed") })
-            ]
-          }
-        )
-      ]
-    }
-  );
+  const statusLabel = log.status === "running" ? t2("common.running") : log.status === "success" ? t2("common.done") : log.status === "pending_review" ? t2("automation.pendingReview") : log.status === "cancelled" ? t2("common.cancelled") : t2("common.failed");
+  const date = new Date(log.started_at);
+  const today = /* @__PURE__ */ new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const dateLabel = date.toDateString() === today.toDateString() ? t2("executionLog.today") : date.toDateString() === yesterday.toDateString() ? t2("executionLog.yesterday") : new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(date);
+  const time = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(date);
+  const duration = log.finished_at ? formatDuration(log.started_at, log.finished_at) : null;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `flex min-h-[62px] items-center gap-2 rounded-lg px-2 transition-colors ${isSelected ? "bg-blue-50 ring-1 ring-inset ring-blue-200" : "hover:bg-gray-50"}`, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "input",
+      {
+        type: "checkbox",
+        className: "h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
+        checked: isChecked,
+        onChange: (event) => onCheck(event.target.checked),
+        "aria-label": t2("executionLog.selectLog", { name: log.task_name || t2("executionLog.unknownTask") })
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        type: "button",
+        onClick,
+        "aria-pressed": isSelected,
+        className: "flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-1 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500",
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `relative h-2 w-2 shrink-0 rounded-full ${statusColors[log.status]}`, children: log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-60" }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "min-w-0 flex-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `block truncate text-sm ${isSelected ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`, title: log.task_name || t2("executionLog.unknownTask"), children: log.task_name || t2("executionLog.unknownTask") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "mt-0.5 block text-xs tabular-nums text-gray-400", children: [
+              dateLabel,
+              " · ",
+              time,
+              duration ? ` · ${duration}` : ""
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `shrink-0 text-xs font-medium ${log.status === "failed" ? "rounded bg-red-50 px-1.5 py-1 text-red-700" : log.status === "running" ? "text-blue-700" : log.status === "pending_review" ? "text-violet-700" : log.status === "cancelled" ? "text-amber-700" : "text-emerald-700"}`, children: statusLabel })
+        ]
+      }
+    )
+  ] });
 }
-function LogDetail({ log: initialLog }) {
-  const { t: t2 } = useTranslation();
+function LogDetail({ log: initialLog, onNewLog }) {
+  const { t: t2, i18n } = useTranslation();
   const { log: liveLog, cancel } = useExecutionLog(initialLog.id);
   const log = liveLog ? { ...initialLog, ...liveLog } : initialLog;
   const outputEndRef = reactExports.useRef(null);
   const [copied, setCopied] = reactExports.useState(false);
+  const [snapshot, setSnapshot] = reactExports.useState(null);
+  const [actionBusy, setActionBusy] = reactExports.useState(false);
+  const [actionError, setActionError] = reactExports.useState(null);
+  reactExports.useEffect(() => {
+    let active = true;
+    void window.electronApi.invoke("log:snapshot", initialLog.id).then((value) => {
+      if (active) setSnapshot(value);
+    }).catch(() => {
+      if (active) setSnapshot(null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [initialLog.id, log.status]);
+  const review = async (approve) => {
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      await window.electronApi.invoke("log:review", log.id, approve);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setActionBusy(false);
+    }
+  };
+  const replay = async (provider) => {
+    if (!confirm(t2("automation.replayConfirm"))) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const next = await window.electronApi.invoke("log:replay", log.id, provider);
+      onNewLog(next);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setActionBusy(false);
+    }
+  };
+  const resumeDelivery = async () => {
+    if (!confirm(t2("automation.resumeConfirm"))) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const next = await window.electronApi.invoke("log:resume-delivery", log.id);
+      onNewLog(next);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setActionBusy(false);
+    }
+  };
   reactExports.useEffect(() => {
     if (log.status === "running" && outputEndRef.current) {
       outputEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -24725,14 +25207,86 @@ function LogDetail({ log: initialLog }) {
       ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto overflow-x-hidden", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-6 py-4 space-y-4 min-w-0", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-6 text-sm text-gray-500", children: [
+      snapshot && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-xl border border-gray-200 bg-white p-4 text-sm space-y-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "font-semibold text-gray-800", children: t2("automation.snapshot") }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-xs text-gray-500", children: [
+          snapshot.provider,
+          " · ",
+          snapshot.model || t2("automation.providerDefault"),
+          " · ",
+          new Date(snapshot.created_at).toLocaleString(i18n.resolvedLanguage || i18n.language)
+        ] }),
+        snapshot.source_path && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "break-all text-xs text-gray-600", children: [
+          t2("automation.sourceFile"),
+          ": ",
+          snapshot.source_path
+        ] }),
+        snapshot.source_url && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "break-all text-xs text-gray-600", children: [
+          t2("automation.sourceWebsite"),
+          ": ",
+          snapshot.source_url
+        ] }),
+        snapshot.proposed_file_name && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-gray-800", children: [
+          t2("automation.proposedFile"),
+          ": ",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: snapshot.proposed_file_name })
+        ] }),
+        snapshot.destination && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "break-all text-xs text-gray-600", children: [
+          t2("automation.destination"),
+          ": ",
+          snapshot.destination
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("details", { className: "text-xs text-gray-600", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("summary", { className: "cursor-pointer", children: t2("automation.showInput") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-gray-50 p-2", children: snapshot.prompt })
+        ] }),
+        log.status === "pending_review" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2 pt-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", disabled: actionBusy, onClick: () => void review(true), className: "rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50", children: t2("automation.approve") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", disabled: actionBusy, onClick: () => void review(false), className: "rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50", children: t2("automation.reject") })
+        ] }),
+        log.status !== "running" && log.status !== "pending_review" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2 pt-2", children: [
+          !(snapshot.result_type === "organize-file" && log.status === "success") && /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", disabled: actionBusy, onClick: () => void replay(), className: "rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 disabled:opacity-50", children: t2("automation.replay") }),
+          log.status === "failed" && snapshot.review_status === "rejected" && snapshot.require_review && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              disabled: actionBusy,
+              onClick: () => void resumeDelivery(),
+              className: "ml-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 disabled:opacity-50",
+              children: t2("automation.resumeDelivery")
+            }
+          ),
+          log.status === "failed" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-full text-xs text-amber-700", children: t2(`automation.failure.${classifyProviderFailure(log.error || "")}`) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-gray-500", children: t2("automation.handoff") }),
+            ["claude", "codex", "antigravity"].filter((provider) => provider !== snapshot.provider && (provider !== "antigravity" || !snapshot.require_review && !snapshot.source_path && !snapshot.source_url)).sort((left, right) => Number(right === snapshot.fallback_provider) - Number(left === snapshot.fallback_provider)).map((provider) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                disabled: actionBusy,
+                onClick: () => void replay(provider),
+                className: "rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 disabled:opacity-50",
+                children: provider
+              },
+              provider
+            ))
+          ] })
+        ] }),
+        actionError && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { role: "alert", className: "text-xs text-red-600", children: actionError })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" }) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatDateTime(log.started_at) })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatDateTime(log.started_at, i18n.resolvedLanguage || i18n.language) })
         ] }),
         log.finished_at && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-3.5 h-3.5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M13 10V3L4 14h7v7l9-11h-7z" }) }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatDuration(log.started_at, log.finished_at) })
+        ] }),
+        log.finished_at && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          t2("executionLog.exitCode"),
+          ": ",
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `font-mono ${log.exit_code !== null && log.exit_code !== 0 ? "text-red-600" : "text-gray-700"}`, children: log.exit_code ?? "—" })
         ] })
       ] }),
       log.status === "running" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2.5 rounded-lg", children: [
@@ -24845,12 +25399,14 @@ function StatusBadge({ status }) {
   const styles = {
     running: "bg-blue-100 text-blue-700",
     success: "bg-emerald-100 text-emerald-700",
+    pending_review: "bg-violet-100 text-violet-700",
     failed: "bg-red-100 text-red-700",
     cancelled: "bg-amber-100 text-amber-700"
   };
   const labels = {
     running: t2("common.running"),
     success: t2("executionLog.statusBadge.completed"),
+    pending_review: t2("automation.pendingReview"),
     failed: t2("common.failed"),
     cancelled: t2("executionLog.statusBadge.cancelled")
   };
@@ -24859,37 +25415,409 @@ function StatusBadge({ status }) {
     labels[status]
   ] });
 }
-function formatDateTime(isoString) {
+function formatDateTime(isoString, locale) {
   const date = new Date(isoString);
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(locale, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit"
   });
 }
-function formatRelativeTime(isoString, t2) {
-  const date = new Date(isoString);
-  const now = /* @__PURE__ */ new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 6e4);
-  const diffHours = Math.floor(diffMs / 36e5);
-  const diffDays = Math.floor(diffMs / 864e5);
-  if (diffMins < 1) return t2("executionLog.time.justNow");
-  if (diffMins < 60) return t2("executionLog.time.minutesAgo", { count: diffMins });
-  if (diffHours < 24) return t2("executionLog.time.hoursAgo", { count: diffHours });
-  if (diffDays < 7) return t2("executionLog.time.daysAgo", { count: diffDays });
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const hourMs = 60 * 60 * 1e3;
+function Dashboard({ onNewTask, onOpenTasks, onOpenTask, onOpenLogs }) {
+  const { t: t2, i18n } = useTranslation();
+  const [data, setData] = reactExports.useState(null);
+  const [loading, setLoading] = reactExports.useState(true);
+  const [refreshing, setRefreshing] = reactExports.useState(false);
+  const [error, setError] = reactExports.useState(null);
+  const locale = i18n.resolvedLanguage || i18n.language;
+  const duration14d = data?.duration14d && typeof data.duration14d.count === "number" ? data.duration14d : null;
+  const durationAnomalies = duration14d?.anomalies ?? [];
+  const durationSlowest = duration14d?.slowest ?? [];
+  const refresh = reactExports.useCallback(async (showSpinner = false) => {
+    if (showSpinner) setRefreshing(true);
+    try {
+      const next = await window.electronApi.invoke("dashboard:get");
+      setData(next);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t2("dashboard.loadError"));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [t2]);
+  reactExports.useEffect(() => {
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 6e4);
+    let pending = null;
+    const onExecutionUpdate = () => {
+      if (pending !== null) return;
+      pending = window.setTimeout(() => {
+        pending = null;
+        void refresh();
+      }, 1200);
+    };
+    window.electronApi.on("execution:update", onExecutionUpdate);
+    return () => {
+      window.clearInterval(interval);
+      if (pending !== null) window.clearTimeout(pending);
+      window.electronApi.off("execution:update", onExecutionUpdate);
+    };
+  }, [refresh]);
+  const activeTasks = data?.tasks.filter((task) => task.enabled === 1) ?? [];
+  const reviewTasks = data?.tasks.filter((task) => task.needs_review === 1) ?? [];
+  const pausedCount = (data?.tasks.length ?? 0) - activeTasks.length;
+  const completed = (data?.executions24h.success ?? 0) + (data?.executions24h.failed ?? 0);
+  const successRate = completed > 0 ? Math.round((data?.executions24h.success ?? 0) / completed * 100) : null;
+  const hasAttention = (data?.recent_failures.length ?? 0) > 0 || (data?.pending_reviews.length ?? 0) > 0 || reviewTasks.length > 0;
+  const upcoming = reactExports.useMemo(() => (data?.tasks ?? []).filter((task) => task.enabled === 1 && task.next_run).sort((a, b) => (a.next_run || "").localeCompare(b.next_run || "")).slice(0, 4), [data]);
+  const activity = reactExports.useMemo(() => {
+    const nowHour = Math.floor(Date.now() / hourMs) * hourMs;
+    const byHour = new Map((data?.activity24h ?? []).map((point2) => [point2.hour, point2]));
+    return Array.from({ length: 25 }, (_, index2) => {
+      const time = new Date(nowHour - (24 - index2) * hourMs);
+      return {
+        time,
+        point: byHour.get(time.toISOString().slice(0, 13))
+      };
+    });
+  }, [data]);
+  const maxActivity = Math.max(1, ...activity.map(({ point: point2 }) => (point2?.success ?? 0) + (point2?.failed ?? 0) + (point2?.running ?? 0) + (point2?.cancelled ?? 0) + (point2?.pending_review ?? 0)));
+  const formatDateTime2 = (value) => new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+  const formatRelative = (value) => {
+    const minutes = Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 6e4));
+    const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+    if (minutes < 60) return formatter.format(minutes, "minute");
+    if (minutes < 1440) return formatter.format(Math.ceil(minutes / 60), "hour");
+    return formatter.format(Math.ceil(minutes / 1440), "day");
+  };
+  const scheduleLabel = (task) => {
+    const parsed = parseCronToSimple(task.cron_expression);
+    if (parsed.mode === "advanced") return task.cron_expression;
+    return getScheduleDescription(
+      parsed.frequency,
+      parsed.intervalValue,
+      parsed.intervalUnit,
+      parsed.time,
+      parsed.weekdays,
+      task.week_interval || 1,
+      parsed.monthDay,
+      t2
+    );
+  };
+  if (loading) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full items-center justify-center gap-3 text-sm text-slate-500", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: "h-5 w-5 animate-spin text-blue-600" }),
+      t2("common.loading")
+    ] });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full overflow-y-auto bg-white", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-5 p-6 pb-10", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("header", { className: "flex flex-wrap items-start justify-between gap-4", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "text-lg font-semibold text-slate-900", children: t2("dashboard.title") }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-500", children: t2("dashboard.subtitle") })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: () => void refresh(true),
+            disabled: refreshing,
+            "aria-label": t2("dashboard.refresh"),
+            title: t2("dashboard.refresh"),
+            className: "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-60",
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: `h-4 w-4 ${refreshing ? "animate-spin" : ""}` })
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: onNewTask,
+            className: "inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(Plus, { className: "h-4 w-4" }),
+              t2("app.newTask")
+            ]
+          }
+        )
+      ] })
+    ] }),
+    error && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { role: "alert", className: "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700", children: [
+      t2("dashboard.loadError"),
+      ": ",
+      error
+    ] }),
+    data && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-5 lg:grid-cols-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:grid-cols-[minmax(220px,1.1fr)_minmax(0,2fr)] lg:p-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-w-0 items-start gap-3 lg:border-r lg:border-slate-200 lg:pr-6", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${hasAttention ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`, children: hasAttention ? /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "h-5 w-5" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "h-5 w-5" }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-base font-semibold text-slate-900", children: data.tasks.length === 0 ? t2("dashboard.health.noTasks") : hasAttention ? t2("dashboard.health.attention") : t2("dashboard.health.healthy") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-500", children: t2("dashboard.health.summary", {
+              active: activeTasks.length,
+              paused: pausedCount,
+              running: data.executions24h.running
+            }) }),
+            data.tasks.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: onNewTask, className: "mt-3 text-sm font-medium text-blue-600 hover:underline", children: [
+              t2("dashboard.createFirst"),
+              " ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "inline h-4 w-4" })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.metric.runs"), value: data.executions24h.total.toString(), note: t2("dashboard.last24h") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.metric.successRate"), value: successRate === null ? "—" : `${successRate}%`, note: t2("dashboard.metric.completedOnly") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.metric.failures"), value: data.executions24h.failed.toString(), note: data.executions24h.failed > 0 ? t2("dashboard.metric.needsAttention") : t2("dashboard.metric.noFailures"), tone: data.executions24h.failed > 0 ? "red" : "green" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.metric.activeTasks"), value: activeTasks.length.toString(), note: t2("dashboard.metric.totalTasks", { count: data.tasks.length }) })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:px-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-4 flex items-center justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-slate-900", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CalendarClock, { className: "h-5 w-5 text-blue-600" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-semibold", children: t2("dashboard.upcoming.title") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: onOpenTasks, className: "inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700", children: [
+            t2("dashboard.viewTasks"),
+            " ",
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "h-4 w-4" })
+          ] })
+        ] }),
+        upcoming.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid gap-2 sm:grid-cols-2", children: upcoming.map((task) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: () => onOpenTask(task.id),
+            className: "min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/50",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between gap-2", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-sm font-medium text-slate-800", children: task.name }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-2 w-2 shrink-0 rounded-full bg-emerald-500" })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm font-semibold text-blue-600", children: formatRelative(task.next_run) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "mt-1 truncate text-xs text-slate-500", title: scheduleLabel(task), children: [
+                formatDateTime2(task.next_run),
+                " · ",
+                task.cli_tool
+              ] })
+            ]
+          },
+          task.id
+        )) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500", children: t2("dashboard.upcoming.empty") })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-4 flex items-center gap-2 text-slate-900", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Clock3, { className: "h-5 w-5 text-blue-600" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-semibold", children: t2("dashboard.duration.title") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-auto text-xs text-slate-400", children: t2("dashboard.last14d") })
+        ] }),
+        !duration14d ? /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyMessage, { text: t2("dashboard.duration.unavailable") }) : duration14d.count === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyMessage, { text: t2("dashboard.duration.empty") }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.duration.p50"), value: formatDurationMs(duration14d.p50_ms ?? NaN), note: t2("dashboard.duration.medianNote") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.duration.p95"), value: formatDurationMs(duration14d.p95_ms ?? NaN), note: t2("dashboard.duration.p95Note") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Metric, { label: t2("dashboard.duration.samples"), value: duration14d.count.toString(), note: t2("dashboard.duration.completedOnly") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-5 space-y-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "mb-2 text-xs font-semibold text-slate-500", children: durationAnomalies.length > 0 ? t2("dashboard.duration.anomalies") : t2("dashboard.duration.slowest") }),
+            durationAnomalies.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-xs text-slate-400", children: t2("dashboard.duration.anomalyRule") }),
+            (durationAnomalies.length > 0 ? durationAnomalies : durationSlowest).map((run) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "button",
+              {
+                type: "button",
+                onClick: () => onOpenLogs(run.id),
+                className: "flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500",
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "min-w-0", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block truncate text-slate-700", children: run.task_name || t2("executionLog.unknownTask") }),
+                    "baseline_ms" in run && typeof run.baseline_ms === "number" && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-xs text-slate-400", children: t2("dashboard.duration.baseline", { duration: formatDurationMs(run.baseline_ms) }) })
+                  ] }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 tabular-nums font-medium text-slate-900", children: formatDurationMs(run.duration_ms) })
+                ]
+              },
+              run.id
+            ))
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:p-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-start justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-slate-900", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(Activity, { className: "h-5 w-5 text-blue-600" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-semibold", children: t2("dashboard.activity.title") })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-500", children: t2("dashboard.activity.subtitle") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Legend, { color: "bg-emerald-500", label: t2("dashboard.activity.success") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Legend, { color: "bg-red-500", label: t2("dashboard.activity.failed") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Legend, { color: "bg-blue-500", label: t2("dashboard.activity.running") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Legend, { color: "bg-violet-500", label: t2("automation.pendingReview") })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-6 rounded-xl bg-slate-50 p-4", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-32 items-end gap-1", role: "group", "aria-label": t2("dashboard.activity.chartLabel"), children: activity.map(({ time, point: point2 }) => {
+            const total = (point2?.success ?? 0) + (point2?.failed ?? 0) + (point2?.running ?? 0) + (point2?.cancelled ?? 0) + (point2?.pending_review ?? 0);
+            const label = `${formatDateTime2(time.toISOString())}: ${point2?.success ?? 0} ${t2("dashboard.activity.success")}, ${point2?.failed ?? 0} ${t2("dashboard.activity.failed")}, ${point2?.pending_review ?? 0} ${t2("automation.pendingReview")}`;
+            return /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                onClick: () => onOpenLogs(),
+                title: label,
+                "aria-label": label,
+                className: "group flex h-full min-w-0 flex-1 flex-col justify-end focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600",
+                children: total === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-1 w-full rounded-sm bg-slate-200 group-hover:bg-slate-300" }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex w-full flex-col justify-end overflow-hidden rounded-t-sm transition-opacity group-hover:opacity-70", style: { height: `${Math.max(7, total / maxActivity * 100)}%` }, children: [
+                  (point2?.running ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-full bg-blue-500", style: { flex: point2.running } }),
+                  (point2?.pending_review ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-full bg-violet-500", style: { flex: point2.pending_review } }),
+                  (point2?.cancelled ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-full bg-amber-400", style: { flex: point2.cancelled } }),
+                  (point2?.failed ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-full bg-red-500", style: { flex: point2.failed } }),
+                  (point2?.success ?? 0) > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-full bg-emerald-500", style: { flex: point2.success } })
+                ] })
+              },
+              time.toISOString()
+            );
+          }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 flex justify-between text-[11px] text-slate-400", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t2("dashboard.activity.before24h") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t2("dashboard.activity.before12h") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t2("dashboard.activity.now") })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-4 flex flex-wrap gap-4 text-sm text-slate-600", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "font-semibold text-slate-900", children: data.executions24h.success }),
+            " ",
+            t2("dashboard.activity.success")
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: `font-semibold ${data.executions24h.failed ? "text-red-600" : "text-slate-900"}`, children: data.executions24h.failed }),
+            " ",
+            t2("dashboard.activity.failed")
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "font-semibold text-slate-900", children: data.executions24h.running }),
+            " ",
+            t2("dashboard.activity.running")
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "font-semibold text-violet-700", children: data.executions24h.pending_review }),
+            " ",
+            t2("automation.pendingReview")
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "font-semibold text-slate-900", children: data.executions24h.cancelled }),
+            " ",
+            t2("dashboard.activity.cancelled")
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-5 lg:col-span-2 lg:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-4 flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CircleAlert, { className: "h-5 w-5 text-amber-600" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-semibold text-slate-900", children: t2("dashboard.attention.title") })
+          ] }),
+          reviewTasks.length === 0 && data.recent_failures.length === 0 && data.pending_reviews.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyMessage, { text: t2("dashboard.attention.empty") }) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+            data.pending_reviews.map((run) => /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => onOpenLogs(run.id), className: "flex w-full items-center justify-between gap-3 rounded-xl bg-violet-50 p-3 text-left hover:bg-violet-100", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-sm font-medium text-slate-900", children: run.task_name || t2("executionLog.unknownTask") }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs text-violet-700", children: t2("automation.pendingReview") })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "h-4 w-4 shrink-0 text-violet-700" })
+            ] }, run.id)),
+            reviewTasks.slice(0, 2).map((task) => /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => onOpenTask(task.id), className: "flex w-full items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-left hover:bg-amber-100", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-sm font-medium text-slate-900", children: task.name }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs text-amber-700", children: t2("dashboard.attention.review") })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "h-4 w-4 shrink-0 text-amber-700" })
+            ] }, task.id)),
+            data.recent_failures.map((run) => /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => onOpenLogs(run.id), className: "flex w-full items-center justify-between gap-3 rounded-xl bg-red-50 p-3 text-left hover:bg-red-100", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-sm font-medium text-slate-900", children: run.task_name || t2("executionLog.unknownTask") }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 truncate text-xs text-red-700", children: run.error || formatDateTime2(run.started_at) })
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "h-4 w-4 shrink-0 text-red-600" })
+            ] }, run.id))
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-4 flex items-center justify-between gap-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(ListChecks, { className: "h-5 w-5 text-blue-600" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-semibold text-slate-900", children: t2("dashboard.topTasks.title") })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-slate-400", children: t2("dashboard.last7d") })
+          ] }),
+          data.top_tasks.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyMessage, { text: t2("dashboard.topTasks.empty") }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-4", children: data.top_tasks.map((task) => /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => onOpenTask(task.task_id), className: "block w-full text-left group", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between gap-3 text-sm", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate font-medium text-slate-700 group-hover:text-blue-600", children: task.task_name || t2("executionLog.unknownTask") }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 font-semibold text-slate-900", children: t2("dashboard.topTasks.runs", { count: task.total }) })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full rounded-full bg-blue-500", style: { width: `${task.total / data.top_tasks[0].total * 100}%` } }) }),
+            task.failed > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-xs text-red-600", children: t2("dashboard.topTasks.failures", { count: task.failed }) })
+          ] }, task.task_id)) })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:p-6", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-4 flex items-center justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Clock3, { className: "h-5 w-5 text-blue-600" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-semibold text-slate-900", children: t2("dashboard.recent.title") })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => onOpenLogs(), className: "inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700", children: [
+            t2("dashboard.viewLogs"),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "h-4 w-4" })
+          ] })
+        ] }),
+        data.recent_runs.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyMessage, { text: t2("dashboard.recent.empty") }) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "divide-y divide-slate-100", children: data.recent_runs.map((run) => /* @__PURE__ */ jsxRuntimeExports.jsx(RunRow, { run, locale, onClick: () => onOpenLogs(run.id) }, run.id)) })
+      ] })
+    ] })
+  ] }) });
 }
-function formatDuration(start, end) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const diffMs = endDate.getTime() - startDate.getTime();
-  if (diffMs < 1e3) return `${diffMs}ms`;
-  if (diffMs < 6e4) return `${(diffMs / 1e3).toFixed(1)}s`;
-  const minutes = Math.floor(diffMs / 6e4);
-  const seconds = Math.round(diffMs % 6e4 / 1e3);
-  return `${minutes}m ${seconds}s`;
+function Metric({ label, value, note, tone = "default" }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-medium text-slate-500", children: label }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: `mt-2 text-2xl font-semibold tabular-nums ${tone === "red" ? "text-red-600" : tone === "green" ? "text-emerald-600" : "text-slate-900"}`, children: value }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-xs leading-4 text-slate-400", children: note })
+  ] });
+}
+function Legend({ color: color2, label }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "inline-flex items-center gap-1.5", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `h-2 w-2 rounded-sm ${color2}` }),
+    label
+  ] });
+}
+function EmptyMessage({ text: text2 }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-h-24 items-center justify-center rounded-xl bg-slate-50 px-4 text-center text-sm text-slate-500", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Sparkles, { className: "mr-2 h-4 w-4 text-slate-400" }),
+    text2
+  ] });
+}
+function RunRow({ run, locale, onClick }) {
+  const { t: t2 } = useTranslation();
+  const statusLabel = t2(`dashboard.activity.${run.status}`);
+  const statusColor = run.status === "success" ? "bg-emerald-500" : run.status === "failed" ? "bg-red-500" : run.status === "running" ? "bg-blue-500" : "bg-amber-400";
+  const duration = run.finished_at ? formatDuration(run.started_at, run.finished_at) : null;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick, className: "flex w-full items-center gap-3 py-3 text-left hover:bg-slate-50", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `h-2 w-2 shrink-0 rounded-full ${statusColor}` }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "min-w-0 flex-1 truncate text-sm font-medium text-slate-800", children: run.task_name || t2("executionLog.unknownTask") }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 text-xs text-slate-500", children: statusLabel }),
+    duration && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "hidden shrink-0 text-xs tabular-nums text-slate-500 sm:inline", children: duration }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "hidden shrink-0 text-xs text-slate-400 sm:inline", children: new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(run.started_at)) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowRight, { className: "h-4 w-4 shrink-0 text-slate-300" })
+  ] });
 }
 const common$1 = {
   cancel: "Cancel",
@@ -24901,13 +25829,71 @@ const common$1 = {
   failed: "Failed",
   cancelled: "Cancelled"
 };
+const automation$1 = {
+  templates: "Outcome templates",
+  fileTemplate: "Organize inbox",
+  fileTemplateDesc: "Suggest a name for each new file and wait for approval",
+  fileTemplateName: "File inbox organizer",
+  fileTemplatePrompt: "Read each new file, summarize it, and suggest a clear, searchable filename.",
+  websiteTemplate: "Website update summary",
+  websiteTemplateDesc: "Summarize a website when its content changes",
+  websiteTemplateName: "Website update monitor",
+  websiteTemplatePrompt: "Summarize the important points and notable changes in this website content.",
+  trigger: "Trigger",
+  source: {
+    schedule: "Schedule",
+    folder: "File inbox",
+    website: "Website monitor"
+  },
+  watchFolder: "Watched folder",
+  browse: "Choose",
+  result: {
+    report: "Create report",
+    "organize-file": "Organize file"
+  },
+  resultLabel: "Result type",
+  destination: "Destination folder",
+  requireReview: "Review results before applying",
+  reviewHint: "File moves and email require approval",
+  readOnlyMode: "Review mode analyzes with read-only permissions. Orbit Agents moves files or sends email after approval.",
+  reviewProviderError: "File, website, and review tasks currently support Claude or Codex. Choose another provider.",
+  fallbackProvider: "Suggested handoff provider",
+  none: "None",
+  pendingReview: "Pending review",
+  watching: "Watching",
+  noNewFiles: "There are no new files in this inbox.",
+  noWebsiteChange: "The website has not changed. AI execution was skipped.",
+  runFailed: "Run failed. Open the execution log for details.",
+  approve: "Approve",
+  reject: "Reject",
+  replay: "Replay",
+  replayConfirm: "Run again with the saved input? This may repeat actions in the task.",
+  resumeDelivery: "Resume delivery stage",
+  resumeConfirm: "Submit the previous result for approval again? Check whether the prior file move or email already happened to avoid duplicates.",
+  handoff: "Hand off to another provider",
+  failure: {
+    auth: "Provider sign-in or authorization failed. Sign in again or hand off to another provider.",
+    model: "This model may have been removed or your account may lack access. Choose another model or provider.",
+    cli: "The CLI could not be started. Check installation and its path.",
+    rate: "The provider is rate limited or out of quota. Retry later or choose another provider.",
+    network: "Network connection failed. Retry later or choose another provider.",
+    other: "The run failed. Inspect the error and input snapshot, then replay or hand off."
+  },
+  providerDefault: "Default model",
+  showInput: "Show prompt and input",
+  snapshot: "Run input snapshot",
+  proposedFile: "Suggested filename",
+  sourceFile: "Source file",
+  sourceWebsite: "Watched website"
+};
 const main$1 = {
   test: {
     greeting: "Hi {{name}}"
   },
   notification: {
     success: "✅ Task completed",
-    failure: "❌ Task failed"
+    failure: "❌ Task failed",
+    review: "Pending review: open the execution log"
   },
   retry: {
     networkError: "⏳ Network error, retrying in {{delay}}s (attempt {{attempt}}/{{max}})...\nError: {{error}}",
@@ -25053,13 +26039,89 @@ const settings$1 = {
 const app$1 = {
   newTask: "New Task",
   nav: {
-    tasks: "Tasks",
+    overview: "Overview",
+    tasks: "Task Schedule",
     executionLogs: "Execution Logs",
     settings: "Settings"
   }
 };
+const dashboard$1 = {
+  title: "Overview",
+  subtitle: "See your scheduled tasks and recent activity at a glance",
+  refresh: "Refresh overview",
+  loadError: "Could not load overview",
+  last24h: "Last 24 hours",
+  last14d: "Last 14 days",
+  last7d: "Last 7 days",
+  viewTasks: "View task schedule",
+  viewLogs: "View logs",
+  createFirst: "Create your first task",
+  health: {
+    noTasks: "Create your first automation",
+    attention: "Some items need attention",
+    healthy: "Everything is running smoothly",
+    summary: "{{active}} active · {{paused}} paused · {{running}} running"
+  },
+  metric: {
+    runs: "Runs",
+    successRate: "Success rate",
+    completedOnly: "Completed runs only",
+    failures: "Failures",
+    needsAttention: "Review failed runs",
+    noFailures: "No failures",
+    activeTasks: "Active tasks",
+    totalTasks: "{{count}} tasks total"
+  },
+  upcoming: {
+    title: "Upcoming runs",
+    empty: "No upcoming run can be predicted. Check whether your tasks are enabled."
+  },
+  activity: {
+    title: "Run activity",
+    subtitle: "Last 24 hours, one hour per bar. Select a bar to view logs.",
+    chartLabel: "Task runs in the last 24 hours",
+    success: "Success",
+    failed: "Failed",
+    running: "Running",
+    pending_review: "Pending review",
+    cancelled: "Cancelled",
+    before24h: "24 hours ago",
+    before12h: "12 hours ago",
+    now: "Now"
+  },
+  duration: {
+    title: "Run duration",
+    empty: "No completed runs in the last 14 days",
+    unavailable: "Duration data is not ready. Please restart the app.",
+    p50: "Median P50",
+    medianNote: "Half of runs finished within this time",
+    p95: "P95",
+    p95Note: "95% of runs finished within this time",
+    samples: "Runs measured",
+    completedOnly: "Completed runs",
+    slowest: "Longest runs",
+    anomalies: "Unusually slow tasks",
+    anomalyRule: "Latest run took at least twice the median of 3 or more prior runs and over 1 minute longer",
+    baseline: "Previous median {{duration}}"
+  },
+  attention: {
+    title: "Needs attention",
+    empty: "No recent failures or tasks awaiting review",
+    review: "Task settings need review"
+  },
+  topTasks: {
+    title: "Most active tasks",
+    empty: "No runs in the last 7 days",
+    runs: "{{count}} runs",
+    failures: "{{count}} failed"
+  },
+  recent: {
+    title: "Recent runs",
+    empty: "Runs will appear here after a task executes"
+  }
+};
 const taskList$1 = {
-  title: "Tasks",
+  title: "Task Schedule",
   subtitle: "Manage automated workflows",
   loading: "Loading...",
   error: "Error:",
@@ -25068,6 +26130,9 @@ const taskList$1 = {
   createOne: "Create one",
   needsReview: "Needs review: Gemini removed, reconfigure provider",
   runNow: "Run Now",
+  nextRun: "Next run",
+  paused: "Paused",
+  unscheduled: "Not scheduled",
   noTaskSelected: "No Task Selected",
   noTaskSelectedDesc: "Select a task from the list to view details or create a new one.",
   createNewTask: "Create New Task"
@@ -25101,6 +26166,7 @@ const taskForm$1 = {
     hours: "hours",
     week: "week",
     weeks: "weeks",
+    savedNextRun: "Next run for saved schedule",
     cronFormat: "Cron format: minute hour day month weekday",
     examplesLabel: "Examples:",
     exampleDailyDesc: "(daily 9am)",
@@ -25355,6 +26421,20 @@ const welcome$1 = {
 };
 const executionLog$1 = {
   listTitle: "Execution Logs",
+  exitCode: "Exit code",
+  searchPlaceholder: "Search task names",
+  shown: "Showing {{shown}} of {{total}} logs",
+  today: "Today",
+  yesterday: "Yesterday",
+  filter: {
+    label: "Filter by run status",
+    all: "All statuses"
+  },
+  selectVisible: "Select loaded",
+  selectLog: "Select run of {{name}}",
+  noMatching: "No matching logs",
+  clearFilters: "Clear filters",
+  loadMore: "Load more logs",
   selectAll: "Select all",
   deleteSelected: "Delete ({{count}})",
   confirmDelete: "Are you sure you want to delete {{count}} logs?",
@@ -25450,9 +26530,11 @@ const executionLog$1 = {
 };
 const en = {
   common: common$1,
+  automation: automation$1,
   main: main$1,
   settings: settings$1,
   app: app$1,
+  dashboard: dashboard$1,
   taskList: taskList$1,
   taskForm: taskForm$1,
   schedule: schedule$1,
@@ -25469,13 +26551,71 @@ const common = {
   failed: "失敗",
   cancelled: "已中止"
 };
+const automation = {
+  templates: "快速套用成果模板",
+  fileTemplate: "整理收件匣",
+  fileTemplateDesc: "檔案加入資料夾後，提出檔名並等待審核",
+  fileTemplateName: "檔案收件匣整理",
+  fileTemplatePrompt: "閱讀新檔案，摘要內容，並提出清楚、方便搜尋的檔名。",
+  websiteTemplate: "網站更新摘要",
+  websiteTemplateDesc: "網站內容變更時，產生更新摘要",
+  websiteTemplateName: "網站更新監測",
+  websiteTemplatePrompt: "摘要這次網站內容的重點與值得注意的變化。",
+  trigger: "觸發方式",
+  source: {
+    schedule: "定時",
+    folder: "檔案收件匣",
+    website: "網站監測"
+  },
+  watchFolder: "監看資料夾",
+  browse: "選擇",
+  result: {
+    report: "產生報告",
+    "organize-file": "整理檔案"
+  },
+  resultLabel: "成果類型",
+  destination: "整理後的目的資料夾",
+  requireReview: "執行前審核成果",
+  reviewHint: "檔案移動與寄信須先核准",
+  readOnlyMode: "審核模式會以唯讀權限分析，核准後才由 Orbit Agents 移動檔案或寄信。",
+  reviewProviderError: "檔案、網站與成果審核任務目前支援 Claude 或 Codex，請更換供應商。",
+  fallbackProvider: "接手時建議使用的供應商",
+  none: "未設定",
+  pendingReview: "待審核",
+  watching: "監看中",
+  noNewFiles: "收件匣目前沒有新的檔案。",
+  noWebsiteChange: "網站內容與上次相同，已略過 AI 執行。",
+  runFailed: "執行失敗，請到執行紀錄查看原因。",
+  approve: "核准執行",
+  reject: "拒絕",
+  replay: "重播",
+  replayConfirm: "要用當次保存的輸入重新執行嗎？這可能重複執行任務中的動作。",
+  resumeDelivery: "從交付階段繼續",
+  resumeConfirm: "要重新提交上次的成果審核嗎？請先確認上次的檔案移動或寄信沒有完成，以免重複。",
+  handoff: "交給其他供應商",
+  failure: {
+    auth: "供應商登入或授權失效；可重新登入，或交給另一個供應商。",
+    model: "此模型可能已移除或帳號無權使用；可換模型或供應商。",
+    cli: "找不到或無法啟動 CLI；請檢查安裝與路徑。",
+    rate: "供應商限流或額度不足；可稍後重試或改用其他供應商。",
+    network: "網路連線失敗；可稍後重試或改用其他供應商。",
+    other: "執行失敗。可查看錯誤與輸入快照，再重播或改用其他供應商。"
+  },
+  providerDefault: "預設模型",
+  showInput: "查看提示詞與輸入",
+  snapshot: "當次輸入快照",
+  proposedFile: "建議檔名",
+  sourceFile: "來源檔案",
+  sourceWebsite: "監測網站"
+};
 const main = {
   test: {
     greeting: "嗨 {{name}}"
   },
   notification: {
     success: "✅ 執行成功",
-    failure: "❌ 執行失敗"
+    failure: "❌ 執行失敗",
+    review: "待審核：請查看執行紀錄"
   },
   retry: {
     networkError: "⏳ 網路錯誤，{{delay}} 秒後自動重試（第 {{attempt}}/{{max}} 次）...\n錯誤: {{error}}",
@@ -25621,13 +26761,89 @@ const settings = {
 const app = {
   newTask: "新增任務",
   nav: {
-    tasks: "任務",
+    overview: "總覽",
+    tasks: "任務排程",
     executionLogs: "執行記錄",
     settings: "設定"
   }
 };
+const dashboard = {
+  title: "總覽",
+  subtitle: "掌握任務排程與最近的執行狀況",
+  refresh: "重新整理總覽",
+  loadError: "無法載入總覽",
+  last24h: "近 24 小時",
+  last14d: "近 14 天",
+  last7d: "近 7 天",
+  viewTasks: "查看任務排程",
+  viewLogs: "查看記錄",
+  createFirst: "建立第一個任務",
+  health: {
+    noTasks: "開始建立自動化任務",
+    attention: "有項目需要留意",
+    healthy: "目前運作正常",
+    summary: "{{active}} 個任務啟用 · {{paused}} 個暫停 · {{running}} 個執行中"
+  },
+  metric: {
+    runs: "執行次數",
+    successRate: "成功率",
+    completedOnly: "已完成的執行",
+    failures: "失敗次數",
+    needsAttention: "請查看失敗記錄",
+    noFailures: "沒有失敗",
+    activeTasks: "啟用任務",
+    totalTasks: "共 {{count}} 個任務"
+  },
+  upcoming: {
+    title: "接下來的排程",
+    empty: "目前沒有可預測的下一次執行；請檢查任務是否已啟用。"
+  },
+  activity: {
+    title: "執行概況",
+    subtitle: "近 24 小時，每格代表一小時。點擊可查看執行記錄。",
+    chartLabel: "近 24 小時任務執行狀況圖",
+    success: "成功",
+    failed: "失敗",
+    running: "執行中",
+    pending_review: "待審核",
+    cancelled: "已中止",
+    before24h: "24 小時前",
+    before12h: "12 小時前",
+    now: "現在"
+  },
+  duration: {
+    title: "執行耗時",
+    empty: "近 14 天沒有已完成的執行記錄",
+    unavailable: "耗時統計尚未就緒，請重新啟動應用程式",
+    p50: "中位數 P50",
+    medianNote: "一半的執行在此時間內完成",
+    p95: "P95",
+    p95Note: "95% 的執行在此時間內完成",
+    samples: "記錄數",
+    completedOnly: "已完成的執行",
+    slowest: "耗時最長的執行",
+    anomalies: "耗時異常的任務",
+    anomalyRule: "最近一次比至少 3 次過往執行的中位數慢 2 倍，且多出 1 分鐘以上",
+    baseline: "過去執行中位數 {{duration}}"
+  },
+  attention: {
+    title: "需要關注",
+    empty: "近期沒有失敗或待確認的任務",
+    review: "任務設定需要確認"
+  },
+  topTasks: {
+    title: "最常執行的任務",
+    empty: "近 7 天沒有執行記錄",
+    runs: "{{count}} 次",
+    failures: "{{count}} 次失敗"
+  },
+  recent: {
+    title: "最近執行",
+    empty: "執行任務後，記錄會顯示在這裡"
+  }
+};
 const taskList = {
-  title: "任務",
+  title: "任務排程",
   subtitle: "管理自動化工作流程",
   loading: "載入中...",
   error: "發生錯誤：",
@@ -25636,6 +26852,9 @@ const taskList = {
   createOne: "建立一個",
   needsReview: "需要確認：Gemini 已移除，請重新設定供應商",
   runNow: "立即執行",
+  nextRun: "下次執行",
+  paused: "已暫停",
+  unscheduled: "尚未排定",
   noTaskSelected: "未選取任務",
   noTaskSelectedDesc: "從列表選取任務以查看詳情，或建立新任務",
   createNewTask: "建立新任務"
@@ -25669,6 +26888,7 @@ const taskForm = {
     hours: "小時",
     week: "週",
     weeks: "週",
+    savedNextRun: "目前排程的下次執行",
     cronFormat: "Cron 格式：分 時 日 月 星期",
     examplesLabel: "範例：",
     exampleDailyDesc: "（每天早上 9 點）",
@@ -25923,6 +27143,20 @@ const welcome = {
 };
 const executionLog = {
   listTitle: "執行記錄",
+  exitCode: "終止碼",
+  searchPlaceholder: "搜尋任務名稱",
+  shown: "已載入 {{shown}} 筆，共 {{total}} 筆",
+  today: "今天",
+  yesterday: "昨天",
+  filter: {
+    label: "依執行狀態篩選",
+    all: "所有狀態"
+  },
+  selectVisible: "選取已載入",
+  selectLog: "選取 {{name}} 的執行記錄",
+  noMatching: "沒有符合條件的記錄",
+  clearFilters: "清除篩選",
+  loadMore: "載入更多記錄",
   selectAll: "全選",
   deleteSelected: "刪除 ({{count}})",
   confirmDelete: "確定要刪除 {{count}} 筆記錄？",
@@ -26018,9 +27252,11 @@ const executionLog = {
 };
 const zhTW = {
   common,
+  automation,
   main,
   settings,
   app,
+  dashboard,
   taskList,
   taskForm,
   schedule,
@@ -26794,7 +28030,7 @@ function Settings({}) {
 }
 const screenshot = "" + new URL("screenshot-B7bN3Fmj.png", import.meta.url).href;
 const screenshotLog = "" + new URL("screenshot-log-BjcTkmuR.png", import.meta.url).href;
-const version = "1.1.1";
+const version = "1.2.4";
 const pkg = {
   version
 };
@@ -27249,8 +28485,9 @@ function App() {
     if (!isElectron || loading) return;
     applyLanguagePreference(settings2.language ?? "system");
   }, [isElectron, loading, settings2.language]);
-  const [currentView, setCurrentView] = reactExports.useState("tasks");
+  const [currentView, setCurrentView] = reactExports.useState("overview");
   const [editingTask, setEditingTask] = reactExports.useState(null);
+  const [selectedLogId, setSelectedLogId] = reactExports.useState(null);
   const [showTaskForm, setShowTaskForm] = reactExports.useState(false);
   const [taskListKey, setTaskListKey] = reactExports.useState(0);
   if (!isElectron) {
@@ -27262,6 +28499,20 @@ function App() {
   const handleEditTask = (task) => {
     setEditingTask(task);
     setShowTaskForm(true);
+    setCurrentView("tasks");
+  };
+  const handleOpenTask = async (id2) => {
+    try {
+      const task = await window.electronApi.invoke("task:get", id2);
+      if (task) handleEditTask(task);
+      else setCurrentView("tasks");
+    } catch {
+      setCurrentView("tasks");
+    }
+  };
+  const handleOpenLogs = (id2) => {
+    setSelectedLogId(id2 ?? null);
+    setCurrentView("logs");
   };
   const handleNewTask = () => {
     setEditingTask(null);
@@ -27277,7 +28528,7 @@ function App() {
     handleCloseForm();
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-screen bg-[#F8F7F6]", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "w-56 bg-[#F8F7F6] flex flex-col border-r border-gray-200/60", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "w-56 bg-[#F8F7F6] flex flex-col", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-6 pb-2", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "relative flex items-center justify-center w-8 h-8", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("svg", { className: "w-8 h-8 text-blue-600", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", children: [
@@ -27304,6 +28555,20 @@ function App() {
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           NavItem,
           {
+            label: t2("app.nav.overview"),
+            icon: /* @__PURE__ */ jsxRuntimeExports.jsxs("svg", { className: "w-[18px] h-[18px]", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1.5", strokeWidth: "1.75" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1.5", strokeWidth: "1.75" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1.5", strokeWidth: "1.75" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1.5", strokeWidth: "1.75" })
+            ] }),
+            active: currentView === "overview",
+            onClick: () => handleViewChange("overview")
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          NavItem,
+          {
             label: t2("app.nav.tasks"),
             icon: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-[18px] h-[18px]", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 1.75, d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" }) }),
             active: currentView === "tasks",
@@ -27316,7 +28581,7 @@ function App() {
             label: t2("app.nav.executionLogs"),
             icon: /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className: "w-[18px] h-[18px]", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 1.75, d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }) }),
             active: currentView === "logs",
-            onClick: () => handleViewChange("logs")
+            onClick: () => handleOpenLogs()
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -27333,14 +28598,23 @@ function App() {
         )
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "p-4 text-sm text-gray-400", children: [
-        "v1.1.1 ",
+        "v1.2.4 ",
         false
       ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 flex flex-col overflow-hidden min-w-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-12 drag-region bg-[#F8F7F6]" }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 overflow-hidden", children: [
-        currentView === "tasks" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        currentView === "overview" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full overflow-hidden rounded-tl-2xl border-t border-gray-200/60 bg-white shadow-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          Dashboard,
+          {
+            onNewTask: handleNewTask,
+            onOpenTasks: () => handleViewChange("tasks"),
+            onOpenTask: (id2) => void handleOpenTask(id2),
+            onOpenLogs: handleOpenLogs
+          }
+        ) }),
+        currentView === "tasks" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl shadow-sm border-t border-gray-200/60 p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
           TaskList,
           {
             onEditTask: handleEditTask,
@@ -27352,8 +28626,8 @@ function App() {
           },
           taskListKey
         ) }),
-        currentView === "logs" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ExecutionLog, {}) }),
-        currentView === "settings" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl shadow-sm border-t border-l border-gray-200/60 p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, {}) })
+        currentView === "logs" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl shadow-sm border-t border-gray-200/60 p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ExecutionLog, { initialLogId: selectedLogId }) }),
+        currentView === "settings" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full bg-white rounded-tl-2xl shadow-sm border-t border-gray-200/60 p-6", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Settings, {}) })
       ] })
     ] })
   ] });
@@ -27363,9 +28637,10 @@ function NavItem({ label, icon, active, onClick }) {
     "button",
     {
       onClick,
-      className: `w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-sm ${active ? "bg-white shadow-sm text-gray-900 font-medium border border-gray-200/60" : "text-gray-600 hover:bg-white/60"}`,
+      "aria-current": active ? "page" : void 0,
+      className: `w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm ${active ? "bg-blue-50 text-blue-700 font-semibold border border-blue-100" : "text-gray-600 hover:bg-white/60"}`,
       children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: active ? "text-gray-700" : "text-gray-500", children: icon }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: active ? "text-blue-600" : "text-gray-500", children: icon }),
         label
       ]
     }
