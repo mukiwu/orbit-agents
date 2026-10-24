@@ -1,5 +1,6 @@
 import { isAbsolute, relative, resolve } from 'path'
 import type { AutomationConfig, ProviderId } from '../shared/types'
+import { defaultAutomationConfig } from '../shared/automation'
 
 const providers = new Set<ProviderId>(['claude', 'codex', 'antigravity'])
 
@@ -48,8 +49,5 @@ export function validateAutomationConfig(value: unknown): AutomationConfig {
 }
 
 export function parseAutomationConfig(raw: string | null): AutomationConfig {
-  return raw ? validateAutomationConfig(JSON.parse(raw)) : {
-    source: { type: 'schedule' }, result: { type: 'report' },
-    require_review: false, fallback_provider: null
-  }
+  return raw ? validateAutomationConfig(JSON.parse(raw)) : defaultAutomationConfig()
 }
