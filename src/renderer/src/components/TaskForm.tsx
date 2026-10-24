@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTasks, useAiProvider, useSkills } from '../hooks/useApi'
 import type { ScheduledTask, CreateTaskInput, McpServer, ProviderId, ModelOption, AutomationConfig } from '../../../shared/types'
+import { readAutomationConfig } from '../../../shared/automation'
 import { RefreshCw, Sun, Calendar, CalendarDays, FolderOpen, Sparkles, X } from 'lucide-react'
 import ModelSelect from './ModelSelect'
 import QuickPicker from './QuickPicker'
@@ -50,11 +51,6 @@ function removePromptSnippet(prompt: string, snippet: string): string {
   return before && after ? `${before}\n\n${after}` : before + after
 }
 
-const defaultAutomation: AutomationConfig = {
-  source: { type: 'schedule' }, result: { type: 'report' },
-  require_review: false, fallback_provider: null
-}
-
 export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = 'modal' }: TaskFormProps) {
   const { t, i18n } = useTranslation()
   const savedNextRun = nextRun === undefined ? task?.next_run : nextRun
@@ -76,7 +72,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
   const [error, setError] = useState<string | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServer[]>([])
   const [loadingMcps, setLoadingMcps] = useState(false)
-  const [automation, setAutomation] = useState<AutomationConfig>(task?.automation ? JSON.parse(task.automation) : defaultAutomation)
+  const [automation, setAutomation] = useState<AutomationConfig>(() => readAutomationConfig(task?.automation ?? null))
 
   // Parse existing cron to determine initial schedule mode
   const initialSchedule = useMemo(() => {
@@ -97,7 +93,7 @@ export default function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSa
     setSelectedWeekdays(parsed.weekdays)
     setWeekInterval(task?.week_interval || parsed.weekInterval)
     setMonthDay(parsed.monthDay)
-    setAutomation(task?.automation ? JSON.parse(task.automation) as AutomationConfig : defaultAutomation)
+    setAutomation(readAutomationConfig(task?.automation ?? null))
 
     if (task) {
         setFormData({
