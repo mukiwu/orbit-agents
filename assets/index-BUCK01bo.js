@@ -9886,6 +9886,23 @@ function useSkills() {
   }, [scanSkills]);
   return { skills, loading, projectPath, setProjectPath, scanSkills, selectProject, clearProject, initProject };
 }
+function defaultAutomationConfig() {
+  return {
+    source: { type: "schedule" },
+    result: { type: "report" },
+    require_review: false,
+    fallback_provider: null
+  };
+}
+function readAutomationConfig(raw) {
+  if (!raw) return defaultAutomationConfig();
+  try {
+    const config = JSON.parse(raw);
+    if (config?.source && config.result) return config;
+  } catch {
+  }
+  return defaultAutomationConfig();
+}
 /**
  * @license lucide-react v0.563.0 - ISC
  *
@@ -10747,12 +10764,6 @@ function removePromptSnippet(prompt, snippet) {
 
 ${after}` : before + after;
 }
-const defaultAutomation = {
-  source: { type: "schedule" },
-  result: { type: "report" },
-  require_review: false,
-  fallback_provider: null
-};
 function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = "modal" }) {
   const { t: t2, i18n } = useTranslation();
   const savedNextRun = nextRun === void 0 ? task?.next_run : nextRun;
@@ -10773,7 +10784,7 @@ function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = 
   const [error, setError] = reactExports.useState(null);
   const [mcpServers, setMcpServers] = reactExports.useState([]);
   const [loadingMcps, setLoadingMcps] = reactExports.useState(false);
-  const [automation2, setAutomation] = reactExports.useState(task?.automation ? JSON.parse(task.automation) : defaultAutomation);
+  const [automation2, setAutomation] = reactExports.useState(() => readAutomationConfig(task?.automation ?? null));
   const initialSchedule = reactExports.useMemo(() => {
     return parseCronToSimple(task?.cron_expression || "0 9 * * *");
   }, [task?.cron_expression]);
@@ -10790,7 +10801,7 @@ function TaskForm({ task, nextRun, scheduleEnabled, onClose, onSaved, variant = 
     setSelectedWeekdays(parsed.weekdays);
     setWeekInterval(task?.week_interval || parsed.weekInterval);
     setMonthDay(parsed.monthDay);
-    setAutomation(task?.automation ? JSON.parse(task.automation) : defaultAutomation);
+    setAutomation(readAutomationConfig(task?.automation ?? null));
     if (task) {
       setFormData({
         name: task.name || "",
@@ -11877,12 +11888,7 @@ function TaskList({
   }, [fetchTasks]);
   const nextRunLabel = (task) => {
     if (task.enabled !== 1) return t2("taskList.paused");
-    if (task.automation) {
-      try {
-        if (JSON.parse(task.automation).source?.type === "folder") return t2("automation.watching");
-      } catch {
-      }
-    }
+    if (readAutomationConfig(task.automation).source.type === "folder") return t2("automation.watching");
     if (!task.next_run) return t2("taskList.unscheduled");
     const minutes = Math.max(0, Math.ceil((new Date(task.next_run).getTime() - now) / 6e4));
     const formatter = new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language, { numeric: "auto" });
@@ -11978,14 +11984,9 @@ function TaskList({
                     /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-gray-400 flex items-center gap-0.5 ml-1", children: [
                       /* @__PURE__ */ jsxRuntimeExports.jsx(Clock, { className: "w-3 h-3" }),
                       (() => {
-                        if (task.automation) {
-                          try {
-                            const source = JSON.parse(task.automation).source;
-                            if (source?.type === "folder") return t2("automation.source.folder");
-                            if (source?.type === "website") return t2("automation.source.website");
-                          } catch {
-                          }
-                        }
+                        const source = readAutomationConfig(task.automation).source;
+                        if (source.type === "folder") return t2("automation.source.folder");
+                        if (source.type === "website") return t2("automation.source.website");
                         const params = parseCronToSimple(task.cron_expression || "");
                         if (params.mode === "advanced") return task.cron_expression;
                         return getScheduleDescription(
