@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { parseCronToSimple, getScheduleDescription } from '../utils/cron'
 import { useTasks } from '../hooks/useApi'
 import type { Task, ScheduledTask } from '../../../shared/types'
+import { readAutomationConfig } from '../../../shared/automation'
 import TaskForm from './TaskForm'
 import { Play, Pause, Trash2, Clock, Terminal, ChevronRight, Plus } from 'lucide-react'
 
@@ -40,11 +41,7 @@ export default function TaskList({
 
   const nextRunLabel = (task: ScheduledTask): string => {
     if (task.enabled !== 1) return t('taskList.paused')
-    if (task.automation) {
-      try {
-        if (JSON.parse(task.automation).source?.type === 'folder') return t('automation.watching')
-      } catch { /* legacy task */ }
-    }
+    if (readAutomationConfig(task.automation).source.type === 'folder') return t('automation.watching')
     if (!task.next_run) return t('taskList.unscheduled')
     const minutes = Math.max(0, Math.ceil((new Date(task.next_run).getTime() - now) / 60_000))
     const formatter = new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language, { numeric: 'auto' })
@@ -179,13 +176,9 @@ export default function TaskList({
                        <span className="text-xs text-gray-400 flex items-center gap-0.5 ml-1">
                            <Clock className="w-3 h-3" />
                            {(() => {
-                             if (task.automation) {
-                               try {
-                                 const source = JSON.parse(task.automation).source
-                                 if (source?.type === 'folder') return t('automation.source.folder')
-                                 if (source?.type === 'website') return t('automation.source.website')
-                               } catch { /* legacy task */ }
-                             }
+                             const source = readAutomationConfig(task.automation).source
+                             if (source.type === 'folder') return t('automation.source.folder')
+                             if (source.type === 'website') return t('automation.source.website')
                              const params = parseCronToSimple(task.cron_expression || '')
                              if (params.mode === 'advanced') return task.cron_expression
                              return getScheduleDescription(
